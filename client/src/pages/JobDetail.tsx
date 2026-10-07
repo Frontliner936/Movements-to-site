@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useRoute } from "wouter";
 import { ArrowLeft, ArrowUpRight, Bookmark, CalendarDays, ExternalLink, Heart, MapPin, Share2 } from "lucide-react";
 import { Brand } from "@/components/Brand";
 import { CompanyLogo, shareJob } from "@/components/JobCard";
-import { api, type Job } from "@/lib/api";
+import { api, recordJobView, type Job } from "@/lib/api";
 import { applyJobPageMetadata } from "@/lib/pageMetadata";
 
 export default function JobDetail() {
@@ -14,7 +14,13 @@ export default function JobDetail() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const id = params?.id;
+  const trackedJob = useRef<number | null>(null);
   useEffect(() => job ? applyJobPageMetadata(job) : undefined, [job]);
+  useEffect(() => {
+    if (!job || navigator.doNotTrack === "1" || trackedJob.current === job.id) return;
+    trackedJob.current = job.id;
+    void recordJobView(job.id).catch(() => undefined);
+  }, [job]);
 
   async function load() {
     if (!id) return;
@@ -51,6 +57,7 @@ export default function JobDetail() {
           <div className="detail-meta">{job.location && <span><MapPin size={16} />{job.location}</span>}{job.deadline && <span><CalendarDays size={15} />Deadline: {job.deadline}</span>}</div>
           <div className="detail-heading-actions"><button type="button" className={`secondary-button ${job.liked ? "is-liked" : ""}`} onClick={() => void toggle("like")} disabled={busy}><Heart size={16} fill={job.liked ? "currentColor" : "none"} /> {job.liked ? "Liked" : "Like"} <span>{job.likeCount}</span></button><button type="button" className={`secondary-button ${job.saved ? "is-saved" : ""}`} onClick={() => void toggle("save")} disabled={busy}><Bookmark size={15} fill={job.saved ? "currentColor" : "none"} /> {job.saved ? "Saved" : "Save"}</button><button type="button" className="secondary-button" onClick={() => void share()}><Share2 size={15} /> Share</button></div>
         </section>
+        <p className="job-view-privacy-note">Visitor counts use a random browser ID for this job only and count once per listing. No IP address or personal profile is stored; Do Not Track is respected.</p>
         <div className="detail-layout">
           <div className="detail-content">
             {job.companyDescription && <section className="detail-section"><span className="eyebrow muted-eyebrow">ABOUT THE ORGANISATION</span><h2>{job.companyName || "Company profile"}</h2><p>{job.companyDescription}</p>{job.companyHref && <Link href={job.companyHref} className="text-link">View company profile <ArrowUpRight size={14} /></Link>}</section>}

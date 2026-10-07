@@ -1,8 +1,9 @@
-import { and, count, desc, eq, inArray, like, or } from "drizzle-orm";
+import { createHash } from "node:crypto";
+import { and, count, desc, eq, inArray, like, or, sql } from "drizzle-orm";
 import { Router } from "express";
 import type { Request } from "express";
 import { getDb } from "../db";
-import { companies, jobs, jobReactions } from "../../drizzle/schema";
+import { companies, jobs, jobReactions, jobViewers } from "../../drizzle/schema";
 import { getJobShareImageUrl, getPublicSiteOrigin } from "./share-meta";
 
 const visitorKey = (req: Request) => {
@@ -86,6 +87,20 @@ export function createPublicRouter() {
     if (!rows.length) return res.status(404).json({ error: "Listing not found." });
     const mapped = await addReactionSummary(rows, visitorKey(req));
     return res.json({ job: mapped[0] });
+  });
+
+  router.post("/jobs/:id/view", async (req, res) => {
+    const id = Number(req.params.id);
+    const rawViewer = String(req.get("x-job-viewer-key") ?? "");
+    if (!Number.isSafeInteger(id) || id < 1 || !/^[a-z0-9-]{16,64}$/i.test(rawViewer)) return res.status(400).json({ error: "A valid job and anonymous browser key are required." });
+    const viewerHash = createHash("sha256").update(rawViewer).digest("hex");
+    const db = await getDb();
+    if (!db) return res.status(503).json({ error: "Visitor analytics are temporarily unavailable." });
+    const [job] = await db.select({ id: jobs.id }).from(jobs).where(and(eq(jobs.id, id), eq(jobs.status, "published"))).limit(1);
+    if (!job) return res.status(404).json({ error: "Listing not found." });
+    await db.insert(jobViewers).values({ jobId: id, visitorKey: viewerHash })
+      .onDuplicateKeyUpdate({ set: { lastViewedAt: sql`CURRENT_TIMESTAMP` } });
+    return res.json({ recorded: true });
   });
 
   router.get("/companies/:id", async (req, res) => {

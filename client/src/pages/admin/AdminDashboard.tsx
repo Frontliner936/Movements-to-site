@@ -1,18 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowUpRight, BriefcaseBusiness, Building2, Clock3, LogOut, PanelTop, Rss, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, BarChart3, BriefcaseBusiness, Building2, Clock3, LogOut, PanelTop, Rss, ShieldCheck } from "lucide-react";
 import { Brand } from "@/components/Brand";
 import { api } from "@/lib/api";
 import AdminJobs from "./AdminJobs";
 import AdminCompanies from "./AdminCompanies";
 import AdminSources from "./AdminSources";
 import AdminReview from "./AdminReview";
+import AdminAnalytics from "./AdminAnalytics";
 
-type Tab = "overview" | "review" | "jobs" | "companies" | "sources";
+type Tab = "overview" | "review" | "jobs" | "companies" | "sources" | "analytics";
 type Overview = { jobs: Record<string, number>; companies: number; sources: number; activeSources: number; pending: number; recentRuns: Array<{ id: number; name: string; lastRunAt: string | null; lastRunError: string | null; lastRunCount: number; isActive: boolean }>; schedule: { enabled: boolean; cronExpression: string; lastRunAt: string | null } };
 const tabs: Array<{ id: Tab; label: string; icon: typeof PanelTop }> = [
   { id: "overview", label: "Overview", icon: PanelTop }, { id: "review", label: "Review queue", icon: Clock3 },
   { id: "jobs", label: "Jobs", icon: BriefcaseBusiness }, { id: "companies", label: "Companies", icon: Building2 }, { id: "sources", label: "Tracked sources", icon: Rss },
+  { id: "analytics", label: "Analytics", icon: BarChart3 },
 ];
 
 export default function AdminDashboard() {
@@ -58,6 +60,7 @@ export default function AdminDashboard() {
         {tab === "jobs" && <AdminJobs onChanged={loadOverview} />}
         {tab === "companies" && <AdminCompanies />}
         {tab === "sources" && <AdminSources onChanged={loadOverview} />}
+        {tab === "analytics" && <AdminAnalytics />}
       </main>
     </div>
   </div>;

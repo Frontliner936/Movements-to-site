@@ -414,3 +414,26 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .hero-photo-note { left: 10px; bottom: 10px; }
   .hero-photo-note strong { font-size: 13px; }
 }
+
+.analytics-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-bottom: 15px; }
+.analytics-panel { min-width: 0; }
+.analytics-definition { color: #7d897f; font-size: 9px; }
+.analytics-table-scroll { width: 100%; overflow-x: auto; margin-top: 18px; }
+.analytics-table { width: 100%; border-collapse: collapse; text-align: left; min-width: 680px; }
+.analytics-table th { padding: 11px 12px; border-bottom: 1px solid #e8ece5; color: #7e8a80; font-size: 8px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+.analytics-table td { padding: 14px 12px; border-bottom: 1px solid #eff0eb; color: #718076; font-size: 10px; }
+.analytics-table tbody tr:last-child td { border-bottom: 0; }
+.analytics-table td strong { color: #243a30; font-size: 11px; font-weight: 700; }
+.analytics-number { text-align: right !important; font-variant-numeric: tabular-nums; }
+.visitor-count { display: inline-grid; min-width: 32px; height: 27px; place-items: center; padding: 0 8px; border-radius: 40px; background: #edf4ec; color: #2f6b49; font-size: 10px; font-weight: 700; }
+.analytics-open-link { display: grid; width: 28px; height: 28px; place-items: center; border: 1px solid #e3e9e1; border-radius: 50%; color: var(--green); }
+.analytics-open-link:hover { background: #edf4ec; }
+.analytics-privacy-note, .job-view-privacy-note { color: #79877d; font-size: 9px; line-height: 1.65; }
+.analytics-privacy-note { margin: 14px 0 0; max-width: 730px; }
+.job-view-privacy-note { margin: 3px 0 22px; padding: 10px 12px; border-left: 2px solid #a8c4ae; background: #f2f5ef; }
+@media (max-width: 680px) {
+  .analytics-summary { grid-template-columns: 1fr; }
+  .analytics-panel { padding: 17px 13px; }
+  .analytics-panel .panel-heading { align-items: flex-start; flex-direction: column; }
+  .job-view-privacy-note { margin: 2px 0 20px; }
+}

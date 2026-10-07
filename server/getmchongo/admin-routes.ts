@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { and, count, desc, eq } from "drizzle-orm";
+import { and, count, desc, eq, inArray, max } from "drizzle-orm";
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { getDb } from "../db";
-import { companies, jobs, jobReactions, pendingJobs, scanSchedules, sources } from "../../drizzle/schema";
+import { companies, jobs, jobReactions, jobViewers, pendingJobs, scanSchedules, sources } from "../../drizzle/schema";
 import { createHeartbeatJob, updateHeartbeatJob } from "../_core/heartbeat";
 import { ADMIN_EMAIL, isAdmin, login, logout, requireAdmin, requireSameOrigin } from "./auth";
 import { runSource } from "./source-runner";
@@ -60,6 +60,26 @@ router.get("/overview", async (_req, res) => {
     db.select().from(scanSchedules).where(eq(scanSchedules.id, 1)).limit(1),
   ]);
   return res.json({ jobs: Object.fromEntries(jobCounts.map(item => [item.status, Number(item.total)])), companies: Number(companyCounts[0]?.total ?? 0), sources: sourceCounts.reduce((sum, item) => sum + Number(item.total), 0), activeSources: sourceCounts.filter(item => item.active).reduce((sum, item) => sum + Number(item.total), 0), pending: Number(pendingCounts[0]?.total ?? 0), recentRuns, schedule: schedule[0] ?? { enabled: false, cronExpression: "0 0 6 * * *", heartbeatTaskUid: null, lastRunAt: null } });
+});
+
+router.get("/analytics/jobs", async (_req, res) => {
+  const db = await getDb(); if (!db) return sendDbUnavailable(res);
+  const published = await db.select({ job: jobs, company: companies }).from(jobs)
+    .leftJoin(companies, eq(jobs.companyId, companies.id))
+    .where(eq(jobs.status, "published")).orderBy(desc(jobs.publishedAt), desc(jobs.createdAt));
+  const jobIds = published.map(row => row.job.id);
+  const visitorCounts = jobIds.length ? await db.select({ jobId: jobViewers.jobId, uniqueVisitors: count(), lastViewedAt: max(jobViewers.lastViewedAt) })
+    .from(jobViewers).where(inArray(jobViewers.jobId, jobIds)).groupBy(jobViewers.jobId) : [];
+  const byJob = new Map(visitorCounts.map(item => [item.jobId, item]));
+  const rows = published.map(({ job, company }) => {
+    const stats = byJob.get(job.id);
+    return {
+      id: job.id, title: job.title, companyName: job.companyName ?? company?.name ?? null,
+      location: job.location, publishedAt: job.publishedAt,
+      uniqueVisitors: Number(stats?.uniqueVisitors ?? 0), lastViewedAt: stats?.lastViewedAt ?? null,
+    };
+  });
+  return res.json({ jobs: rows });
 });
 
 function normalizeJob(body: any, old?: typeof jobs.$inferSelect) {

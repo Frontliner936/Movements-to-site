@@ -31,6 +31,7 @@ A mobile-first Tanzanian jobs and opportunities board with a clear separation be
 - Build public `/`, `/jobs/:id`, and `/companies/:id` views. Public queries return published jobs only. Search covers job title and company text; category and location are filters. Details render only stored/source-verified values, offer an application link only when the source provides one, and retain the original source URL separately. Render crawler-readable job detail HTML and per-job Open Graph/Twitter metadata before the SPA shell; use the job image then company logo, show the job title and Get Mchongo brand, return real 404s for missing/unpublished records, use the known public Preview origin only in development, and require an explicit `PUBLIC_SITE_ORIGIN` for production absolute metadata.
 - For stored admin-uploaded listing images or logos, create a public **1200 × 630 JPEG** share-card rendition from the exact asset using contain/letterbox (no crop); declare its actual MIME type and dimensions, keep the original listing asset unchanged, and version both the image URL and share link when the job/company image record changes. Direct external image URLs remain direct.
 - Add a dedicated `/admin` surface backed by server-verified email/password login and a signed, HTTP-only application cookie. The provided password is kept only in protected environment storage. Server endpoints for job, company, source, upload and review operations require the admin session. Do not depend on Manus OAuth or treat a client flag as authentication.
+- Add an admin Analytics tab listing unique anonymous browsers per published job. Use a separate random browser key for each job and store only its one-way hash and first/last timestamps in a per-job table; do not collect IP addresses, names or user-agent strings. Respect browser Do Not Track, disclose the counting in job details, and cascade visitor records when a job is deleted. Label results as approximate unique browsers, not identified people.
 - Keep admin capabilities narrow: manual jobs, company records, tracked sources, collected-job review, duplicate warnings, upload preview, publish/unpublish and deletion. Avoid employer/candidate accounts, payments and unrelated hiring features.
 - Store companies separately and allow a job to retain its source-supplied company name even when no company profile has been created. Represent collected candidates in a separate pending-review table so approval creates/updates the public record explicitly.
 - Support RSS/Atom, JSON feeds with administrator-configurable item/field paths, and static career pages. Parse XML/HTML/JSON with bounded response size and timeouts. For static pages, prefer Schema.org JobPosting/JSON-LD, metadata and explicit labeled sections; do not fabricate values. Only send candidates to the pending queue.
@@ -43,6 +44,7 @@ A mobile-first Tanzanian jobs and opportunities board with a clear separation be
 
 - `client/src/App.tsx` — public and admin route composition.
 - `client/src/pages/` — public job feed/detail/company views and the protected admin login/dashboard.
+- `client/src/pages/admin/AdminAnalytics.tsx` — per-published-job unique-browser counts.
 - `client/src/lib/pageMetadata.ts` — synchronize client-side job titles and share-card metadata with server-rendered details.
 - `client/src/components/` — brand header, search/filters, job cards, detail sections, status labels and admin forms.
 - `client/src/index.css`, `client/index.html` — responsive visual system and Get Mchongo page metadata.
@@ -63,6 +65,7 @@ A mobile-first Tanzanian jobs and opportunities board with a clear separation be
 - Sources hold type, URL, extraction configuration, active flag, schedule-related state, last run time, count and most recent error.
 - Pending jobs hold all extracted fields, source/raw context, duplicate reasons and pending/approved/rejected status.
 - Reactions hold job, anonymous browser token, and like/save kind; no candidate or user directory is introduced.
+- Job-view analytics hold a one-way hash of one random browser identifier per published job and its first/last observation timestamps only; no IP address or personal profile is stored.
 - No sample jobs are seeded. A new installation displays a helpful empty state until an administrator adds or approves a real listing.
 
 ## Serving and constraints

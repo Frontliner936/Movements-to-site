@@ -50,6 +50,31 @@ export function getVisitorKey() {
   }
 }
 
+function getJobViewVisitorKey(jobId: number): string | null {
+  const key = `gm-job-view-visitor:${jobId}`;
+  try {
+    let value = localStorage.getItem(key);
+    if (value && !/^[a-z0-9-]{16,64}$/i.test(value)) value = null;
+    if (!value) {
+      value = globalThis.crypto?.randomUUID?.() ?? `v-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+      localStorage.setItem(key, value);
+    }
+    return value;
+  } catch { return null; }
+}
+
+export async function recordJobView(jobId: number): Promise<void> {
+  if (!Number.isSafeInteger(jobId) || jobId < 1) return;
+  const visitorKey = getJobViewVisitorKey(jobId);
+  if (!visitorKey) return;
+  await fetch(`/api/gm/jobs/${jobId}/view`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-job-viewer-key": visitorKey },
+    body: "{}",
+    credentials: "same-origin",
+  });
+}
+
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) { super(message); this.name = "ApiError"; }
 }

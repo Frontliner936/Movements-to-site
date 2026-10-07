@@ -18,6 +18,10 @@
 - A protected admin dashboard accepts the requested administrator login email `frontlinertech@gmail.com`. The provided password stays in protected environment storage; no administrator password is stored in source or a public bundle.
 - The admin can add jobs manually; edit/delete/publish/unpublish jobs; upload and preview logos/images; and manage company profiles.
 
+## [x] Per-job visitor analytics
+- The protected admin tools include an Analytics area showing the visitor count for each published job.
+- A visitor means an approximate unique browser per job, counted once for that listing; use a separate random browser ID for each job and store only its one-way hash and visit timestamps. This browser-side measurement uses no names, IP addresses or user-agent strings. Respect Do Not Track, explain the count to visitors, and remove a job's visitor records when the job is deleted.
+
 ## [x] Tracked sources and automatic collection
 - The admin can add, edit, delete, activate/deactivate and run sources of types RSS, JSON API, career/static page, and web scraping when necessary; view collection errors and counts of new jobs found; and configure scheduled scanning.
 - For active sources, the system opens each source, finds new jobs and extracts title, company, description, responsibilities, qualifications, location, deadline, how to apply, link and logo/image where available; checks duplicates; and sends results to pending review. Missing source information stays missing. **Never publish automatically.**

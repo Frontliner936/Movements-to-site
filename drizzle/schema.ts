@@ -105,3 +105,11 @@ export const scanSchedules = mysqlTable("gm_scan_schedules", {
   lastRunAt: timestamp("last_run_at"),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
+
+export const jobViewers = mysqlTable("gm_job_viewers", {
+  id: int("id").autoincrement().primaryKey(),
+  jobId: int("job_id").notNull().references(() => jobs.id, { onDelete: "cascade" }),
+  visitorKey: varchar("visitor_key", { length: 64 }).notNull(),
+  firstViewedAt: timestamp("first_viewed_at").defaultNow().notNull(),
+  lastViewedAt: timestamp("last_viewed_at").defaultNow().notNull(),
+}, table => [uniqueIndex("gm_job_viewer_unique").on(table.jobId, table.visitorKey)]);
