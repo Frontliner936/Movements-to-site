@@ -9,6 +9,7 @@ import SubmitOpportunity from "./pages/SubmitOpportunity";
 import ContactUs from "./pages/ContactUs";
 import CompanyProfile from "./pages/CompanyProfile";
 import AdminLogin from "./pages/AdminLogin";
+import Account from "./pages/Account";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -20,6 +21,7 @@ function Router() {
     <Route path="/contact" component={ContactUs} />
     <Route path="/companies/:id" component={CompanyProfile} />
     <Route path="/admin/login" component={AdminLogin} />
+    <Route path="/account" component={Account} />
     <Route path="/admin" component={AdminDashboard} />
     <Route path="/404" component={NotFound} />
     <Route component={NotFound} />

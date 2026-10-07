@@ -3,6 +3,7 @@ import { Link, useLocation } from "wouter";
 import { ArrowUpRight, BarChart3, BriefcaseBusiness, Building2, Clock3, LogOut, MessageCircle, PanelTop, Rss, ShieldCheck } from "lucide-react";
 import { Brand } from "@/components/Brand";
 import { api } from "@/lib/api";
+import { signOutFromSupabase } from "@/lib/supabaseAuth";
 import AdminJobs from "./AdminJobs";
 import AdminCompanies from "./AdminCompanies";
 import AdminSources from "./AdminSources";
@@ -40,7 +41,7 @@ export default function AdminDashboard() {
   }, [setLocation, loadOverview]);
 
   async function signOut() {
-    try { await api("/api/gm/admin/logout", { method: "POST", body: "{}" }); } finally { setLocation("/admin/login"); }
+    try { await signOutFromSupabase(); } finally { setLocation("/admin/login"); }
   }
 
   const counts = overview ? [

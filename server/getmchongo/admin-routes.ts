@@ -6,14 +6,13 @@ import sharp from "sharp";
 import { getDb } from "../db";
 import { companies, contactMessages, jobs, jobReactions, jobViewers, pendingJobs, scanSchedules, sources } from "../../drizzle/schema";
 import { createHeartbeatJob, updateHeartbeatJob } from "../_core/heartbeat";
-import { ADMIN_EMAIL, isAdmin, login, logout, requireAdmin, requireSameOrigin } from "./auth";
+import { ADMIN_EMAIL, isAdmin, requireAdmin } from "./auth";
 import { runSource } from "./source-runner";
 import { validateSourceUrl, type SourceType } from "./collector";
 import { MAX_JOB_AD_FILE_BYTES, MAX_JOB_AD_TEXT, structureJobAd, type OutputLanguage } from "./job-ad-structurer";
 import { removeTemporaryDocument, storeTemporaryDocument, TemporaryDocumentCapacityError } from "./temporary-documents";
 
 const router = Router();
-const loginAttempts = new Map<string, { count: number; until: number }>();
 const now = () => new Date();
 const textValue = (value: unknown, maximum: number) => typeof value === "string" && value.trim() ? value.trim().slice(0, maximum) : null;
 const safeHttpUrl = (value: unknown) => {
@@ -36,21 +35,13 @@ const idParam = (req: Request) => {
 };
 const sendDbUnavailable = (res: Response) => res.status(503).json({ error: "Administration is temporarily unavailable." });
 
-router.get("/session", async (req, res) => res.json({ authenticated: await isAdmin(req), email: await isAdmin(req) ? ADMIN_EMAIL : null }));
-router.post("/login", async (req, res) => {
-  if (!requireSameOrigin(req, res)) return;
-  const remote = String(req.ip ?? "unknown");
-  const nowMs = Date.now();
-  const attempt = loginAttempts.get(remote);
-  if (attempt && attempt.until > nowMs && attempt.count >= 10) return res.status(429).json({ error: "Too many sign-in attempts. Try again later." });
-  const result = await login(req, res);
-  if (res.statusCode === 401) {
-    const current = loginAttempts.get(remote);
-    loginAttempts.set(remote, { count: (current && current.until > nowMs ? current.count : 0) + 1, until: nowMs + 15 * 60_000 });
-  } else loginAttempts.delete(remote);
-  return result;
+router.get("/session", async (req, res) => {
+  const authenticated = await isAdmin(req);
+  return res.json({
+    authenticated,
+    email: authenticated ? ADMIN_EMAIL : null,
+  });
 });
-router.post("/logout", requireAdmin, async (req, res) => logout(req, res));
 router.use(requireAdmin);
 
 router.get("/overview", async (_req, res) => {
