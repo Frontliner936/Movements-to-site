@@ -1,3 +1,5 @@
+import { getSupabaseAccessToken } from "@/lib/supabaseAuth";
+
 export type Company = {
   id: number;
   name: string;
@@ -83,6 +85,10 @@ export class ApiError extends Error {
 export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("x-visitor-key", getVisitorKey());
+  if (path.startsWith("/api/gm/admin/")) {
+    const accessToken = await getSupabaseAccessToken();
+    if (accessToken) headers.set("authorization", `Bearer ${accessToken}`);
+  }
   if (init.body && !headers.has("content-type")) headers.set("content-type", "application/json");
   const response = await fetch(path, { ...init, headers, credentials: "include" });
   let data: any = null;
