@@ -4,6 +4,9 @@
 - Visitors can browse **published** jobs/opportunities; search/filter by title, category and location; open a job detail; view company logo and company profile; like, save and share jobs; and apply through the original application link.
 - Each job page shows, when available: job title; company/institution; company description; logo/image; location; deadline; job description; brief responsibilities; brief qualifications/requirements; how to apply; and application link. **Never invent missing information.**
 
+## [x] Responsive photo and graphic enhancement
+- Give the public homepage original editorial imagery in the hero and supporting feature, plus a custom opportunity-path illustration and graphic details; keep crops responsive on phones and do not add fabricated listings or statistics.
+
 ## [x] Protected administrator and manual listings
 - A protected admin dashboard accepts the requested administrator login email `frontlinertech@gmail.com`. The provided password stays in protected environment storage; no administrator password is stored in source or a public bundle.
 - The admin can add jobs manually; edit/delete/publish/unpublish jobs; upload and preview logos/images; and manage company profiles.

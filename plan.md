@@ -19,6 +19,12 @@ A mobile-first Tanzanian jobs and opportunities board with a clear separation be
 - **Wordmark & logo:** a distinctive compact green rising-route/sun glyph paired with the “Get Mchongo” wordmark, not a default text-only logo.
 - **Signature brand color:** coastal green `#12664F`.
 
+## Visual refresh
+
+- Make the public homepage more vivid with two original, editorial photographs: a wide Tanzania-inspired collaboration scene as the hero artwork, and a smaller close workplace scene alongside “The Mchongo Way”. Keep headline copy outside the photographs for legibility and responsive cropping.
+- Add lightweight, source-controlled SVG/CSS graphics for opportunity discovery and the truthful empty-board state. Preserve the existing green, ivory and marigold identity; use measured soft shapes, thin route lines and small floating labels rather than invented statistics, job cards or company logos.
+- Image-search references were considered for visual direction only and are not reused on the site: [Tech In Africa collaboration image](https://files.manuscdn.com/search-media/310519664004490234/ST2pLojWgOk5cgzbxI1519/CYPBiQh3UX8kF2VGRT8XeP.jpg), [Africa Tech Schools Tanzania coworking image](https://files.manuscdn.com/search-media/310519664004490234/ST2pLojWgOk5cgzbxI1519/4RgtrivKVgujkEu6PA7puD.png), and [Dar es Salaam image result](https://files.manuscdn.com/search-media/310519664004490234/ST2pLojWgOk5cgzbxI1519/Hi3EZg3icXejwL6wpqDmjS.jpg). Generate original images rather than copying these third-party pictures.
+
 ## Implementation approach
 
 - Extend the initialized React/TypeScript, Express and Drizzle/MySQL project. Use the managed database for jobs, company profiles, sources, pending review records, public reactions and scan schedule state.

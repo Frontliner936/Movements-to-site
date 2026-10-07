@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDownRight, ArrowRight, BriefcaseBusiness, ChevronDown, Search, Sparkles } from "lucide-react";
 import { Brand } from "@/components/Brand";
+import { EmptyBoardIllustration } from "@/components/EditorialVisuals";
 import { JobCard } from "@/components/JobCard";
 import { api, type Job } from "@/lib/api";
 
@@ -47,14 +48,16 @@ export default function Home() {
             <a href="#opportunities" className="hero-cta">Explore opportunities <ArrowDownRight size={17} /></a>
             <p className="hero-footnote"><span className="small-sun">✳</span> Clear opportunities. No noise.</p>
           </div>
-          <div className="hero-art" aria-label="Get Mchongo brand illustration">
-            <span className="hero-orbit orbit-one" /><span className="hero-orbit orbit-two" />
-            <div className="hero-art-sun" />
-            <div className="hero-path"><span /><span /><span /></div>
-            <div className="hero-art-note note-top"><span className="note-dot" /> REAL LISTINGS</div>
-            <div className="hero-art-note note-bottom">YOUR NEXT CHAPTER <ArrowRight size={14} /></div>
-            <p className="hero-art-caption">Opportunity moves<br />when you do.</p>
-          </div>
+          <figure className="hero-art hero-photo-card">
+            <img src="/manus-storage/async-images/oAV3nT3943jAZnR9rKeyaQ/image-1.webp" alt="Young professionals sharing ideas around a laptop in a bright contemporary workspace." />
+            <div className="hero-photo-shade" aria-hidden="true" />
+            <div className="hero-photo-orbit" aria-hidden="true" />
+            <div className="hero-photo-sun" aria-hidden="true" />
+            <div className="hero-photo-topline"><span className="hero-photo-live" /> MADE FOR TANZANIA</div>
+            <div className="hero-photo-route" aria-hidden="true"><svg viewBox="0 0 220 120"><path d="M4 106c48 0 67-51 113-54 36-3 45 20 82-36" /></svg></div>
+            <div className="hero-photo-note"><span className="hero-note-star"><Sparkles size={16} /></span><span><strong>Make your next move.</strong><small>Find. Save. Apply.</small></span></div>
+            <figcaption className="hero-photo-caption">YOUR NEXT CHAPTER <ArrowRight size={13} /></figcaption>
+          </figure>
         </section>
 
         <section className="opportunities-section" id="opportunities" aria-labelledby="opportunities-title">
@@ -79,6 +82,7 @@ export default function Home() {
           {!error && !loading && visibleJobs.length > 0 ? <div className="jobs-feed">{visibleJobs.map(job => <JobCard key={job.id} job={job} onChanged={() => { void api<{ jobs: Job[] }>(`/api/gm/jobs?${new URLSearchParams({ ...(query ? { q: query } : {}), ...(category ? { category } : {}), ...(location ? { location } : {}) })}`).then(data => setJobs(data.jobs)); }} />)}</div> : null}
           {!error && !loading && visibleJobs.length === 0 ? (
             <div className="empty-opportunities">
+              <div className="empty-board-illustration" aria-hidden="true"><EmptyBoardIllustration /><span className="empty-art-orbit" /><span className="empty-art-spark">✳</span></div>
               <div className="empty-stamp"><Sparkles size={19} /></div>
               <span className="eyebrow muted-eyebrow">{view === "saved" ? "YOUR SHORTLIST" : "THE BOARD IS OPEN"}</span>
               <h3>{view === "saved" ? "Nothing saved just yet." : (query || category || location) ? "No openings match those filters." : "The next opportunity starts with a listing."}</h3>
@@ -89,7 +93,7 @@ export default function Home() {
           ) : null}
         </section>
 
-        <section className="how-section" id="how-it-works"><div className="how-number">02 / THE MCHONGO WAY</div><div className="how-copy"><h2>Real opportunities.<br /><em>Original application links.</em></h2><p>Get Mchongo brings opportunities together in one clear place. When a role catches your eye, you go straight to the original application — no extra hoops.</p><a href="#opportunities" className="text-link">Browse the board <ArrowRight size={15} /></a></div><div className="how-mark"><span>↗</span><small>YOUR NEXT<br />MOVE</small></div></section>
+        <section className="how-section" id="how-it-works"><div className="how-number">02 / THE MCHONGO WAY</div><div className="how-copy"><h2>Real opportunities.<br /><em>Original application links.</em></h2><p>Get Mchongo brings opportunities together in one clear place. When a role catches your eye, you go straight to the original application — no extra hoops.</p><a href="#opportunities" className="text-link">Browse the board <ArrowRight size={15} /></a></div><figure className="how-photo-frame"><img src="/manus-storage/async-images/oAV3nT3943jAZnR9rKeyaQ/image-2.webp" alt="A professional reviews her notes beside a laptop in a sunlit creative workspace." /><figcaption className="how-photo-overlay"><span>ONE CLEAR NEXT STEP</span><div className="how-photo-icons"><span><Search size={13} /></span><i /><span><span className="how-save-mark">▱</span></span><i /><span><ArrowRight size={14} /></span></div></figcaption></figure></section>
       </main>
 
       <footer className="site-footer"><Brand light /><p>Made for the next move.</p><div className="footer-links"><a href="#opportunities">Opportunities</a><a href="/admin/login">Admin access</a></div><span className="footer-year">© {new Date().getFullYear()} GET MCHONGO</span></footer>
