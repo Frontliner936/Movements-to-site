@@ -119,3 +119,12 @@ export const jobViewers = mysqlTable("gm_job_viewers", {
   firstViewedAt: timestamp("first_viewed_at").defaultNow().notNull(),
   lastViewedAt: timestamp("last_viewed_at").defaultNow().notNull(),
 }, table => [uniqueIndex("gm_job_viewer_unique").on(table.jobId, table.visitorKey)]);
+
+export const contactMessages = mysqlTable("gm_contact_messages", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull(),
+  message: text("message").notNull(),
+  isRead: boolean("is_read").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  readAt: timestamp("read_at"),
+});

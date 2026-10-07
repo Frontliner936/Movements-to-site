@@ -3,7 +3,7 @@ import { and, count, desc, eq, inArray, like, or, sql } from "drizzle-orm";
 import { Router } from "express";
 import type { Request } from "express";
 import { getDb } from "../db";
-import { companies, jobs, jobReactions, jobViewers, pendingJobs } from "../../drizzle/schema";
+import { companies, contactMessages, jobs, jobReactions, jobViewers, pendingJobs } from "../../drizzle/schema";
 import { requireSameOrigin } from "./auth";
 import { findDuplicateMatches } from "./duplicates";
 import { getJobShareImageUrl, getPublicSiteOrigin } from "./share-meta";
@@ -153,6 +153,25 @@ export function createPublicRouter() {
       return res.status(201).json({ submitted: true, pendingReview: true });
     } catch {
       return res.status(500).json({ error: "Your job could not be submitted. Please try again." });
+    }
+  });
+
+  router.post("/messages", async (req, res) => {
+    if (!requireSameOrigin(req, res)) return;
+    if (submittedText(req.body?.fax, 300)) return res.status(201).json({ submitted: true });
+    const email = submittedText(req.body?.email, 320);
+    const message = submittedText(req.body?.message, 5000);
+    if (!email || !/^[^\s@<>]+@[^\s@<>.]+(?:\.[^\s@<>.]+)*\.[^\s@<>.]{2,}$/.test(email)) {
+      return res.status(400).json({ error: "Enter a valid email address so we can reply if needed." });
+    }
+    if (!message || message.length < 3) return res.status(400).json({ error: "Enter a message of at least 3 characters." });
+    const db = await getDb();
+    if (!db) return res.status(503).json({ error: "Messages are temporarily unavailable. Please try again." });
+    try {
+      await db.insert(contactMessages).values({ email, message });
+      return res.status(201).json({ submitted: true });
+    } catch {
+      return res.status(500).json({ error: "Your message could not be sent. Please try again." });
     }
   });
 

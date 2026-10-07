@@ -30,6 +30,7 @@ A mobile-first Tanzanian jobs and opportunities board with a clear separation be
 - Extend the initialized React/TypeScript, Express and Drizzle/MySQL project. Use the managed database for jobs, company profiles, sources, pending review records, public reactions and scan schedule state.
 - Build public `/`, `/jobs/:id`, and `/companies/:id` views. Public queries return published jobs only. Search covers job title and company text; category and location are filters. Details render only stored/source-verified values, offer an application link only when the source provides one, and retain the original source URL separately. Render crawler-readable job detail HTML and per-job Open Graph/Twitter metadata before the SPA shell; use the job image then company logo, show the job title and Get Mchongo brand, return real 404s for missing/unpublished records, use the known public Preview origin only in development, and require an explicit `PUBLIC_SITE_ORIGIN` for production absolute metadata.
 - Add visitor-facing **Contact us** links for phone `+255743738062` and email `frontlinertech@gmail.com`, and a public `/submit` form with a clear “Post a job” entry point. Employers can provide company/institution information, listing details, deadlines, application instructions/link, and optional company logo/listing image/reference URL without registering for an account.
+- Add a public `/contact` message form where a visitor provides an email address and message without signing in. Save messages in a private database inbox visible only in the protected admin dashboard; administrators can mark messages read/unread and use a `mailto:` reply link. Do not publish messages or send automatic email.
 - Validate public submissions and insert them only into the pending-review queue, using the existing duplicate matcher to flag possible overlaps. The form confirms that listings remain private until reviewed; admin review can edit/reject/approve them, and only an explicit admin approval publishes the listing. No automatic or direct public publishing from this form.
 - For stored admin-uploaded listing images or logos, create a public **1200 × 630 JPEG** share-card rendition from the exact asset using contain/letterbox (no crop); declare its actual MIME type and dimensions, keep the original listing asset unchanged, and version both the image URL and share link when the job/company image record changes. Direct external image URLs remain direct.
 - Add a dedicated `/admin` surface backed by server-verified email/password login and a signed, HTTP-only application cookie. The provided password is kept only in protected environment storage. Server endpoints for job, company, source, upload and review operations require the admin session. Do not depend on Manus OAuth or treat a client flag as authentication.
@@ -47,6 +48,7 @@ A mobile-first Tanzanian jobs and opportunities board with a clear separation be
 - `client/src/App.tsx` — public and admin route composition.
 - `client/src/pages/` — public job feed/detail/company views and the protected admin login/dashboard.
 - `client/src/pages/SubmitOpportunity.tsx`, `client/src/components/SiteFooter.tsx` — public job-submission flow and common contact details.
+- `client/src/pages/ContactUs.tsx`, `client/src/pages/admin/AdminMessages.tsx` — visitor message form and protected admin inbox.
 - `client/src/pages/admin/AdminAnalytics.tsx` — per-published-job unique-browser counts.
 - `client/src/lib/pageMetadata.ts` — synchronize client-side job titles and share-card metadata with server-rendered details.
 - `client/src/components/` — brand header, search/filters, job cards, detail sections, status labels and admin forms.
@@ -71,6 +73,7 @@ A mobile-first Tanzanian jobs and opportunities board with a clear separation be
 - Pending jobs also hold public employer submissions with the same company/job detail fields; the public phone/email are site contact channels, not applicant or employer accounts.
 - Reactions hold job, anonymous browser token, and like/save kind; no candidate or user directory is introduced.
 - Job-view analytics hold a one-way hash of one random browser identifier per published job and its first/last observation timestamps only; no IP address or personal profile is stored.
+- Visitor messages hold only a validated reply email, bounded message text, read state and submission time, and are returned only by admin-protected APIs.
 - No sample jobs are seeded. A new installation displays a helpful empty state until an administrator adds or approves a real listing.
 
 ## Serving and constraints

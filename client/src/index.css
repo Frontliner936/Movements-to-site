@@ -513,3 +513,69 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .header-actions { gap: 8px; }
   .header-submit-link, .header-admin-link { font-size: 9px; gap: 4px; }
 }
+
+
+/* Visitor messages and the private admin inbox */
+.header-contact-link { display: inline-flex; align-items: center; color: #718078; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.header-contact-link:hover { color: var(--green); }
+.site-footer .footer-links a { display: inline-flex; align-items: center; gap: 5px; }
+.contact-page { width: calc(100% - 48px); max-width: 760px; margin: 0 auto; padding: 34px 0 84px; flex: 1; }
+.contact-page .back-link { margin-bottom: 22px; }
+.contact-intro { padding: 12px 0 26px; }
+.contact-intro h1 { margin: 17px 0 12px; color: var(--ink); font: 500 clamp(42px, 7vw, 68px)/1 var(--font-display); letter-spacing: -.055em; }
+.contact-intro h1 em { color: var(--green); font-weight: 400; }
+.contact-intro > p { max-width: 600px; margin: 0; color: #69786d; font-size: 13px; line-height: 1.75; }
+.contact-card { padding: clamp(18px, 4vw, 34px); border: 1px solid #e4e7de; background: #fffefa; box-shadow: 0 12px 36px rgba(39,57,47,.035); }
+.contact-form { display: flex; flex-direction: column; gap: 16px; }
+.contact-form-heading { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; padding-bottom: 15px; border-bottom: 1px solid #edf0e9; }
+.contact-message-icon { width: 38px; height: 38px; display: grid; flex: none; place-items: center; border-radius: 11px; background: #edf4ec; color: var(--green); }
+.contact-form-heading h2 { margin: 4px 0 0; color: var(--ink); font: 500 27px/1.1 var(--font-display); }
+.contact-form > label { display: flex; flex-direction: column; gap: 7px; color: #53665b; font-size: 11px; font-weight: 700; }
+.contact-form label b { color: var(--red); }
+.contact-form input, .contact-form textarea { width: 100%; min-width: 0; border: 1px solid #dfe4dc; background: #fffefa; padding: 11px 12px; color: #203b31; font: inherit; font-size: 12px; outline: none; border-radius: 0; }
+.contact-form input { min-height: 43px; }
+.contact-form textarea { resize: vertical; line-height: 1.65; }
+.contact-form input:focus, .contact-form textarea:focus { border-color: #6b9d7b; box-shadow: 0 0 0 3px #12664f13; }
+.contact-privacy { display: flex; align-items: flex-start; gap: 7px; margin: 0; color: #79857c; font-size: 10px; line-height: 1.6; }
+.contact-privacy svg { flex: none; margin-top: 1px; }
+.contact-submit { align-self: flex-start; min-height: 44px; }
+.contact-submit:disabled { opacity: .65; cursor: wait; }
+.contact-success { display: flex; align-items: flex-start; gap: 12px; padding: 16px; border: 1px solid #dce9de; background: #eaf3ec; color: #386b4f; }
+.contact-success > span { width: 30px; height: 30px; display: grid; flex: none; place-items: center; border-radius: 50%; background: #d7e9da; }
+.contact-success strong { font-size: 12px; }
+.contact-success p { margin: 5px 0 10px; color: #63756a; font-size: 10px; line-height: 1.65; }
+.contact-direct-note { margin: 15px 0 0; color: #7b867d; font-size: 10px; }
+.contact-honeypot { position: absolute; left: -10000px; top: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.messages-topbar-link { display: inline-flex; align-items: center; gap: 5px; padding: 5px 0; border: 0; background: transparent; color: var(--green); cursor: pointer; font: inherit; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.messages-topbar-link:hover { color: #174e3b; text-decoration: underline; }
+.messages-topbar-badge { min-width: 16px; height: 16px; display: inline-grid; place-items: center; padding: 0 4px; border-radius: 20px; background: #b84d3e; color: #fff; font-size: 8px; font-variant-numeric: tabular-nums; }
+.admin-messages-page { width: 100%; }
+.messages-panel { margin-top: 18px; }
+.messages-private-note { display: inline-flex; align-items: center; gap: 6px; color: #748078; font-size: 9px; }
+.visitor-message-list { display: grid; gap: 11px; margin-top: 17px; }
+.visitor-message-card { padding: 15px 16px; border: 1px solid #e7eae4; background: #fffefa; }
+.visitor-message-unread { border-left: 3px solid #39855c; background: #fcfdf9; }
+.visitor-message-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: #8b938c; font-size: 9px; }
+.visitor-message-top time { text-align: right; }
+.message-state { display: inline-flex; align-items: center; gap: 5px; color: #31704d; font-size: 9px; font-weight: 700; }
+.message-state-read { color: #858c86; }
+.visitor-message-email { display: inline-block; margin-top: 11px; color: var(--green); font-size: 11px; font-weight: 700; overflow-wrap: anywhere; }
+.visitor-message-body { margin: 11px 0 13px; color: #354a3d; font-size: 11px; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; }
+.visitor-message-actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-top: 10px; border-top: 1px solid #eef0eb; }
+.visitor-message-actions a, .visitor-message-actions button { display: inline-flex; align-items: center; gap: 5px; font-size: 9px; }
+.visitor-message-actions button:disabled { opacity: .55; }
+.messages-limit-note { margin: 14px 0 0; color: #858d85; font-size: 9px; line-height: 1.6; }
+@media (max-width: 680px) {
+  .messages-panel { padding: 17px 13px; }
+  .messages-panel .panel-heading { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .visitor-message-card { padding: 13px 12px; }
+  .messages-topbar-link { gap: 4px; font-size: 9px; }
+}
+@media (max-width: 520px) {
+  .contact-page { width: calc(100% - 32px); padding-top: 24px; }
+  .contact-card { padding: 16px 13px; }
+  .contact-form { gap: 13px; }
+  .contact-submit { width: 100%; }
+  .header-actions { gap: 7px; }
+  .header-submit-link, .header-contact-link, .header-admin-link { font-size: 9px; }
+}

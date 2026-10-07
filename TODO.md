@@ -24,6 +24,11 @@
 - Every public submission is stored as **pending review**, possible duplicates are flagged, and it appears in the existing admin review queue for editing, rejection or explicit approval. **Never publish a public submission automatically.** After the administrator clicks **APPROVE & PUBLISH**, the approved details appear on the public job listing.
 - Do not create employer accounts, public employer profiles or candidate databases.
 
+## [x] Visitor messages and protected admin inbox
+- Visitors can open a public message form, enter a valid email address and message, and submit without an account.
+- Store submissions privately and show them only in the protected admin inbox, with new/unread state and read/unread controls; provide a `mailto:` link so an administrator can reply directly.
+- Keep messages off public pages and do not send automatic email; validate and bound submitted content before storing it.
+
 ## [x] Per-job visitor analytics
 - The protected admin tools include an Analytics area showing the visitor count for each published job.
 - Analytics is reachable from the admin navigation, a persistent top-bar shortcut, and a clear dashboard-overview shortcut.

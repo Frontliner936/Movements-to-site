@@ -1,9 +1,9 @@
 import { randomUUID } from "node:crypto";
-import { and, count, desc, eq, inArray, max } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, max } from "drizzle-orm";
 import { Router } from "express";
 import type { Request, Response } from "express";
 import { getDb } from "../db";
-import { companies, jobs, jobReactions, jobViewers, pendingJobs, scanSchedules, sources } from "../../drizzle/schema";
+import { companies, contactMessages, jobs, jobReactions, jobViewers, pendingJobs, scanSchedules, sources } from "../../drizzle/schema";
 import { createHeartbeatJob, updateHeartbeatJob } from "../_core/heartbeat";
 import { ADMIN_EMAIL, isAdmin, login, logout, requireAdmin, requireSameOrigin } from "./auth";
 import { runSource } from "./source-runner";
@@ -51,15 +51,35 @@ router.use(requireAdmin);
 
 router.get("/overview", async (_req, res) => {
   const db = await getDb(); if (!db) return sendDbUnavailable(res);
-  const [jobCounts, companyCounts, sourceCounts, pendingCounts, recentRuns, schedule] = await Promise.all([
+  const [jobCounts, companyCounts, sourceCounts, pendingCounts, recentRuns, schedule, unreadMessages] = await Promise.all([
     db.select({ status: jobs.status, total: count() }).from(jobs).groupBy(jobs.status),
     db.select({ total: count() }).from(companies),
     db.select({ active: sources.isActive, total: count() }).from(sources).groupBy(sources.isActive),
     db.select({ total: count() }).from(pendingJobs).where(eq(pendingJobs.status, "pending")),
     db.select({ id: sources.id, name: sources.name, lastRunAt: sources.lastRunAt, lastRunError: sources.lastRunError, lastRunCount: sources.lastRunCount, isActive: sources.isActive }).from(sources).orderBy(desc(sources.lastRunAt)).limit(8),
     db.select().from(scanSchedules).where(eq(scanSchedules.id, 1)).limit(1),
+    db.select({ total: count() }).from(contactMessages).where(eq(contactMessages.isRead, false)),
   ]);
-  return res.json({ jobs: Object.fromEntries(jobCounts.map(item => [item.status, Number(item.total)])), companies: Number(companyCounts[0]?.total ?? 0), sources: sourceCounts.reduce((sum, item) => sum + Number(item.total), 0), activeSources: sourceCounts.filter(item => item.active).reduce((sum, item) => sum + Number(item.total), 0), pending: Number(pendingCounts[0]?.total ?? 0), recentRuns, schedule: schedule[0] ?? { enabled: false, cronExpression: "0 0 6 * * *", heartbeatTaskUid: null, lastRunAt: null } });
+  return res.json({ jobs: Object.fromEntries(jobCounts.map(item => [item.status, Number(item.total)])), companies: Number(companyCounts[0]?.total ?? 0), sources: sourceCounts.reduce((sum, item) => sum + Number(item.total), 0), activeSources: sourceCounts.filter(item => item.active).reduce((sum, item) => sum + Number(item.total), 0), pending: Number(pendingCounts[0]?.total ?? 0), unreadMessages: Number(unreadMessages[0]?.total ?? 0), recentRuns, schedule: schedule[0] ?? { enabled: false, cronExpression: "0 0 6 * * *", heartbeatTaskUid: null, lastRunAt: null } });
+});
+
+router.get("/messages", async (_req, res) => {
+  const db = await getDb(); if (!db) return sendDbUnavailable(res);
+  const [messages, unread] = await Promise.all([
+    db.select().from(contactMessages).orderBy(asc(contactMessages.isRead), desc(contactMessages.createdAt)).limit(500),
+    db.select({ total: count() }).from(contactMessages).where(eq(contactMessages.isRead, false)),
+  ]);
+  return res.json({ messages, unreadMessages: Number(unread[0]?.total ?? 0) });
+});
+
+router.patch("/messages/:id/read", async (req, res) => {
+  const id = idParam(req); if (!id) return res.status(400).json({ error: "Invalid message id." });
+  if (typeof req.body?.isRead !== "boolean") return res.status(400).json({ error: "Choose whether the message is read." });
+  const db = await getDb(); if (!db) return sendDbUnavailable(res);
+  const [existing] = await db.select({ id: contactMessages.id }).from(contactMessages).where(eq(contactMessages.id, id)).limit(1);
+  if (!existing) return res.status(404).json({ error: "Message not found." });
+  await db.update(contactMessages).set({ isRead: req.body.isRead, readAt: req.body.isRead ? now() : null }).where(eq(contactMessages.id, id));
+  return res.json({ updated: true });
 });
 
 router.get("/analytics/jobs", async (_req, res) => {
