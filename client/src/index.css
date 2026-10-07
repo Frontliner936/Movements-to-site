@@ -431,9 +431,22 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .analytics-privacy-note, .job-view-privacy-note { color: #79877d; font-size: 9px; line-height: 1.65; }
 .analytics-privacy-note { margin: 14px 0 0; max-width: 730px; }
 .job-view-privacy-note { margin: 3px 0 22px; padding: 10px 12px; border-left: 2px solid #a8c4ae; background: #f2f5ef; }
+.analytics-topbar-link { display: inline-flex; align-items: center; gap: 6px; padding: 5px 0; border: 0; background: transparent; color: var(--green); cursor: pointer; font: inherit; font-size: 10px; font-weight: 700; white-space: nowrap; }
+.analytics-topbar-link:hover { color: #174e3b; text-decoration: underline; }
+.overview-analytics-shortcut { width: 100%; display: flex; align-items: center; gap: 12px; margin: 13px 0 0; padding: 13px 16px; border: 1px solid #dce8dc; background: #f0f5ee; color: var(--ink); text-align: left; cursor: pointer; transition: background .16s ease, border-color .16s ease; }
+.overview-analytics-shortcut:hover { background: #e8f1e7; border-color: #c7dbc9; }
+.overview-analytics-icon { width: 36px; height: 36px; display: grid; flex: none; place-items: center; background: #dfece0; color: var(--green); border-radius: 10px; }
+.overview-analytics-copy { display: flex; flex-direction: column; gap: 4px; }
+.overview-analytics-copy strong { font-size: 11px; }
+.overview-analytics-copy small { color: #758279; font-size: 9px; }
+.overview-analytics-action { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; color: var(--green); font-size: 9px; font-weight: 700; white-space: nowrap; }
 @media (max-width: 680px) {
   .analytics-summary { grid-template-columns: 1fr; }
   .analytics-panel { padding: 17px 13px; }
   .analytics-panel .panel-heading { align-items: flex-start; flex-direction: column; }
   .job-view-privacy-note { margin: 2px 0 20px; }
+  .analytics-topbar-link { gap: 4px; font-size: 9px; }
+  .overview-analytics-shortcut { gap: 9px; padding: 11px; }
+  .overview-analytics-copy small { font-size: 8px; }
 }
+@media (max-width: 380px) { .overview-analytics-action { font-size: 0; gap: 0; }.overview-analytics-action svg { width: 16px; height: 16px; } }

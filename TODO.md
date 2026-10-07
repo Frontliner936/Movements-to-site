@@ -20,6 +20,7 @@
 
 ## [x] Per-job visitor analytics
 - The protected admin tools include an Analytics area showing the visitor count for each published job.
+- Analytics is reachable from the admin navigation, a persistent top-bar shortcut, and a clear dashboard-overview shortcut.
 - A visitor means an approximate unique browser per job, counted once for that listing; use a separate random browser ID for each job and store only its one-way hash and visit timestamps. This browser-side measurement uses no names, IP addresses or user-agent strings. Respect Do Not Track, explain the count to visitors, and remove a job's visitor records when the job is deleted.
 
 ## [x] Tracked sources and automatic collection
