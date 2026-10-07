@@ -579,3 +579,33 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .header-actions { gap: 7px; }
   .header-submit-link, .header-contact-link, .header-admin-link { font-size: 9px; }
 }
+
+
+/* Private job-ad import assistant */
+.admin-jobs-actions { display: flex; align-items: center; justify-content: flex-end; gap: 9px; flex: none; }
+.admin-jobs-actions .primary-button, .admin-jobs-actions .secondary-button { min-height: 40px; white-space: nowrap; }
+.ai-import-panel { margin: 0 0 17px; }
+.ai-import-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.ai-import-heading h2 { margin: 7px 0 5px; color: var(--ink); font-family: var(--font-display); font-size: 27px; font-weight: 500; letter-spacing: -.03em; }
+.ai-import-heading p { margin: 0; color: #77837a; font-size: 10px; line-height: 1.6; }
+.ai-import-form { display: grid; grid-template-columns: minmax(0,1.25fr) minmax(230px,.75fr); gap: 15px; margin-top: 17px; }
+.ai-import-form > label:first-child, .ai-import-form .form-actions, .ai-import-form .ai-privacy-note { grid-column: 1 / -1; }
+.ai-import-form > label:first-child textarea { min-height: 145px; }
+.ai-file-field input[type=file] { min-height: 44px; padding: 8px; border-style: dashed; }
+.ai-file-field input[type=file]::file-selector-button { margin-right: 10px; border: 1px solid #dfe4dc; background: #f2f5ef; color: #365849; padding: 7px 10px; cursor: pointer; font: inherit; }
+.ai-file-field > span, .ai-language-field > span { display: flex; flex-direction: column; gap: 4px; }
+.ai-file-field .field-help { display: flex; align-items: center; gap: 5px; }
+.ai-import-form .ai-language-field { display: flex; flex-direction: column; align-items: stretch; gap: 7px; font-size: 11px; font-weight: 700; color: #53665b; }
+.ai-import-form .ai-language-field select { margin-top: 0; }
+.ai-privacy-note { margin: 0; }
+.ai-import-review { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; margin: 0 0 17px; border-left: 3px solid var(--green); background: #edf3eb; color: #496354; font-size: 10px; line-height: 1.55; }
+.ai-import-review > svg { flex: none; color: var(--green); margin-top: 1px; }
+.ai-import-review strong { color: #244a3a; }
+.ai-import-review p { margin: 5px 0 0; }
+@media (max-width: 680px) {
+  .admin-jobs-actions { gap: 5px; }
+  .admin-jobs-actions .primary-button, .admin-jobs-actions .secondary-button { min-height: 36px; padding: 0 9px; font-size: 9px; gap: 5px; }
+  .ai-import-form { grid-template-columns: 1fr; gap: 12px; }
+  .ai-import-form > label:first-child, .ai-import-form .form-actions, .ai-import-form .ai-privacy-note { grid-column: 1; }
+  .ai-import-heading h2 { font-size: 24px; }
+}

@@ -7,6 +7,7 @@ import { companies, contactMessages, jobs, jobReactions, jobViewers, pendingJobs
 import { requireSameOrigin } from "./auth";
 import { findDuplicateMatches } from "./duplicates";
 import { getJobShareImageUrl, getPublicSiteOrigin } from "./share-meta";
+import { getTemporaryDocument } from "./temporary-documents";
 
 const visitorKey = (req: Request) => {
   const value = String(req.get("x-visitor-key") ?? "");
@@ -18,13 +19,14 @@ function submittedUrl(value: unknown, maximum = 2048) {
   if (typeof value !== "string" || !value.trim()) return null;
   try {
     const url = new URL(value.trim());
-    return ["http:", "https:"].includes(url.protocol) && !url.username && !url.password ? url.toString().slice(0, maximum) : null;
+    const normalized = url.toString();
+    return ["http:", "https:"].includes(url.protocol) && !url.username && !url.password && normalized.length <= maximum ? normalized : null;
   } catch { return null; }
 }
 function submittedImage(value: unknown) {
   if (typeof value !== "string" || !value.trim()) return null;
   const candidate = value.trim();
-  if (candidate.startsWith("/manus-storage/") && !candidate.includes("..")) return candidate.slice(0, 2048);
+  if (candidate.startsWith("/manus-storage/") && !candidate.includes("..")) return candidate.length <= 2048 ? candidate : null;
   return submittedUrl(candidate);
 }
 
@@ -69,6 +71,22 @@ async function addReactionSummary(rows: Array<{ job: typeof jobs.$inferSelect; c
 
 export function createPublicRouter() {
   const router = Router();
+  router.get("/temporary-document/:token", (req, res) => {
+    const token = String(req.params.token ?? "");
+    if (!/^[a-f0-9]{64}$/.test(token)) return res.status(404).end();
+    const document = getTemporaryDocument(token);
+    if (!document) return res.status(404).end();
+    const filename = document.mimeType === "application/pdf" ? "source.pdf" : "source.jpg";
+    return res.status(200).set({
+      "Content-Type": document.mimeType,
+      "Content-Length": String(document.buffer.length),
+      "Content-Disposition": `inline; filename="${filename}"`,
+      "Cache-Control": "private, no-store, max-age=0",
+      "X-Content-Type-Options": "nosniff",
+      "X-Robots-Tag": "noindex, nofollow, noarchive",
+      "Content-Security-Policy": "sandbox; default-src 'none'",
+    }).send(document.buffer);
+  });
   router.get("/jobs", async (req, res) => {
     const db = await getDb();
     if (!db) return res.status(503).json({ error: "Job listings are temporarily unavailable." });

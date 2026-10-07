@@ -2,12 +2,15 @@ import { randomUUID } from "node:crypto";
 import { and, asc, count, desc, eq, inArray, max } from "drizzle-orm";
 import { Router } from "express";
 import type { Request, Response } from "express";
+import sharp from "sharp";
 import { getDb } from "../db";
 import { companies, contactMessages, jobs, jobReactions, jobViewers, pendingJobs, scanSchedules, sources } from "../../drizzle/schema";
 import { createHeartbeatJob, updateHeartbeatJob } from "../_core/heartbeat";
 import { ADMIN_EMAIL, isAdmin, login, logout, requireAdmin, requireSameOrigin } from "./auth";
 import { runSource } from "./source-runner";
 import { validateSourceUrl, type SourceType } from "./collector";
+import { MAX_JOB_AD_FILE_BYTES, MAX_JOB_AD_TEXT, structureJobAd, type OutputLanguage } from "./job-ad-structurer";
+import { removeTemporaryDocument, storeTemporaryDocument, TemporaryDocumentCapacityError } from "./temporary-documents";
 
 const router = Router();
 const loginAttempts = new Map<string, { count: number; until: number }>();
@@ -17,12 +20,13 @@ const safeHttpUrl = (value: unknown) => {
   if (typeof value !== "string" || !value.trim()) return null;
   try {
     const url = new URL(value.trim());
-    return ["https:", "http:"].includes(url.protocol) && !url.username && !url.password ? url.toString().slice(0, 2048) : null;
+    const normalized = url.toString();
+    return ["https:", "http:"].includes(url.protocol) && !url.username && !url.password && normalized.length <= 2048 ? normalized : null;
   } catch { return null; }
 };
 const safeAssetUrl = (value: unknown) => {
   if (typeof value !== "string" || !value.trim()) return null;
-  if (value.startsWith("/manus-storage/") && !value.includes("..")) return value.slice(0, 2048);
+  if (value.startsWith("/manus-storage/") && !value.includes("..")) return value.length <= 2048 ? value : null;
   return safeHttpUrl(value);
 };
 const slug = (name: string) => name.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 100) || "company";
@@ -129,6 +133,57 @@ function normalizeJob(body: any, old?: typeof jobs.$inferSelect) {
     applicationUrl, imageUrl, sourceUrl, status: rawStatus as "draft" | "published", publishedAt,
   };
 }
+
+router.post("/jobs/structure", async (req, res) => {
+  let sourceBuffer: Buffer | null = null;
+  let temporaryToken: string | null = null;
+  try {
+    const sourceText = typeof req.body?.sourceText === "string" ? req.body.sourceText.trim() : "";
+    if (sourceText.length > MAX_JOB_AD_TEXT) return res.status(400).json({ error: "Advertisement text must be no more than 40,000 characters." });
+    const allowedLanguages = new Set<OutputLanguage>(["source", "English", "Kiswahili"]);
+    const outputLanguage: OutputLanguage = allowedLanguages.has(req.body?.outputLanguage) ? req.body.outputLanguage : "source";
+    let document: { mimeType: "application/pdf" | "image/jpeg"; url: string } | undefined;
+    const encodedInput = typeof req.body?.fileBase64 === "string" ? req.body.fileBase64.replace(/^data:[^,]+,/, "") : "";
+    if (encodedInput) {
+      const mimeType = String(req.body?.mimeType ?? "").toLowerCase();
+      if (!new Set(["application/pdf", "image/png", "image/jpeg", "image/webp"]).has(mimeType) || !/^[A-Za-z0-9+/]+={0,2}$/.test(encodedInput)) return res.status(400).json({ error: "Choose a PDF, JPEG, PNG or WebP image." });
+      sourceBuffer = Buffer.from(encodedInput, "base64");
+      if (!sourceBuffer.length || sourceBuffer.length > MAX_JOB_AD_FILE_BYTES) return res.status(400).json({ error: "The source file must be no larger than 5 MB." });
+      const isPdf = mimeType === "application/pdf" && sourceBuffer.subarray(0, 5).toString("ascii") === "%PDF-";
+      const isPng = mimeType === "image/png" && sourceBuffer.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+      const isJpeg = mimeType === "image/jpeg" && sourceBuffer[0] === 0xff && sourceBuffer[1] === 0xd8 && sourceBuffer[2] === 0xff;
+      const isWebp = mimeType === "image/webp" && sourceBuffer.subarray(0, 4).toString("ascii") === "RIFF" && sourceBuffer.subarray(8, 12).toString("ascii") === "WEBP";
+      if (!isPdf && !isPng && !isJpeg && !isWebp) return res.status(400).json({ error: "The file content does not match its selected type." });
+      if (isPdf) document = { mimeType: "application/pdf", url: "" };
+      else {
+        try {
+          const original = sourceBuffer;
+          sourceBuffer = await sharp(original, { limitInputPixels: 40_000_000 }).rotate().resize({ width: 2400, height: 2400, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 88 }).toBuffer();
+          original.fill(0);
+          document = { mimeType: "image/jpeg", url: "" };
+        } catch { return res.status(400).json({ error: "The image could not be safely processed. Try another image or paste its text." }); }
+      }
+    }
+    if (!sourceText && !document) return res.status(400).json({ error: "Paste advertisement text or choose a PDF/image." });
+    if (document) {
+      let origin: URL;
+      try { origin = new URL(req.get("origin") ?? ""); }
+      catch { return res.status(400).json({ error: "Open the secure website preview to process uploaded files." }); }
+      if (origin.protocol !== "https:" || origin.origin !== req.get("origin")) return res.status(400).json({ error: "Uploaded files require the secure HTTPS Preview or published website. Pasted text can be used on local HTTP." });
+      temporaryToken = storeTemporaryDocument(sourceBuffer!, document.mimeType);
+      sourceBuffer = null;
+      document.url = new URL(`/api/gm/temporary-document/${temporaryToken}`, origin.origin).toString();
+    }
+    const result = await structureJobAd({ sourceText, outputLanguage, document });
+    return res.json(result);
+  } catch (error) {
+    if (error instanceof TemporaryDocumentCapacityError) return res.status(429).json({ error: error.message });
+    return res.status(502).json({ error: "The assistant could not structure this advertisement. Check the source and try again, or paste its text." });
+  } finally {
+    if (temporaryToken) removeTemporaryDocument(temporaryToken);
+    else sourceBuffer?.fill(0);
+  }
+});
 
 router.get("/jobs", async (_req, res) => {
   const db = await getDb(); if (!db) return sendDbUnavailable(res);

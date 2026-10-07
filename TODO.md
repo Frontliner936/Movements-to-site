@@ -47,3 +47,9 @@
 - Keep the platform simple: do not add employer registration, candidate databases, payments or unnecessary recruitment features.
 
 > Scheduled Heartbeat callbacks target the published website. The admin screen explains this; “Run now” works in Preview, and recurring runs begin only after a successful publication and schedule activation.
+
+## [x] Admin AI job-ad import assistant
+- In the protected admin job-management area, the administrator can paste up to 40,000 characters or upload one PDF, JPEG, PNG or WebP ad (up to 5 MB), then request structured extraction.
+- The administrator can choose to keep the source language (default), or request English or Kiswahili output.
+- The assistant can populate the existing editor's job title, company/institution name and details, category, location, deadline, description, responsibilities, qualifications, how-to-apply instructions and application URL. Extract only facts present in the supplied ad; do not invent missing information, leave unsupported values blank, validate URLs and show review notes.
+- Uploaded files are temporary and never saved as public listing assets; the extracted content fills the existing job editor as an unpublished draft. An administrator must inspect and explicitly save/publish it; the assistant never publishes or stores the file automatically.

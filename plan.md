@@ -41,21 +41,25 @@ A mobile-first Tanzanian jobs and opportunities board with a clear separation be
 - Validate source URLs/redirects against private and local network targets, constrain response size/time and uploads, and record collection errors/run counts. Evaluate possible duplicate matches using normalized title, company, application URL and description similarity; flag rather than silently suppress matches.
 - Implement scheduled scanning through the documented Heartbeat management API and authenticated `/api/scheduled/...` callback. Verify the signed platform callback, resolve its task identity, match it to the persisted scan-schedule row, and make runs idempotent. Scheduling can be configured by the admin; automatic scans must never publish.
 - Use the platform's durable storage presign API for administrator image uploads and save stable `/manus-storage/...` asset paths in the database. Keep API credentials on the server.
+- Add an administrator-only AI import assistant within job management. Accept pasted text up to 40,000 characters or one PDF/JPEG/PNG/WebP image up to 5 MB. Offer “keep source language” (default), English, and Kiswahili output. Use the live-catalog multimodal `gemini-3-flash-preview` model with strict JSON-schema extraction for the existing job/company fields. Treat uploaded content as untrusted data; never follow embedded instructions or invent missing details. Leave unsupported values blank, validate extracted HTTP(S) URLs, and return review notes.
+- Uploaded source documents are memory-only and exposed to the model through a random, expiring, token-protected fetch URL; remove the temporary bytes after the request and never persist the source document. Do not use the source PDF/poster automatically as a public company logo or listing image. Map only validated extracted fields into the existing `JobEditor`, force draft status, and require an administrator to review and save/publish explicitly.
 - Keep React routes and server code modular, maintain the route manifest, add the additive MySQL migration, and keep secrets out of source, migrations, logs and public bundles.
 
 ## Project structure
 
 - `client/src/App.tsx` — public and admin route composition.
 - `client/src/pages/` — public job feed/detail/company views and the protected admin login/dashboard.
+- `client/src/pages/admin/JobAdImporter.tsx`, `client/src/pages/admin/AdminJobs.tsx` — bounded text/file import, output-language choice, and reviewed draft handoff to the existing job editor.
 - `client/src/pages/SubmitOpportunity.tsx`, `client/src/components/SiteFooter.tsx` — public job-submission flow and common contact details.
 - `client/src/pages/ContactUs.tsx`, `client/src/pages/admin/AdminMessages.tsx` — visitor message form and protected admin inbox.
 - `client/src/pages/admin/AdminAnalytics.tsx` — per-published-job unique-browser counts.
 - `client/src/lib/pageMetadata.ts` — synchronize client-side job titles and share-card metadata with server-rendered details.
 - `client/src/components/` — brand header, search/filters, job cards, detail sections, status labels and admin forms.
 - `client/src/index.css`, `client/index.html` — responsive visual system and Get Mchongo page metadata.
-- `public/manus-routes.json` — all public/admin page route patterns for the website.
+- `client/public/manus-routes.json` — all public/admin page route patterns served from Vite's configured public directory.
 - `server/_core/index.ts` — Express app startup and API mount points.
 - `server/getmchongo/` — authentication, public API, server-rendered job share metadata, admin CRUD, upload handling, source collection, duplicate detection and scheduled callback services.
+- `server/getmchongo/job-ad-structurer.ts` — strict-schema multimodal extraction and URL-safe normalization; `temporary-documents.ts` — unguessable, expiring, memory-only document access for the model.
 - `drizzle/schema.ts`, `drizzle/migrations/` — relational tables and additive migration.
 
 ### Share-preview image references
