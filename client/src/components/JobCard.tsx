@@ -16,7 +16,13 @@ export async function shareJob(job: Job) {
   const canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href;
   let origin = window.location.origin;
   try { if (canonical) origin = new URL(canonical).origin; } catch { /* Use the active browser origin. */ }
-  const url = new URL(`/jobs/${job.id}`, origin).href;
+  const shareUrl = new URL(`/jobs/${job.id}`, origin);
+  try {
+    const image = job.shareImageUrl ? new URL(job.shareImageUrl, origin) : null;
+    const version = image?.pathname === `/og/jobs/${job.id}.jpg` ? image.searchParams.get("v") : null;
+    if (version && /^\d+$/.test(version)) shareUrl.searchParams.set("share", version);
+  } catch { /* Share the stable job path if no card version is available. */ }
+  const url = shareUrl.href;
   const title = `${job.title}${job.companyName ? ` — ${job.companyName}` : ""} | Get Mchongo`;
   const text = `${job.title}${job.companyName ? ` — ${job.companyName}` : ""}`;
   if (navigator.share) return navigator.share({ title, text, url });

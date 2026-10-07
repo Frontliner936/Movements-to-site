@@ -29,6 +29,7 @@ A mobile-first Tanzanian jobs and opportunities board with a clear separation be
 
 - Extend the initialized React/TypeScript, Express and Drizzle/MySQL project. Use the managed database for jobs, company profiles, sources, pending review records, public reactions and scan schedule state.
 - Build public `/`, `/jobs/:id`, and `/companies/:id` views. Public queries return published jobs only. Search covers job title and company text; category and location are filters. Details render only stored/source-verified values, offer an application link only when the source provides one, and retain the original source URL separately. Render crawler-readable job detail HTML and per-job Open Graph/Twitter metadata before the SPA shell; use the job image then company logo, show the job title and Get Mchongo brand, return real 404s for missing/unpublished records, use the known public Preview origin only in development, and require an explicit `PUBLIC_SITE_ORIGIN` for production absolute metadata.
+- For stored admin-uploaded listing images or logos, create a public **1200 × 630 JPEG** share-card rendition from the exact asset using contain/letterbox (no crop); declare its actual MIME type and dimensions, keep the original listing asset unchanged, and version both the image URL and share link when the job/company image record changes. Direct external image URLs remain direct.
 - Add a dedicated `/admin` surface backed by server-verified email/password login and a signed, HTTP-only application cookie. The provided password is kept only in protected environment storage. Server endpoints for job, company, source, upload and review operations require the admin session. Do not depend on Manus OAuth or treat a client flag as authentication.
 - Keep admin capabilities narrow: manual jobs, company records, tracked sources, collected-job review, duplicate warnings, upload preview, publish/unpublish and deletion. Avoid employer/candidate accounts, payments and unrelated hiring features.
 - Store companies separately and allow a job to retain its source-supplied company name even when no company profile has been created. Represent collected candidates in a separate pending-review table so approval creates/updates the public record explicitly.
@@ -49,6 +50,11 @@ A mobile-first Tanzanian jobs and opportunities board with a clear separation be
 - `server/_core/index.ts` — Express app startup and API mount points.
 - `server/getmchongo/` — authentication, public API, server-rendered job share metadata, admin CRUD, upload handling, source collection, duplicate detection and scheduled callback services.
 - `drizzle/schema.ts`, `drizzle/migrations/` — relational tables and additive migration.
+
+### Share-preview image references
+
+- [Meta sharing best practices](https://developers.facebook.com/documentation/sharing/best-practices) recommends 1080-pixel-wide images for high-resolution display and states 600 pixels as the minimum width for image-link ads; it recommends pre-caching updated images and declaring `og:image:width` / `og:image:height`.
+- [Open Graph protocol](https://ogp.me/) defines `og:image:type`, `og:image:width`, `og:image:height` and `og:image:alt` as structured image metadata.
 
 ## Data and user-visible behavior
 

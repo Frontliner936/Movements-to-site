@@ -47,13 +47,18 @@ export function applyJobPageMetadata(job: Job) {
   const description = (clean(job.description) || clean(job.responsibilities) || clean(job.qualifications) || title).slice(0, 240);
   let imageUrl: string | null = null;
   try {
-    const candidate = job.imageUrl || job.companyLogoUrl;
+    const candidate = job.shareImageUrl || job.imageUrl || job.companyLogoUrl;
     if (candidate) {
       const url = new URL(candidate, window.location.origin);
       if (url.protocol === "https:" && !url.username && !url.password) imageUrl = url.href;
     }
   } catch { /* Ignore invalid/unshareable image URLs. */ }
   const canonical = new URL(`/jobs/${job.id}`, window.location.origin).href;
+  const generatedCard = !!job.shareImageUrl && /\/og\/jobs\/\d+\.jpg(?:\?|$)/.test(job.shareImageUrl);
+  let socialUrl = new URL(canonical);
+  let shareVersion: string | null = null;
+  try { if (generatedCard && job.shareImageUrl) shareVersion = new URL(job.shareImageUrl, window.location.origin).searchParams.get("v"); } catch { /* No card version available. */ }
+  if (shareVersion && /^\d+$/.test(shareVersion)) socialUrl.searchParams.set("share", shareVersion);
   document.title = title;
   const restore = [
     addOrUpdateMeta("name", "description", description),
@@ -61,14 +66,18 @@ export function applyJobPageMetadata(job: Job) {
     addOrUpdateMeta("property", "og:site_name", "Get Mchongo"),
     addOrUpdateMeta("property", "og:title", title),
     addOrUpdateMeta("property", "og:description", description),
-    addOrUpdateMeta("property", "og:url", canonical),
+    addOrUpdateMeta("property", "og:url", socialUrl.href),
     addOrUpdateMeta("property", "og:image", imageUrl),
-    addOrUpdateMeta("property", "og:image:alt", title),
+    addOrUpdateMeta("property", "og:image:secure_url", imageUrl),
+    addOrUpdateMeta("property", "og:image:type", generatedCard ? "image/jpeg" : null),
+    addOrUpdateMeta("property", "og:image:width", generatedCard ? "1200" : null),
+    addOrUpdateMeta("property", "og:image:height", generatedCard ? "630" : null),
+    addOrUpdateMeta("property", "og:image:alt", imageUrl ? title : null),
     addOrUpdateMeta("name", "twitter:card", imageUrl ? "summary_large_image" : "summary"),
     addOrUpdateMeta("name", "twitter:title", title),
     addOrUpdateMeta("name", "twitter:description", description),
     addOrUpdateMeta("name", "twitter:image", imageUrl),
-    addOrUpdateMeta("name", "twitter:image:alt", title),
+    addOrUpdateMeta("name", "twitter:image:alt", imageUrl ? title : null),
     addOrUpdateCanonical(canonical),
   ];
   return () => { restore.reverse().forEach(restoreTag => restoreTag()); document.title = oldTitle; };

@@ -3,6 +3,7 @@ import { Router } from "express";
 import type { Request } from "express";
 import { getDb } from "../db";
 import { companies, jobs, jobReactions } from "../../drizzle/schema";
+import { getJobShareImageUrl, getPublicSiteOrigin } from "./share-meta";
 
 const visitorKey = (req: Request) => {
   const value = String(req.get("x-visitor-key") ?? "");
@@ -41,6 +42,7 @@ async function addReactionSummary(rows: Array<{ job: typeof jobs.$inferSelect; c
       companyDescription: company?.description ?? null,
       companyLogoUrl: company?.logoUrl ?? null,
       companyHref: companyHref(company),
+      shareImageUrl: getJobShareImageUrl(job, company, getPublicSiteOrigin()),
       likeCount: summary.like, saveCount: summary.save,
       liked: chosen.has("like"), saved: chosen.has("save"),
     };

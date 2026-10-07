@@ -25,6 +25,7 @@ export type Job = {
   howToApply: string | null;
   applicationUrl: string | null;
   imageUrl: string | null;
+  shareImageUrl?: string | null;
   sourceUrl?: string | null;
   status?: "draft" | "published";
   likeCount: number;

@@ -10,6 +10,10 @@
 ## [x] Job-specific share previews
 - When a published job is shared, its link preview shows that job's title (and company when available), source-provided description, and its inserted image when present, falling back to the company logo; the site label is **Get Mchongo**, not generic or stale “MchongoDaily job portal” branding. Put these tags and meaningful job content in the initial HTML without requiring JavaScript. Never expose unpublished jobs; return a real 404 for missing or unpublished job pages.
 
+## [x] Social-card picture from the inserted asset
+- For an uploaded listing image—or the linked company logo when the job has no image—serve a public, correctly sized **1200 × 630 JPEG** made from that same asset, showing the full image without cropping or substituting unrelated artwork. Declare its accurate MIME type and dimensions in the job’s Open Graph tags.
+- Make the share image and Share-button URL change when the listing image/logo record changes, so a newly shared listing does not reuse an old card.
+
 ## [x] Protected administrator and manual listings
 - A protected admin dashboard accepts the requested administrator login email `frontlinertech@gmail.com`. The provided password stays in protected environment storage; no administrator password is stored in source or a public bundle.
 - The admin can add jobs manually; edit/delete/publish/unpublish jobs; upload and preview logos/images; and manage company profiles.
