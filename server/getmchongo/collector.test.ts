@@ -49,4 +49,8 @@ describe("Get Mchongo source collection", () => {
     await expect(validateSourceUrl("http://10.0.0.12/jobs")).rejects.toThrow(/private|reserved/i);
     await expect(validateSourceUrl("https://203.0.113.12:3306/api")).rejects.toThrow(/standard.*ports/i);
   });
+
+  it("accepts a public IPv4 source through ipaddr.js", async () => {
+    await expect(validateSourceUrl("https://8.8.8.8/jobs")).resolves.toBeUndefined();
+  });
 });

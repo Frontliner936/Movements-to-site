@@ -1,5 +1,5 @@
 import { lookup } from "node:dns/promises";
-import * as ipaddr from "ipaddr.js";
+import ipaddr from "ipaddr.js";
 import * as cheerio from "cheerio";
 import { XMLParser } from "fast-xml-parser";
 
