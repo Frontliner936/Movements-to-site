@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowUpRight, Bookmark, CalendarDays, ExternalLink, Heart, M
 import { Brand } from "@/components/Brand";
 import { CompanyLogo, shareJob } from "@/components/JobCard";
 import { api, type Job } from "@/lib/api";
+import { applyJobPageMetadata } from "@/lib/pageMetadata";
 
 export default function JobDetail() {
   const [, params] = useRoute("/jobs/:id");
@@ -13,6 +14,7 @@ export default function JobDetail() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const id = params?.id;
+  useEffect(() => job ? applyJobPageMetadata(job) : undefined, [job]);
 
   async function load() {
     if (!id) return;

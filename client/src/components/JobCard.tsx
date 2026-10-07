@@ -13,8 +13,13 @@ export function CompanyLogo({ name, imageUrl, size = "normal" }: { name?: string
 }
 
 export async function shareJob(job: Job) {
-  const url = `${window.location.origin}/jobs/${job.id}`;
-  if (navigator.share) return navigator.share({ title: job.title, text: job.companyName ?? "Opportunity on Get Mchongo", url });
+  const canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href;
+  let origin = window.location.origin;
+  try { if (canonical) origin = new URL(canonical).origin; } catch { /* Use the active browser origin. */ }
+  const url = new URL(`/jobs/${job.id}`, origin).href;
+  const title = `${job.title}${job.companyName ? ` — ${job.companyName}` : ""} | Get Mchongo`;
+  const text = `${job.title}${job.companyName ? ` — ${job.companyName}` : ""}`;
+  if (navigator.share) return navigator.share({ title, text, url });
   await navigator.clipboard.writeText(url);
   return "copied";
 }

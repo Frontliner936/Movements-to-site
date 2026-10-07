@@ -28,7 +28,7 @@ A mobile-first Tanzanian jobs and opportunities board with a clear separation be
 ## Implementation approach
 
 - Extend the initialized React/TypeScript, Express and Drizzle/MySQL project. Use the managed database for jobs, company profiles, sources, pending review records, public reactions and scan schedule state.
-- Build public `/`, `/jobs/:id`, and `/companies/:id` views. Public queries return published jobs only. Search covers job title and company text; category and location are filters. Details render only stored/source-verified values, offer an application link only when the source provides one, and retain the original source URL separately.
+- Build public `/`, `/jobs/:id`, and `/companies/:id` views. Public queries return published jobs only. Search covers job title and company text; category and location are filters. Details render only stored/source-verified values, offer an application link only when the source provides one, and retain the original source URL separately. Render crawler-readable job detail HTML and per-job Open Graph/Twitter metadata before the SPA shell; use the job image then company logo, show the job title and Get Mchongo brand, return real 404s for missing/unpublished records, use the known public Preview origin only in development, and require an explicit `PUBLIC_SITE_ORIGIN` for production absolute metadata.
 - Add a dedicated `/admin` surface backed by server-verified email/password login and a signed, HTTP-only application cookie. The provided password is kept only in protected environment storage. Server endpoints for job, company, source, upload and review operations require the admin session. Do not depend on Manus OAuth or treat a client flag as authentication.
 - Keep admin capabilities narrow: manual jobs, company records, tracked sources, collected-job review, duplicate warnings, upload preview, publish/unpublish and deletion. Avoid employer/candidate accounts, payments and unrelated hiring features.
 - Store companies separately and allow a job to retain its source-supplied company name even when no company profile has been created. Represent collected candidates in a separate pending-review table so approval creates/updates the public record explicitly.
@@ -42,11 +42,12 @@ A mobile-first Tanzanian jobs and opportunities board with a clear separation be
 
 - `client/src/App.tsx` — public and admin route composition.
 - `client/src/pages/` — public job feed/detail/company views and the protected admin login/dashboard.
+- `client/src/lib/pageMetadata.ts` — synchronize client-side job titles and share-card metadata with server-rendered details.
 - `client/src/components/` — brand header, search/filters, job cards, detail sections, status labels and admin forms.
 - `client/src/index.css`, `client/index.html` — responsive visual system and Get Mchongo page metadata.
 - `public/manus-routes.json` — all public/admin page route patterns for the website.
 - `server/_core/index.ts` — Express app startup and API mount points.
-- `server/getmchongo/` — authentication, public API, admin CRUD, upload handling, source collection, duplicate detection and scheduled callback services.
+- `server/getmchongo/` — authentication, public API, server-rendered job share metadata, admin CRUD, upload handling, source collection, duplicate detection and scheduled callback services.
 - `drizzle/schema.ts`, `drizzle/migrations/` — relational tables and additive migration.
 
 ## Data and user-visible behavior

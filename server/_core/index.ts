@@ -8,6 +8,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { registerGetMchongoRoutes } from "../getmchongo/router";
+import { registerJobShareMetadata } from "../getmchongo/share-meta";
 
 async function startServer() {
   const app = express();
@@ -21,6 +22,7 @@ async function startServer() {
   });
   registerOAuthRoutes(app);
   registerGetMchongoRoutes(app);
+  registerJobShareMetadata(app);
   // tRPC API
   app.use(
     "/api/trpc",

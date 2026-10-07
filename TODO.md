@@ -7,6 +7,9 @@
 ## [x] Responsive photo and graphic enhancement
 - Give the public homepage original editorial imagery in the hero and supporting feature, plus a custom opportunity-path illustration and graphic details; keep crops responsive on phones and do not add fabricated listings or statistics.
 
+## [x] Job-specific share previews
+- When a published job is shared, its link preview shows that job's title (and company when available), source-provided description, and its inserted image when present, falling back to the company logo; the site label is **Get Mchongo**, not generic or stale “MchongoDaily job portal” branding. Put these tags and meaningful job content in the initial HTML without requiring JavaScript. Never expose unpublished jobs; return a real 404 for missing or unpublished job pages.
+
 ## [x] Protected administrator and manual listings
 - A protected admin dashboard accepts the requested administrator login email `frontlinertech@gmail.com`. The provided password stays in protected environment storage; no administrator password is stored in source or a public bundle.
 - The admin can add jobs manually; edit/delete/publish/unpublish jobs; upload and preview logos/images; and manage company profiles.
