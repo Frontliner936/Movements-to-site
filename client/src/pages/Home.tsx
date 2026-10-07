@@ -3,6 +3,7 @@ import { ArrowDownRight, ArrowRight, BriefcaseBusiness, ChevronDown, Search, Spa
 import { Brand } from "@/components/Brand";
 import { EmptyBoardIllustration } from "@/components/EditorialVisuals";
 import { JobCard } from "@/components/JobCard";
+import { SiteFooter } from "@/components/SiteFooter";
 import { api, type Job } from "@/lib/api";
 
 export default function Home() {
@@ -36,7 +37,7 @@ export default function Home() {
   return (
     <div className="site-shell">
       <header className="site-header">
-        <div className="header-inner"><Brand /><nav className="main-nav" aria-label="Main navigation"><a className="nav-current" href="#opportunities">Opportunities</a><a href="#how-it-works">How it works</a></nav><a className="header-admin-link" href="/admin/login">Admin <ArrowRight size={14} /></a></div>
+        <div className="header-inner"><Brand /><nav className="main-nav" aria-label="Main navigation"><a className="nav-current" href="#opportunities">Opportunities</a><a href="#how-it-works">How it works</a></nav><div className="header-actions"><a className="header-submit-link" href="/submit">Post a job <ArrowRight size={14} /></a><a className="header-admin-link" href="/admin/login">Admin <ArrowRight size={14} /></a></div></div>
       </header>
 
       <main>
@@ -88,7 +89,7 @@ export default function Home() {
               <h3>{view === "saved" ? "Nothing saved just yet." : (query || category || location) ? "No openings match those filters." : "The next opportunity starts with a listing."}</h3>
               <p>{view === "saved" ? "Tap the bookmark on a listing to keep it here for later." : (query || category || location) ? "Try a different title, category or location — or clear your filters." : "We're ready to share verified opportunities as they come in. Check back soon, or clear your search and try another filter."}</p>
               {(query || category || location || view === "saved") && <button className="secondary-button" type="button" onClick={clearFilters}>Show all opportunities <ArrowRight size={15} /></button>}
-              {!jobs.length && !query && !category && !location && view === "all" && <a className="empty-admin-link" href="/admin/login">Administrator? Add the first listing <ArrowRight size={14} /></a>}
+              {!jobs.length && !query && !category && !location && view === "all" && <div className="empty-board-actions"><a className="empty-submit-link" href="/submit">Employer? Submit an opportunity <ArrowRight size={14} /></a><a className="empty-admin-link" href="/admin/login">Administrator? Add the first listing <ArrowRight size={14} /></a></div>}
             </div>
           ) : null}
         </section>
@@ -96,7 +97,7 @@ export default function Home() {
         <section className="how-section" id="how-it-works"><div className="how-number">02 / THE MCHONGO WAY</div><div className="how-copy"><h2>Real opportunities.<br /><em>Original application links.</em></h2><p>Get Mchongo brings opportunities together in one clear place. When a role catches your eye, you go straight to the original application — no extra hoops.</p><a href="#opportunities" className="text-link">Browse the board <ArrowRight size={15} /></a></div><figure className="how-photo-frame"><img src="/manus-storage/async-images/oAV3nT3943jAZnR9rKeyaQ/image-2.webp" alt="A professional reviews her notes beside a laptop in a sunlit creative workspace." /><figcaption className="how-photo-overlay"><span>ONE CLEAR NEXT STEP</span><div className="how-photo-icons"><span><Search size={13} /></span><i /><span><span className="how-save-mark">▱</span></span><i /><span><ArrowRight size={14} /></span></div></figcaption></figure></section>
       </main>
 
-      <footer className="site-footer"><Brand light /><p>Made for the next move.</p><div className="footer-links"><a href="#opportunities">Opportunities</a><a href="/admin/login">Admin access</a></div><span className="footer-year">© {new Date().getFullYear()} GET MCHONGO</span></footer>
+      <SiteFooter />
     </div>
   );
 }

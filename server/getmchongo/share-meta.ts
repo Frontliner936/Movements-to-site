@@ -8,8 +8,9 @@ import { getDb } from "../db";
 
 type ShareJob = Pick<typeof jobs.$inferSelect,
   "id" | "title" | "companyName" | "location" | "deadline" | "description" |
-  "responsibilities" | "qualifications" | "howToApply" | "applicationUrl" | "sourceUrl" | "imageUrl" | "updatedAt">;
-type ShareCompany = Pick<typeof companies.$inferSelect, "name" | "description" | "logoUrl" | "updatedAt"> | null;
+  "companyDescription" | "companyLogoUrl" | "companyWebsiteUrl" | "responsibilities" |
+  "qualifications" | "howToApply" | "applicationUrl" | "sourceUrl" | "imageUrl" | "updatedAt">;
+type ShareCompany = Pick<typeof companies.$inferSelect, "name" | "description" | "logoUrl" | "websiteUrl" | "updatedAt"> | null;
 
 export const SHARE_IMAGE_WIDTH = 1200;
 export const SHARE_IMAGE_HEIGHT = 630;
@@ -132,7 +133,7 @@ export function buildJobShareMetadata(job: ShareJob, company: ShareCompany, orig
   const title = `${roleAndCompany} | Get Mchongo`;
   const description = (plainText(job.description) || plainText(job.responsibilities) ||
     plainText(job.qualifications) || plainText(job.howToApply) || roleAndCompany).slice(0, 240);
-  const selectedImage = job.imageUrl || company?.logoUrl || null;
+  const selectedImage = job.imageUrl || job.companyLogoUrl || company?.logoUrl || null;
   const sourceImageUrl = safeAbsoluteUrl(selectedImage, origin);
   const objectKey = storageObjectKey(selectedImage, origin);
   const shareMillis = Math.max(updatedMillis(job.updatedAt), company ? updatedMillis(company.updatedAt) : 0);
@@ -191,7 +192,7 @@ function shareBody(job: ShareJob, company: ShareCompany, metadata: JobShareMetad
     ["Responsibilities", job.responsibilities],
     ["Qualifications and requirements", job.qualifications],
     ["How to apply", job.howToApply],
-    [companyName ? `About ${companyName}` : "About the organisation", company?.description],
+    [companyName ? `About ${companyName}` : "About the organisation", job.companyDescription || company?.description],
   ];
   const detailHtml = sections.map(([heading, content]) => {
     const text = plainText(content);
@@ -204,7 +205,9 @@ function shareBody(job: ShareJob, company: ShareCompany, metadata: JobShareMetad
   const applyHtml = application ? `<p><a href="${escapeHtml(application)}" rel="nofollow noopener">Apply on the original site</a></p>` : "";
   const source = safeAbsoluteUrl(job.sourceUrl, null);
   const sourceHtml = source && source !== application ? `<p><a href="${escapeHtml(source)}" rel="nofollow noopener">View original source</a></p>` : "";
-  return `<main><article>${image}<p>GET MCHONGO · TANZANIA OPPORTUNITIES</p><h1>${escapeHtml(fieldText(job.title))}</h1>${companyName ? `<p>${escapeHtml(companyName)}</p>` : ""}${rows ? `<ul>${rows}</ul>` : ""}${detailHtml}${applyHtml}${sourceHtml}</article></main>`;
+  const companyWebsite = safeAbsoluteUrl(job.companyWebsiteUrl || company?.websiteUrl, null);
+  const websiteHtml = companyWebsite ? `<p><a href="${escapeHtml(companyWebsite)}" rel="nofollow noopener">Official company website</a></p>` : "";
+  return `<main><article>${image}<p>GET MCHONGO · TANZANIA OPPORTUNITIES</p><h1>${escapeHtml(fieldText(job.title))}</h1>${companyName ? `<p>${escapeHtml(companyName)}</p>` : ""}${rows ? `<ul>${rows}</ul>` : ""}${detailHtml}${websiteHtml}${applyHtml}${sourceHtml}</article></main>`;
 }
 
 export function renderJobShareHtml(template: string, job: ShareJob, company: ShareCompany, origin: string | null, requestedShareVersion: string | null = null): string {

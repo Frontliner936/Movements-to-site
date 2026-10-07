@@ -90,12 +90,15 @@ function normalizeJob(body: any, old?: typeof jobs.$inferSelect) {
   const companyIdRaw = body.companyId === undefined ? old?.companyId : Number(body.companyId);
   const companyId = Number.isSafeInteger(companyIdRaw) && Number(companyIdRaw) > 0 ? Number(companyIdRaw) : null;
   const companyName = body.companyName === undefined ? old?.companyName ?? null : textValue(body.companyName, 240);
+  const companyDescription = body.companyDescription === undefined ? old?.companyDescription ?? null : textValue(body.companyDescription, 12_000);
+  const companyLogoUrl = body.companyLogoUrl === undefined ? old?.companyLogoUrl ?? null : safeAssetUrl(body.companyLogoUrl);
+  const companyWebsiteUrl = body.companyWebsiteUrl === undefined ? old?.companyWebsiteUrl ?? null : safeHttpUrl(body.companyWebsiteUrl);
   const imageUrl = body.imageUrl === undefined ? old?.imageUrl ?? null : safeAssetUrl(body.imageUrl);
   const sourceUrl = body.sourceUrl === undefined ? old?.sourceUrl ?? null : safeHttpUrl(body.sourceUrl);
   const applicationUrl = body.applicationUrl === undefined ? old?.applicationUrl ?? null : safeHttpUrl(body.applicationUrl);
   const publishedAt = rawStatus === "published" ? (old?.status === "published" && old.publishedAt ? old.publishedAt : now()) : null;
   return {
-    title, companyId, companyName,
+    title, companyId, companyName, companyDescription, companyLogoUrl, companyWebsiteUrl,
     category: body.category === undefined ? old?.category ?? null : textValue(body.category, 120),
     location: body.location === undefined ? old?.location ?? null : textValue(body.location, 240),
     deadline: body.deadline === undefined ? old?.deadline ?? null : textValue(body.deadline, 240),
@@ -257,7 +260,7 @@ router.put("/pending/:id", async (req, res) => {
   if (!old) return res.status(404).json({ error: "Pending listing not found." });
   try {
     const values = normalizeJob({ ...req.body, status: "draft" }, { ...old, status: "draft", publishedAt: null } as any);
-    await db.update(pendingJobs).set({ title: values.title, companyName: values.companyName, category: values.category, location: values.location, deadline: values.deadline, description: values.description, responsibilities: values.responsibilities, qualifications: values.qualifications, howToApply: values.howToApply, applicationUrl: values.applicationUrl, imageUrl: values.imageUrl }).where(eq(pendingJobs.id, id));
+    await db.update(pendingJobs).set({ title: values.title, companyName: values.companyName, companyDescription: values.companyDescription, companyLogoUrl: values.companyLogoUrl, companyWebsiteUrl: values.companyWebsiteUrl, category: values.category, location: values.location, deadline: values.deadline, description: values.description, responsibilities: values.responsibilities, qualifications: values.qualifications, howToApply: values.howToApply, applicationUrl: values.applicationUrl, imageUrl: values.imageUrl }).where(eq(pendingJobs.id, id));
     const [fresh] = await db.select().from(pendingJobs).where(eq(pendingJobs.id, id)).limit(1);
     return res.json({ pending: fresh });
   } catch (error) { return res.status(400).json({ error: error instanceof Error ? error.message : "Pending listing could not be updated." }); }
@@ -276,7 +279,7 @@ router.post("/pending/:id/approve", async (req, res) => {
         const match = await tx.select({ id: companies.id }).from(companies).where(eq(companies.name, pending.companyName)).limit(1);
         companyId = match[0]?.id ?? null;
       }
-      const inserted = await tx.insert(jobs).values({ title: pending.title, companyId, companyName: pending.companyName, category: pending.category, location: pending.location, deadline: pending.deadline, description: pending.description, responsibilities: pending.responsibilities, qualifications: pending.qualifications, howToApply: pending.howToApply, applicationUrl: pending.applicationUrl, imageUrl: pending.imageUrl, sourceUrl: pending.sourceUrl, sourceId: pending.sourceId, status: "published", publishedAt: now() });
+      const inserted = await tx.insert(jobs).values({ title: pending.title, companyId, companyName: pending.companyName, companyDescription: pending.companyDescription, companyLogoUrl: pending.companyLogoUrl, companyWebsiteUrl: pending.companyWebsiteUrl, category: pending.category, location: pending.location, deadline: pending.deadline, description: pending.description, responsibilities: pending.responsibilities, qualifications: pending.qualifications, howToApply: pending.howToApply, applicationUrl: pending.applicationUrl, imageUrl: pending.imageUrl, sourceUrl: pending.sourceUrl, sourceId: pending.sourceId, status: "published", publishedAt: now() });
       publishedId = Number((inserted as any)?.[0]?.insertId ?? 0);
       await tx.update(pendingJobs).set({ status: "approved", reviewedAt: now() }).where(and(eq(pendingJobs.id, id), eq(pendingJobs.status, "pending")));
       didPublish = true;

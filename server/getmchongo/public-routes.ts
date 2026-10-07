@@ -1,9 +1,11 @@
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { and, count, desc, eq, inArray, like, or, sql } from "drizzle-orm";
 import { Router } from "express";
 import type { Request } from "express";
 import { getDb } from "../db";
-import { companies, jobs, jobReactions, jobViewers } from "../../drizzle/schema";
+import { companies, jobs, jobReactions, jobViewers, pendingJobs } from "../../drizzle/schema";
+import { requireSameOrigin } from "./auth";
+import { findDuplicateMatches } from "./duplicates";
 import { getJobShareImageUrl, getPublicSiteOrigin } from "./share-meta";
 
 const visitorKey = (req: Request) => {
@@ -11,6 +13,20 @@ const visitorKey = (req: Request) => {
   return /^[a-z0-9-]{16,64}$/i.test(value) ? value : null;
 };
 const companyHref = (company: typeof companies.$inferSelect | null) => company ? `/companies/${company.id}` : null;
+const submittedText = (value: unknown, maximum: number) => typeof value === "string" && value.trim() ? value.trim().slice(0, maximum) : null;
+function submittedUrl(value: unknown, maximum = 2048) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  try {
+    const url = new URL(value.trim());
+    return ["http:", "https:"].includes(url.protocol) && !url.username && !url.password ? url.toString().slice(0, maximum) : null;
+  } catch { return null; }
+}
+function submittedImage(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const candidate = value.trim();
+  if (candidate.startsWith("/manus-storage/") && !candidate.includes("..")) return candidate.slice(0, 2048);
+  return submittedUrl(candidate);
+}
 
 async function addReactionSummary(rows: Array<{ job: typeof jobs.$inferSelect; company: typeof companies.$inferSelect | null }>, viewer: string | null) {
   const db = await getDb();
@@ -40,8 +56,9 @@ async function addReactionSummary(rows: Array<{ job: typeof jobs.$inferSelect; c
     return {
       ...job,
       companyName: job.companyName ?? company?.name ?? null,
-      companyDescription: company?.description ?? null,
-      companyLogoUrl: company?.logoUrl ?? null,
+      companyDescription: job.companyDescription ?? company?.description ?? null,
+      companyLogoUrl: job.companyLogoUrl ?? company?.logoUrl ?? null,
+      companyWebsiteUrl: job.companyWebsiteUrl ?? company?.websiteUrl ?? null,
       companyHref: companyHref(company),
       shareImageUrl: getJobShareImageUrl(job, company, getPublicSiteOrigin()),
       likeCount: summary.like, saveCount: summary.save,
@@ -87,6 +104,56 @@ export function createPublicRouter() {
     if (!rows.length) return res.status(404).json({ error: "Listing not found." });
     const mapped = await addReactionSummary(rows, visitorKey(req));
     return res.json({ job: mapped[0] });
+  });
+
+  router.post("/submissions", async (req, res) => {
+    if (!requireSameOrigin(req, res)) return;
+    if (submittedText(req.body?.fax, 300)) return res.status(201).json({ submitted: true, pendingReview: true });
+    const title = submittedText(req.body?.title, 300);
+    const companyName = submittedText(req.body?.companyName, 240);
+    const description = submittedText(req.body?.description, 30_000);
+    const responsibilities = submittedText(req.body?.responsibilities, 12_000);
+    const qualifications = submittedText(req.body?.qualifications, 12_000);
+    const howToApply = submittedText(req.body?.howToApply, 8_000);
+    const applicationUrl = submittedUrl(req.body?.applicationUrl);
+    const sourceUrl = submittedUrl(req.body?.sourceUrl);
+    const companyWebsiteUrl = submittedUrl(req.body?.companyWebsiteUrl);
+    const imageUrl = submittedImage(req.body?.imageUrl);
+    const companyLogoUrl = submittedImage(req.body?.companyLogoUrl);
+    if (!title || !companyName || !description) return res.status(400).json({ error: "Enter the job title, company or institution, and job description." });
+    if (!applicationUrl && !howToApply) return res.status(400).json({ error: "Add an application link or clear instructions for how to apply." });
+    if ((req.body?.applicationUrl && !applicationUrl) || (req.body?.sourceUrl && !sourceUrl) || (req.body?.companyWebsiteUrl && !companyWebsiteUrl) || (req.body?.imageUrl && !imageUrl) || (req.body?.companyLogoUrl && !companyLogoUrl)) {
+      return res.status(400).json({ error: "One of the supplied website or image links is invalid. Use public HTTP or HTTPS URLs." });
+    }
+    const db = await getDb();
+    if (!db) return res.status(503).json({ error: "Job submissions are temporarily unavailable. Please try again." });
+    try {
+      const candidate = { title, companyName, applicationUrl, description };
+      const [existingJobs, existingPending] = await Promise.all([
+        db.select({ id: jobs.id, title: jobs.title, companyName: jobs.companyName, companyProfileName: companies.name, applicationUrl: jobs.applicationUrl, description: jobs.description })
+          .from(jobs).leftJoin(companies, eq(jobs.companyId, companies.id)),
+        db.select({ id: pendingJobs.id, title: pendingJobs.title, companyName: pendingJobs.companyName, applicationUrl: pendingJobs.applicationUrl, description: pendingJobs.description })
+          .from(pendingJobs).where(eq(pendingJobs.status, "pending")),
+      ]);
+      const records = [
+        ...existingJobs.map(item => ({ ...item, companyName: item.companyName ?? item.companyProfileName, recordType: "job" as const, recordId: item.id })),
+        ...existingPending.map(item => ({ ...item, recordType: "pending" as const, recordId: item.id })),
+      ];
+      const duplicateMatches = findDuplicateMatches(candidate, records);
+      const sourceFingerprint = createHash("sha256").update(`public-submission:${randomUUID()}`).digest("hex");
+      await db.insert(pendingJobs).values({
+        sourceId: 0, sourceName: "Public employer submission", sourceFingerprint, sourceUrl,
+        title, companyName, companyDescription: submittedText(req.body?.companyDescription, 12_000),
+        companyLogoUrl, companyWebsiteUrl, category: submittedText(req.body?.category, 120),
+        location: submittedText(req.body?.location, 240), deadline: submittedText(req.body?.deadline, 240),
+        description, responsibilities, qualifications, howToApply, applicationUrl, imageUrl,
+        rawContext: "Submitted through the public Get Mchongo job form. This listing is private until an administrator reviews it.",
+        duplicateMatches: JSON.stringify(duplicateMatches), status: "pending",
+      });
+      return res.status(201).json({ submitted: true, pendingReview: true });
+    } catch {
+      return res.status(500).json({ error: "Your job could not be submitted. Please try again." });
+    }
   });
 
   router.post("/jobs/:id/view", async (req, res) => {

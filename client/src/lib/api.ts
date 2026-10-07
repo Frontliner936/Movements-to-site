@@ -15,6 +15,7 @@ export type Job = {
   companyName: string | null;
   companyDescription: string | null;
   companyLogoUrl: string | null;
+  companyWebsiteUrl: string | null;
   companyHref: string | null;
   category: string | null;
   location: string | null;

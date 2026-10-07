@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useRoute } from "wouter";
-import { ArrowLeft, ArrowUpRight, Bookmark, CalendarDays, ExternalLink, Heart, MapPin, Share2 } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Bookmark, CalendarDays, ExternalLink, Globe2, Heart, MapPin, Share2 } from "lucide-react";
 import { Brand } from "@/components/Brand";
 import { CompanyLogo, shareJob } from "@/components/JobCard";
+import { SiteFooter } from "@/components/SiteFooter";
 import { api, recordJobView, type Job } from "@/lib/api";
 import { applyJobPageMetadata } from "@/lib/pageMetadata";
 
@@ -60,7 +61,7 @@ export default function JobDetail() {
         <p className="job-view-privacy-note">Visitor counts use a random browser ID for this job only and count once per listing. No IP address or personal profile is stored; Do Not Track is respected.</p>
         <div className="detail-layout">
           <div className="detail-content">
-            {job.companyDescription && <section className="detail-section"><span className="eyebrow muted-eyebrow">ABOUT THE ORGANISATION</span><h2>{job.companyName || "Company profile"}</h2><p>{job.companyDescription}</p>{job.companyHref && <Link href={job.companyHref} className="text-link">View company profile <ArrowUpRight size={14} /></Link>}</section>}
+            {(job.companyDescription || job.companyWebsiteUrl || job.companyHref) && <section className="detail-section"><span className="eyebrow muted-eyebrow">ABOUT THE ORGANISATION</span><h2>{job.companyName || "Company profile"}</h2>{job.companyDescription && <p>{job.companyDescription}</p>}{job.companyWebsiteUrl && <a href={job.companyWebsiteUrl} target="_blank" rel="noreferrer" className="text-link"><Globe2 size={14} />Official company website <ArrowUpRight size={14} /></a>}{job.companyHref && <Link href={job.companyHref} className="text-link">View company profile <ArrowUpRight size={14} /></Link>}</section>}
             {job.description && <section className="detail-section"><span className="eyebrow muted-eyebrow">THE OPPORTUNITY</span><h2>About the role</h2><p>{job.description}</p></section>}
             {job.responsibilities && <section className="detail-section"><span className="eyebrow muted-eyebrow">THE WORK</span><h2>Responsibilities</h2><p>{job.responsibilities}</p></section>}
             {job.qualifications && <section className="detail-section"><span className="eyebrow muted-eyebrow">WHAT YOU'LL NEED</span><h2>Qualifications & requirements</h2><p>{job.qualifications}</p></section>}
@@ -71,6 +72,6 @@ export default function JobDetail() {
         </div>
       </> : null}
     </main>
-    <footer className="site-footer"><Brand light /><p>Made for the next move.</p><div className="footer-links"><Link href="/">Opportunities</Link><a href="/admin/login">Admin access</a></div><span className="footer-year">© {new Date().getFullYear()} GET MCHONGO</span></footer>
+    <SiteFooter />
   </div>;
 }

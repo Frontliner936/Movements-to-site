@@ -18,6 +18,12 @@
 - A protected admin dashboard accepts the requested administrator login email `frontlinertech@gmail.com`. The provided password stays in protected environment storage; no administrator password is stored in source or a public bundle.
 - The admin can add jobs manually; edit/delete/publish/unpublish jobs; upload and preview logos/images; and manage company profiles.
 
+## [x] Public contact and employer job submissions
+- Visitor-facing pages show clickable contact options for `+255743738062` and `frontlinertech@gmail.com`.
+- Visitors can open a public **Post a job** form without employer registration and enter the job title, company/institution and description; category, location, deadline, responsibilities, qualifications, how-to-apply details, application link, company description/website/logo, listing image and original/reference URL are available as appropriate. Require a title, company and description, plus an application link or clear application instructions.
+- Every public submission is stored as **pending review**, possible duplicates are flagged, and it appears in the existing admin review queue for editing, rejection or explicit approval. **Never publish a public submission automatically.** After the administrator clicks **APPROVE & PUBLISH**, the approved details appear on the public job listing.
+- Do not create employer accounts, public employer profiles or candidate databases.
+
 ## [x] Per-job visitor analytics
 - The protected admin tools include an Analytics area showing the visitor count for each published job.
 - Analytics is reachable from the admin navigation, a persistent top-bar shortcut, and a clear dashboard-overview shortcut.
