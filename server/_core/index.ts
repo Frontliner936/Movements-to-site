@@ -7,18 +7,20 @@ import { publicPlatformScript } from "./publicConfig";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { registerGetMchongoRoutes } from "../getmchongo/router";
 
 async function startServer() {
   const app = express();
   const server = createServer(app);
-  // Configure body parser with larger size limit for file uploads
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // Source documents and uploads are bounded server-side; image uploads have a 5 MB cap.
+  app.use(express.json({ limit: "7mb" }));
+  app.use(express.urlencoded({ limit: "1mb", extended: true }));
   app.get("/api/health", (_req, res) => res.json({ status: "ok" }));
   app.get("/api/platform/config.js", (_req, res) => {
     res.set("Cache-Control", "no-store").type("application/javascript").send(publicPlatformScript());
   });
   registerOAuthRoutes(app);
+  registerGetMchongoRoutes(app);
   // tRPC API
   app.use(
     "/api/trpc",

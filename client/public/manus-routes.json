@@ -1,0 +1,1 @@
+{"routes":[{"path":"/","title":"Get Mchongo — opportunities"},{"path":"/jobs/:id","title":"Opportunity details"},{"path":"/companies/:id","title":"Company profile"},{"path":"/admin/login","title":"Admin login"},{"path":"/admin","title":"Admin dashboard"}]}
