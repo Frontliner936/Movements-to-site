@@ -183,7 +183,12 @@ router.post("/jobs/structure", async (req, res) => {
     return res.json(result);
   } catch (error) {
     if (error instanceof TemporaryDocumentCapacityError) return res.status(429).json({ error: error.message });
-    return res.status(502).json({ error: "The assistant could not structure this advertisement. Check the source and try again, or paste its text." });
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("[jobs/structure] Advertisement structuring failed:", error);
+    return res.status(502).json({
+      error: message || "The assistant could not structure this advertisement.",
+      diagnostic: true,
+    });
   } finally {
     if (temporaryToken) removeTemporaryDocument(temporaryToken);
     else sourceBuffer?.fill(0);
