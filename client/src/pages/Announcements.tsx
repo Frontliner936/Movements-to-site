@@ -31,7 +31,7 @@ export default function Announcements() {
             <h2>{item.title}</h2>
             {item.body && <p className="announcement-text">{item.body}</p>}
             {(item.pdfUrl || item.linkUrl) && <div className="announcement-actions">
-              {item.pdfUrl && <a className="secondary-button" href={item.pdfUrl} target="_blank" rel="noopener noreferrer"><FileText size={14} />{item.pdfName ? `Open ${item.pdfName}` : "Open PDF"}</a>}
+              {item.pdfUrl && <a className="secondary-button" href={item.pdfUrl} download={item.pdfName || "announcement.pdf"}><FileText size={14} />{item.pdfName ? `Download ${item.pdfName}` : "Download PDF"}</a>}
               {item.linkUrl && <a className="secondary-button" href={item.linkUrl} target="_blank" rel="noopener noreferrer nofollow">{item.linkLabel || "Open link"}<ExternalLink size={14} /></a>}
             </div>}
           </div>
