@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, ExternalLink, FileText, Megaphone } from "lucide-react";
+import { ArrowLeft, ArrowRight, ExternalLink, FileText, Maximize2, Megaphone, X } from "lucide-react";
 import { Brand } from "@/components/Brand";
 import { SiteFooter } from "@/components/SiteFooter";
 import { announcementKinds, api, type Announcement } from "@/lib/api";
@@ -8,6 +8,7 @@ export default function Announcements() {
   const [items, setItems] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [viewer, setViewer] = useState<Announcement | null>(null);
   useEffect(() => {
     document.title = "Announcements — Get Mchongo";
     api<{ announcements: Announcement[] }>("/api/gm/announcements")
@@ -30,7 +31,8 @@ export default function Announcements() {
             <div className="announcement-meta"><span className="announcement-kind">{kindLabel(item.kind)}</span><time dateTime={item.publishedAt ?? item.createdAt}>{new Date(item.publishedAt ?? item.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}</time></div>
             <h2>{item.title}</h2>
             {item.body && <p className="announcement-text">{item.body}</p>}
-            {(item.pdfUrl || item.linkUrl) && <div className="announcement-actions">
+            {(item.imageUrl || item.pdfUrl || item.linkUrl) && <div className="announcement-actions">
+              {(item.imageUrl || item.pdfUrl) && <button type="button" className="secondary-button" onClick={() => setViewer(item)}><Maximize2 size={14} />View full advert</button>}
               {item.pdfUrl && <a className="secondary-button" href={item.pdfUrl} download={item.pdfName || "announcement.pdf"}><FileText size={14} />{item.pdfName ? `Download ${item.pdfName}` : "Download PDF"}</a>}
               {item.linkUrl && <a className="secondary-button" href={item.linkUrl} target="_blank" rel="noopener noreferrer nofollow">{item.linkLabel || "Open link"}<ExternalLink size={14} /></a>}
             </div>}
