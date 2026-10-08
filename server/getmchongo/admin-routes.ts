@@ -168,9 +168,13 @@ router.post("/jobs/structure", async (req, res) => {
     if (!sourceText && !document) return res.status(400).json({ error: "Paste advertisement text or choose a PDF/image." });
     if (document) {
       let origin: URL;
-      try { origin = new URL(req.get("origin") ?? ""); }
-      catch { return res.status(400).json({ error: "Open the secure website preview to process uploaded files." }); }
-      if (origin.protocol !== "https:" || origin.origin !== req.get("origin")) return res.status(400).json({ error: "Uploaded files require the secure HTTPS Preview or published website. Pasted text can be used on local HTTP." });
+      try {
+        const requestOrigin = req.get("origin") || `${req.protocol}://${req.get("host")}`;
+        origin = new URL(requestOrigin);
+      } catch { return res.status(400).json({ error: "The website address could not be determined for this upload. Refresh the page and try again." }); }
+      if (origin.protocol !== "https:" && process.env.NODE_ENV === "production") {
+        return res.status(400).json({ error: "Uploaded files require the secure HTTPS website. If you are testing locally, paste the advertisement text instead." });
+      }
       temporaryToken = storeTemporaryDocument(sourceBuffer!, document.mimeType);
       sourceBuffer = null;
       document.url = new URL(`/api/gm/temporary-document/${temporaryToken}`, origin.origin).toString();
