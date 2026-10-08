@@ -161,7 +161,7 @@ router.post("/jobs/structure", async (req, res) => {
           const original = sourceBuffer;
           sourceBuffer = await sharp(original, { limitInputPixels: 40_000_000 }).rotate().resize({ width: 2400, height: 2400, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 88 }).toBuffer();
           original.fill(0);
-          document = { mimeType: "image/jpeg", url: "" };
+          document = { mimeType: "image/jpeg", url: "", dataUrl: `data:image/jpeg;base64,${sourceBuffer.toString("base64")}` };
         } catch { return res.status(400).json({ error: "The image could not be safely processed. Try another image or paste its text." }); }
       }
     }
