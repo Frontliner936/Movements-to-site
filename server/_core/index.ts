@@ -10,6 +10,7 @@ import { serveStatic, setupVite } from "./vite";
 import { registerGetMchongoRoutes } from "../getmchongo/router";
 import { registerJobShareMetadata } from "../getmchongo/share-meta";
 import { serveLocalStorage } from "../getmchongo/local-storage";
+import { registerStorageProxy } from "./storageProxy";
 
 async function startServer() {
   const app = express();
@@ -22,6 +23,7 @@ async function startServer() {
     res.set("Cache-Control", "no-store").type("application/javascript").send(publicPlatformScript());
   });
   app.get("/manus-storage/*", serveLocalStorage);
+  registerStorageProxy(app);
   registerOAuthRoutes(app);
   registerGetMchongoRoutes(app);
   registerJobShareMetadata(app);
