@@ -1,4 +1,7 @@
-import { describe, expect, it } from "vitest";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it, vi } from "vitest";
+import { JobQuickShareButtons } from "../../client/src/components/JobShareMenu";
 import { createJobShareInfo } from "../../client/src/lib/jobSharing";
 
 const job = {
@@ -26,5 +29,18 @@ describe("createJobShareInfo", () => {
     const whatsapp = new URL(info.destinations[0].href);
     expect(whatsapp.searchParams.get("text")).toContain("Field Officer — Example & Partners");
     expect(whatsapp.searchParams.get("text")).toContain(info.url);
+  });
+
+  it("renders direct WhatsApp and LinkedIn buttons outside the share menu", () => {
+    vi.stubGlobal("window", { location: { origin: "https://jobs.example" } });
+    vi.stubGlobal("document", { head: { querySelector: () => null } });
+    try {
+      const html = renderToStaticMarkup(React.createElement(JobQuickShareButtons, { job, variant: "button" }));
+      expect(html.match(/<a /g)).toHaveLength(2);
+      expect(html).toContain('aria-label="Share job on WhatsApp"');
+      expect(html).toContain('aria-label="Share job on LinkedIn"');
+      expect(html).toContain(">WhatsApp</span>");
+      expect(html).toContain(">LinkedIn</span>");
+    } finally { vi.unstubAllGlobals(); }
   });
 });

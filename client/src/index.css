@@ -192,6 +192,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .job-card-actions { display: flex; align-items: center; gap: 3px; margin-left: auto; }
 .icon-button { width: 35px; height: 35px; border: 1px solid transparent; background: transparent; color: #78827b; cursor: pointer; display: inline-grid; place-items: center; border-radius: 9px; transition: color .18s ease, background .18s ease, border-color .18s ease; }
 .icon-button:hover { background: #eff3ec; color: var(--green); border-color: #dce8dc; }
+@media (max-width: 420px) { .job-card-topline { flex-wrap: wrap; }.job-card-actions { flex: 1 0 100%; justify-content: flex-end; } }
 .job-card:focus-within { z-index: 30; }
 .job-share-control { position: relative; display: inline-flex; align-items: center; }
 .job-share-trigger { white-space: nowrap; }
@@ -201,6 +202,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .job-share-social-link { min-height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; color: #53645a; background: #faf9f4; border: 1px solid var(--line); border-radius: 8px; font-size: 9px; font-weight: 700; text-decoration: none; transition: background .16s ease, border-color .16s ease, transform .16s ease; }
 .job-share-social-link:hover, .job-share-social-link:focus-visible { background: #f0f3ec; border-color: #bdcfc0; transform: translateY(-1px); }
 .job-share-whatsapp svg { color: #25d366; }.job-share-facebook svg { color: #1877f2; }.job-share-x svg { color: #111; }.job-share-linkedin svg { color: #0a66c2; }.job-share-telegram svg { color: #229ed9; }
+.job-quick-share-buttons { display: inline-flex; align-items: center; gap: 3px; }
+.job-quick-share-icon { flex: none; text-decoration: none; }
+.job-quick-share-button { white-space: nowrap; text-decoration: none; }
+.job-quick-share-button:hover, .job-quick-share-button:focus-visible { background: #f0f3ec; }
 .job-share-copy { width: 100%; min-height: 38px; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 7px; color: var(--green); background: transparent; border: 1px solid #d8e4d7; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; }
 .job-share-copy:hover, .job-share-copy:focus-visible { background: #edf3eb; }
 .job-share-copy-status { display: block; margin-top: 7px; color: #66756c; font-size: 10px; text-align: center; }

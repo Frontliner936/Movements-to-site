@@ -1,12 +1,11 @@
-import { useEffect, useId, useRef, useState } from "react";
+import React, { useEffect, useId, useRef, useState } from "react";
 import { Link2, Share2 } from "lucide-react";
 import type { IconType } from "react-icons";
 import { FaFacebookF, FaLinkedinIn, FaTelegram, FaWhatsapp, FaXTwitter } from "react-icons/fa6";
-import type { Job } from "@/lib/api";
-import { createJobShareInfo, type SocialDestination } from "@/lib/jobSharing";
+import { createJobShareInfo, type ShareableJob, type SocialDestination } from "@/lib/jobSharing";
 
 type Props = {
-  job: Job;
+  job: ShareableJob;
   variant?: "icon" | "button";
   onStatus?: (message: string) => void;
 };
@@ -18,6 +17,26 @@ const brandIcons: Record<SocialDestination["id"], IconType> = {
   linkedin: FaLinkedinIn,
   telegram: FaTelegram,
 };
+
+export function JobQuickShareButtons({ job, variant = "icon" }: { job: ShareableJob; variant?: "icon" | "button" }) {
+  const canonicalHref = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href;
+  const shareInfo = createJobShareInfo(job, window.location.origin, canonicalHref);
+  const destinations = shareInfo.destinations.filter(destination => destination.id === "whatsapp" || destination.id === "linkedin");
+  return <div className={`job-quick-share-buttons job-quick-share-${variant}`} role="group" aria-label="Share directly">
+    {destinations.map(destination => {
+      const BrandIcon = brandIcons[destination.id];
+      return <a
+        key={destination.id}
+        className={variant === "button" ? `secondary-button job-quick-share-button job-share-${destination.id}` : `icon-button job-quick-share-icon job-share-${destination.id}`}
+        href={destination.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={`Share on ${destination.label}`}
+        aria-label={`Share job on ${destination.label}`}
+      ><BrandIcon size={variant === "button" ? 15 : 17} aria-hidden="true" />{variant === "button" && <span>{destination.label}</span>}</a>;
+    })}
+  </div>;
+}
 
 export function JobShareMenu({ job, variant = "icon", onStatus }: Props) {
   const [open, setOpen] = useState(false);

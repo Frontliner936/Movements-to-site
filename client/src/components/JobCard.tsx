@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { ArrowUpRight, Bookmark, Heart, MapPin } from "lucide-react";
 import { api, type Job } from "@/lib/api";
-import { JobShareMenu } from "@/components/JobShareMenu";
+import { JobQuickShareButtons, JobShareMenu } from "@/components/JobShareMenu";
 
 export function CompanyLogo({ name, imageUrl, size = "normal" }: { name?: string | null; imageUrl?: string | null; size?: "normal" | "large" }) {
   const [failed, setFailed] = useState(false);
@@ -32,6 +32,7 @@ export function JobCard({ job, onChanged }: { job: Job; onChanged: () => void })
           <button className={`icon-button ${job.liked ? "is-liked" : ""}`} type="button" aria-label={job.liked ? "Unlike job" : "Like job"} aria-pressed={job.liked} disabled={!!busy} onClick={() => void toggle("like")}><Heart size={17} fill={job.liked ? "currentColor" : "none"} /></button>
           <button className={`icon-button ${job.saved ? "is-saved" : ""}`} type="button" aria-label={job.saved ? "Remove saved job" : "Save job"} aria-pressed={job.saved} disabled={!!busy} onClick={() => void toggle("save")}><Bookmark size={17} fill={job.saved ? "currentColor" : "none"} /></button>
           <JobShareMenu job={job} variant="icon" onStatus={setNotice} />
+          <JobQuickShareButtons job={job} variant="icon" />
         </div>
       </div>
       <Link href={`/jobs/${job.id}`} className="job-card-title">{job.title}<ArrowUpRight size={16} aria-hidden="true" /></Link>
