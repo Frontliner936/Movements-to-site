@@ -45,11 +45,12 @@ export default function Home() {
 
   return (
     <div className="site-shell">
-      <header className="site-header">
+      <header className="site-header home-page-header">
         <div className="header-inner"><Brand /><nav className="main-nav" aria-label="Main navigation"><a className="nav-current" href="#opportunities">Opportunities</a><a href="#how-it-works">How it works</a><a href="/announcements">Announcements</a></nav><div className="header-actions"><a className="header-submit-link" href="/submit">Post a job <ArrowRight size={14} /></a><a className="header-contact-link" href="/contact">Contact us</a><a className="header-admin-link" href="/admin/login">Admin <ArrowRight size={14} /></a></div></div>
       </header>
 
       <main>
+        <div className="home-top-band">
         <section className="hero-wrap" aria-labelledby="hero-title">
           <div className="hero-copy">
             <span className="eyebrow"><span className="eyebrow-dot" />TANZANIA'S OPPORTUNITY BOARD</span>
@@ -97,6 +98,8 @@ export default function Home() {
             </div>
           </section>
         )}
+
+        </div>
 
         <section className="opportunities-section" id="opportunities" aria-labelledby="opportunities-title">
           <div className="section-heading-row">
