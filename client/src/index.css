@@ -216,6 +216,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .job-company-link:hover { color: var(--green); text-decoration: underline; text-underline-offset: 3px; }
 .job-description-preview { font-size: 12px; line-height: 1.65; color: #758078; margin: 7px 0 13px; max-width: none; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .job-card-footer { display: flex; flex-wrap: wrap; gap: 9px 17px; align-items: center; color: #737d75; font-size: 10px; min-height: 22px; margin-top: auto; }
+.job-card-footer .job-location { display: inline-flex; align-items: center; gap: 5px; }
+.job-card-location-actions { display: inline-flex; align-items: center; gap: 3px; margin-left: -12px; }
+.job-card-location-actions .icon-button { width: 30px; height: 30px; }
 .posted-time { color: var(--green-dark); font-weight: 700; }
 .job-card-footer .posted-time { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; white-space: nowrap; }
 .job-card-footer > span { display: inline-flex; align-items: center; gap: 5px; }

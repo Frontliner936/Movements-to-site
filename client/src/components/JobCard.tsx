@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { ArrowUpRight, Bookmark, Clock3, Heart, MapPin } from "lucide-react";
 import { api, type Job } from "@/lib/api";
-import { JobQuickShareButtons, JobShareMenu } from "@/components/JobShareMenu";
+import { JobShareMenu } from "@/components/JobShareMenu";
 import { formatPostedAgo } from "@/lib/timeAgo";
 
 export function CompanyLogo({ name, imageUrl, size = "normal" }: { name?: string | null; imageUrl?: string | null; size?: "normal" | "large" }) {
@@ -30,12 +30,9 @@ export function JobCard({ job, onChanged }: { job: Job; onChanged: () => void })
     <article className="job-card">
       <div className="job-card-topline">
         <CompanyLogo name={job.companyName} imageUrl={job.companyLogoUrl || job.imageUrl} />
-        <span className="job-category">{job.category || "Opportunity"}</span>
+        {job.category && <span className="job-category">{job.category}</span>}
         <div className="job-card-actions">
-          <button className={`icon-button ${job.liked ? "is-liked" : ""}`} type="button" aria-label={job.liked ? "Unlike job" : "Like job"} aria-pressed={job.liked} disabled={!!busy} onClick={() => void toggle("like")}><Heart size={17} fill={job.liked ? "currentColor" : "none"} /></button>
-          <button className={`icon-button ${job.saved ? "is-saved" : ""}`} type="button" aria-label={job.saved ? "Remove saved job" : "Save job"} aria-pressed={job.saved} disabled={!!busy} onClick={() => void toggle("save")}><Bookmark size={17} fill={job.saved ? "currentColor" : "none"} /></button>
           <JobShareMenu job={job} variant="icon" onStatus={setNotice} />
-          <JobQuickShareButtons job={job} variant="icon" />
         </div>
       </div>
       <Link href={`/jobs/${job.id}`} className="job-card-title">{job.title}<ArrowUpRight size={16} aria-hidden="true" /></Link>
@@ -43,7 +40,11 @@ export function JobCard({ job, onChanged }: { job: Job; onChanged: () => void })
       <p className="job-description-preview">{job.description || "Open the listing to view the information shared by the source."}</p>
       <div className="job-card-footer">
         {postedAt && postedLabel && <time className="posted-time" dateTime={postedAt}><Clock3 size={13} />{postedLabel}</time>}
-        <span>{job.location && <><MapPin size={14} />{job.location}</>}</span>
+        {job.location && <span className="job-location"><MapPin size={14} />{job.location}</span>}
+        <div className="job-card-location-actions" aria-label="Job actions">
+          <button className={`icon-button ${job.liked ? "is-liked" : ""}`} type="button" aria-label={job.liked ? "Unlike job" : "Like job"} aria-pressed={job.liked} disabled={!!busy} onClick={() => void toggle("like")}><Heart size={17} fill={job.liked ? "currentColor" : "none"} /></button>
+          <button className={`icon-button ${job.saved ? "is-saved" : ""}`} type="button" aria-label={job.saved ? "Remove saved job" : "Save job"} aria-pressed={job.saved} disabled={!!busy} onClick={() => void toggle("save")}><Bookmark size={17} fill={job.saved ? "currentColor" : "none"} /></button>
+        </div>
         {job.deadline && <span className="deadline-chip">Closes {job.deadline}</span>}
         <Link href={`/jobs/${job.id}`} className="view-more-button">View more <ArrowUpRight size={14} /></Link>
       </div>
