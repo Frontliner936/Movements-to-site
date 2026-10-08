@@ -92,7 +92,7 @@ function parseJson(text: string): unknown {
 export async function structureJobAd(options: {
   sourceText: string;
   outputLanguage: OutputLanguage;
-  document?: { url: string; mimeType: "application/pdf" | "image/jpeg" };
+  document?: { url: string; mimeType: "application/pdf" | "image/jpeg"; dataUrl?: string };
 }): Promise<StructuredJobAd> {
   const languageInstruction = options.outputLanguage === "source"
     ? "Keep the source language of the advertisement."
