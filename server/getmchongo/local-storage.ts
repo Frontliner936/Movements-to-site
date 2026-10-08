@@ -4,8 +4,8 @@ import type { NextFunction, Request, Response } from "express";
 
 /**
  * Fallback file storage for hosts without Manus storage (e.g. Railway).
- * Files live on disk in UPLOAD_DIR (default ./uploads). On Railway, mount a
- * Volume and point UPLOAD_DIR at it so files survive redeploys.
+ * Files live on disk in UPLOAD_DIR. On Railway, a mounted Volume is used
+ * automatically via RAILWAY_VOLUME_MOUNT_PATH when UPLOAD_DIR is not set.
  */
 const KEY_PATTERN = /^get-mchongo\/uploads\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.(png|jpg|webp|pdf)$/;
 
@@ -13,7 +13,12 @@ export const LOCAL_CONTENT_TYPES: Record<string, string> = {
   png: "image/png", jpg: "image/jpeg", webp: "image/webp", pdf: "application/pdf",
 };
 
-export const uploadRoot = () => path.resolve(process.env.UPLOAD_DIR || path.join(process.cwd(), "uploads"));
+export const uploadRoot = () => {
+  const configured = process.env.UPLOAD_DIR?.trim();
+  const railwayMount = process.env.RAILWAY_VOLUME_MOUNT_PATH?.trim();
+  const root = configured || (railwayMount ? path.join(railwayMount, "uploads") : path.join(process.cwd(), "uploads"));
+  return path.resolve(root);
+};
 
 export function isLocalKey(key: string): boolean {
   return KEY_PATTERN.test(key);
