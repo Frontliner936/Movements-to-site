@@ -192,6 +192,18 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .job-card-actions { display: flex; align-items: center; gap: 3px; margin-left: auto; }
 .icon-button { width: 35px; height: 35px; border: 1px solid transparent; background: transparent; color: #78827b; cursor: pointer; display: inline-grid; place-items: center; border-radius: 9px; transition: color .18s ease, background .18s ease, border-color .18s ease; }
 .icon-button:hover { background: #eff3ec; color: var(--green); border-color: #dce8dc; }
+.job-card:focus-within { z-index: 30; }
+.job-share-control { position: relative; display: inline-flex; align-items: center; }
+.job-share-trigger { white-space: nowrap; }
+.job-share-popover { position: absolute; z-index: 50; top: calc(100% + 8px); right: 0; width: min(318px, calc(100vw - 32px)); padding: 14px; color: var(--ink); background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 14px 38px rgba(22,44,33,.18); }
+.job-share-heading { display: block; margin-bottom: 11px; font-size: 12px; font-weight: 700; }
+.job-share-social-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+.job-share-social-link { min-height: 60px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; color: #53645a; background: #faf9f4; border: 1px solid var(--line); border-radius: 8px; font-size: 9px; font-weight: 700; text-decoration: none; transition: background .16s ease, border-color .16s ease, transform .16s ease; }
+.job-share-social-link:hover, .job-share-social-link:focus-visible { background: #f0f3ec; border-color: #bdcfc0; transform: translateY(-1px); }
+.job-share-whatsapp svg { color: #25d366; }.job-share-facebook svg { color: #1877f2; }.job-share-x svg { color: #111; }.job-share-linkedin svg { color: #0a66c2; }.job-share-telegram svg { color: #229ed9; }
+.job-share-copy { width: 100%; min-height: 38px; margin-top: 10px; display: flex; align-items: center; justify-content: center; gap: 7px; color: var(--green); background: transparent; border: 1px solid #d8e4d7; border-radius: 8px; font-size: 11px; font-weight: 700; cursor: pointer; }
+.job-share-copy:hover, .job-share-copy:focus-visible { background: #edf3eb; }
+.job-share-copy-status { display: block; margin-top: 7px; color: #66756c; font-size: 10px; text-align: center; }
 .icon-button.is-liked, .is-liked { color: #bd625c !important; }.icon-button.is-saved, .is-saved { color: var(--green) !important; }
 .job-card-title { width: max-content; max-width: 100%; display: flex; align-items: baseline; gap: 8px; font-family: var(--font-display); font-size: 29px; line-height: 1.16; letter-spacing: -.035em; font-weight: 500; margin: 12px 0 4px; color: var(--ink); }
 .job-card-title svg { color: var(--green); flex: none; transition: transform .18s ease; }.job-card-title:hover svg { transform: translate(2px,-2px); }

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useRoute } from "wouter";
-import { ArrowLeft, ArrowUpRight, Bookmark, CalendarDays, ExternalLink, Globe2, Heart, MapPin, Share2 } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Bookmark, CalendarDays, ExternalLink, Globe2, Heart, MapPin } from "lucide-react";
 import { Brand } from "@/components/Brand";
-import { CompanyLogo, shareJob } from "@/components/JobCard";
+import { CompanyLogo } from "@/components/JobCard";
+import { JobShareMenu } from "@/components/JobShareMenu";
 import { SiteFooter } from "@/components/SiteFooter";
 import RichJobText from "@/components/RichJobText";
 import { api, recordJobView, type Job } from "@/lib/api";
@@ -41,12 +42,6 @@ export default function JobDetail() {
     finally { setBusy(false); }
   }
 
-  async function share() {
-    if (!job) return;
-    try { const result = await shareJob(job); setNotice(result === "copied" ? "Link copied to clipboard." : ""); }
-    catch { setNotice("Could not share this listing."); }
-  }
-
   return <div className="site-shell"><header className="site-header"><div className="header-inner"><Brand /><a className="header-admin-link" href="/admin/login">Admin <ArrowUpRight size={14} /></a></div></header>
     <main className="detail-page">
       <Link href="/" className="back-link"><ArrowLeft size={15} /> All opportunities</Link>
@@ -57,7 +52,7 @@ export default function JobDetail() {
           <div className="detail-company-line"><CompanyLogo size="large" name={job.companyName} imageUrl={job.companyLogoUrl || job.imageUrl} /><div>{job.companyName && (job.companyHref ? <Link href={job.companyHref} className="detail-company-link">{job.companyName} <ArrowUpRight size={13} /></Link> : <span className="detail-company-name">{job.companyName}</span>)}{job.category && <span className="job-category">{job.category}</span>}</div></div>
           <h1>{job.title}</h1>
           <div className="detail-meta">{job.location && <span><MapPin size={16} />{job.location}</span>}{job.deadline && <span><CalendarDays size={15} />Deadline: {job.deadline}</span>}</div>
-          <div className="detail-heading-actions"><button type="button" className={`secondary-button ${job.liked ? "is-liked" : ""}`} onClick={() => void toggle("like")} disabled={busy}><Heart size={16} fill={job.liked ? "currentColor" : "none"} /> {job.liked ? "Liked" : "Like"} <span>{job.likeCount}</span></button><button type="button" className={`secondary-button ${job.saved ? "is-saved" : ""}`} onClick={() => void toggle("save")} disabled={busy}><Bookmark size={15} fill={job.saved ? "currentColor" : "none"} /> {job.saved ? "Saved" : "Save"}</button><button type="button" className="secondary-button" onClick={() => void share()}><Share2 size={15} /> Share</button></div>
+          <div className="detail-heading-actions"><button type="button" className={`secondary-button ${job.liked ? "is-liked" : ""}`} onClick={() => void toggle("like")} disabled={busy}><Heart size={16} fill={job.liked ? "currentColor" : "none"} /> {job.liked ? "Liked" : "Like"} <span>{job.likeCount}</span></button><button type="button" className={`secondary-button ${job.saved ? "is-saved" : ""}`} onClick={() => void toggle("save")} disabled={busy}><Bookmark size={15} fill={job.saved ? "currentColor" : "none"} /> {job.saved ? "Saved" : "Save"}</button><JobShareMenu job={job} variant="button" onStatus={setNotice} /></div>
         </section>
         <p className="job-view-privacy-note">Visitor counts use a random browser ID for this job only and count once per listing. No IP address or personal profile is stored; Do Not Track is respected.</p>
         <div className="detail-layout">

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { ArrowUpRight, Bookmark, Heart, MapPin, Share2 } from "lucide-react";
+import { ArrowUpRight, Bookmark, Heart, MapPin } from "lucide-react";
 import { api, type Job } from "@/lib/api";
+import { JobShareMenu } from "@/components/JobShareMenu";
 
 export function CompanyLogo({ name, imageUrl, size = "normal" }: { name?: string | null; imageUrl?: string | null; size?: "normal" | "large" }) {
   const [failed, setFailed] = useState(false);
@@ -10,24 +11,6 @@ export function CompanyLogo({ name, imageUrl, size = "normal" }: { name?: string
       {imageUrl && !failed ? <img src={imageUrl} alt={name ? `${name} logo` : "Company logo"} onError={() => setFailed(true)} /> : <span aria-hidden="true">{(name || "?").trim().slice(0, 1).toUpperCase()}</span>}
     </span>
   );
-}
-
-export async function shareJob(job: Job) {
-  const canonical = document.head.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href;
-  let origin = window.location.origin;
-  try { if (canonical) origin = new URL(canonical).origin; } catch { /* Use the active browser origin. */ }
-  const shareUrl = new URL(`/jobs/${job.id}`, origin);
-  try {
-    const image = job.shareImageUrl ? new URL(job.shareImageUrl, origin) : null;
-    const version = image?.pathname === `/og/jobs/${job.id}.jpg` ? image.searchParams.get("v") : null;
-    if (version && /^\d+$/.test(version)) shareUrl.searchParams.set("share", version);
-  } catch { /* Share the stable job path if no card version is available. */ }
-  const url = shareUrl.href;
-  const title = `${job.title}${job.companyName ? ` — ${job.companyName}` : ""} | Get Mchongo`;
-  const text = `${job.title}${job.companyName ? ` — ${job.companyName}` : ""}`;
-  if (navigator.share) return navigator.share({ title, text, url });
-  await navigator.clipboard.writeText(url);
-  return "copied";
 }
 
 export function JobCard({ job, onChanged }: { job: Job; onChanged: () => void }) {
@@ -40,10 +23,6 @@ export function JobCard({ job, onChanged }: { job: Job; onChanged: () => void })
     catch (error) { setNotice(error instanceof Error ? error.message : "Could not save your reaction."); }
     finally { setBusy(null); }
   }
-  async function share() {
-    try { const result = await shareJob(job); setNotice(result === "copied" ? "Link copied" : ""); }
-    catch { setNotice("Could not share this listing."); }
-  }
   return (
     <article className="job-card">
       <div className="job-card-topline">
@@ -52,7 +31,7 @@ export function JobCard({ job, onChanged }: { job: Job; onChanged: () => void })
         <div className="job-card-actions">
           <button className={`icon-button ${job.liked ? "is-liked" : ""}`} type="button" aria-label={job.liked ? "Unlike job" : "Like job"} aria-pressed={job.liked} disabled={!!busy} onClick={() => void toggle("like")}><Heart size={17} fill={job.liked ? "currentColor" : "none"} /></button>
           <button className={`icon-button ${job.saved ? "is-saved" : ""}`} type="button" aria-label={job.saved ? "Remove saved job" : "Save job"} aria-pressed={job.saved} disabled={!!busy} onClick={() => void toggle("save")}><Bookmark size={17} fill={job.saved ? "currentColor" : "none"} /></button>
-          <button className="icon-button" type="button" aria-label="Share job" onClick={() => void share()}><Share2 size={16} /></button>
+          <JobShareMenu job={job} variant="icon" onStatus={setNotice} />
         </div>
       </div>
       <Link href={`/jobs/${job.id}`} className="job-card-title">{job.title}<ArrowUpRight size={16} aria-hidden="true" /></Link>
