@@ -92,3 +92,15 @@ export async function api<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export const jsonBody = (value: unknown) => JSON.stringify(value);
+
+export type AnnouncementKind = "interview" | "event" | "ad" | "business" | "news";
+export const announcementKinds: Array<{ value: AnnouncementKind; label: string }> = [
+  { value: "news", label: "News" }, { value: "interview", label: "Interview" }, { value: "event", label: "Event" },
+  { value: "ad", label: "Advert" }, { value: "business", label: "Business" },
+];
+export type Announcement = {
+  id: number; title: string; kind: AnnouncementKind; body: string | null;
+  imageUrl: string | null; imageCaption: string | null; pdfUrl: string | null; pdfName: string | null;
+  linkUrl: string | null; linkLabel: string | null; status: "draft" | "published";
+  publishedAt: string | null; createdAt: string;
+};

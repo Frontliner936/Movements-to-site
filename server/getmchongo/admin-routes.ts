@@ -4,7 +4,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import sharp from "sharp";
 import { getDb } from "../db";
-import { companies, contactMessages, jobs, jobReactions, jobViewers, pendingJobs, scanSchedules, sources } from "../../drizzle/schema";
+import { announcements, companies, contactMessages, jobs, jobReactions, jobViewers, pendingJobs, scanSchedules, sources } from "../../drizzle/schema";
 import { createHeartbeatJob, updateHeartbeatJob } from "../_core/heartbeat";
 import { ADMIN_EMAIL, isAdmin, login, logout, requireAdmin, requireSameOrigin } from "./auth";
 import { runSource } from "./source-runner";
@@ -392,17 +392,89 @@ router.post("/schedule", async (req, res) => {
   } catch (error) { return res.status(502).json({ error: error instanceof Error ? error.message : "The scan schedule could not be saved." }); }
 });
 
+const ANNOUNCEMENT_KINDS = ["interview", "event", "ad", "business", "news"] as const;
+type AnnouncementKind = typeof ANNOUNCEMENT_KINDS[number];
+function normalizeAnnouncement(body: any, old?: typeof announcements.$inferSelect) {
+  const title = textValue(body?.title, 300) ?? old?.title;
+  if (!title) throw new Error("A title is required.");
+  const kind: AnnouncementKind = ANNOUNCEMENT_KINDS.includes(body?.kind) ? body.kind : old?.kind ?? "news";
+  const status = body?.status === "published" ? "published" : body?.status === "draft" ? "draft" : old?.status ?? "draft";
+  const has = (key: string) => body && Object.prototype.hasOwnProperty.call(body, key);
+  const url = (key: string, label: string) => {
+    if (!has(key)) return null;
+    const raw = body[key];
+    if (typeof raw !== "string" || !raw.trim()) return "";
+    const safe = safeHttpUrl(raw);
+    if (!safe) throw new Error(`${label} must be a valid http(s) link.`);
+    return safe;
+  };
+  const asset = (key: string, label: string) => {
+    if (!has(key)) return null;
+    const raw = body[key];
+    if (typeof raw !== "string" || !raw.trim()) return "";
+    const safe = safeAssetUrl(raw);
+    if (!safe) throw new Error(`${label} is not a valid file location.`);
+    return safe;
+  };
+  const pick = (next: string | null, previous: string | null | undefined) => next === null ? previous ?? null : next || null;
+  const imageUrl = pick(asset("imageUrl", "The photo"), old?.imageUrl);
+  const pdfUrl = pick(asset("pdfUrl", "The PDF"), old?.pdfUrl);
+  const linkUrl = pick(url("linkUrl", "The link"), old?.linkUrl);
+  return {
+    title, kind, status,
+    body: has("body") ? textValue(body.body, 20000) : old?.body ?? null,
+    imageUrl,
+    imageCaption: imageUrl ? (has("imageCaption") ? textValue(body.imageCaption, 600) : old?.imageCaption ?? null) : null,
+    pdfUrl,
+    pdfName: pdfUrl ? (has("pdfName") ? textValue(body.pdfName, 240) : old?.pdfName ?? null) : null,
+    linkUrl,
+    linkLabel: linkUrl ? (has("linkLabel") ? textValue(body.linkLabel, 120) : old?.linkLabel ?? null) : null,
+    publishedAt: status === "published" ? (old?.publishedAt ?? now()) : null,
+  };
+}
+router.get("/announcements", async (_req, res) => {
+  const db = await getDb(); if (!db) return sendDbUnavailable(res);
+  return res.json({ announcements: await db.select().from(announcements).orderBy(desc(announcements.createdAt)).limit(500) });
+});
+router.post("/announcements", async (req, res) => {
+  const db = await getDb(); if (!db) return sendDbUnavailable(res);
+  try {
+    const input = normalizeAnnouncement(req.body);
+    const result = await db.insert(announcements).values(input);
+    const id = Number((result as any)?.[0]?.insertId ?? 0);
+    const [created] = await db.select().from(announcements).where(eq(announcements.id, id)).limit(1);
+    return res.status(201).json({ announcement: created });
+  } catch (error) { return res.status(400).json({ error: error instanceof Error ? error.message : "Announcement could not be saved." }); }
+});
+router.put("/announcements/:id", async (req, res) => {
+  const id = idParam(req); if (!id) return res.status(400).json({ error: "Invalid announcement id." });
+  const db = await getDb(); if (!db) return sendDbUnavailable(res);
+  const [old] = await db.select().from(announcements).where(eq(announcements.id, id)).limit(1);
+  if (!old) return res.status(404).json({ error: "Announcement not found." });
+  try {
+    await db.update(announcements).set(normalizeAnnouncement(req.body, old)).where(eq(announcements.id, id));
+    const [updated] = await db.select().from(announcements).where(eq(announcements.id, id)).limit(1);
+    return res.json({ announcement: updated });
+  } catch (error) { return res.status(400).json({ error: error instanceof Error ? error.message : "Announcement could not be updated." }); }
+});
+router.delete("/announcements/:id", async (req, res) => {
+  const id = idParam(req); if (!id) return res.status(400).json({ error: "Invalid announcement id." });
+  const db = await getDb(); if (!db) return sendDbUnavailable(res);
+  await db.delete(announcements).where(eq(announcements.id, id));
+  return res.json({ deleted: true });
+});
+
 router.post("/upload", async (req, res) => {
   const mime = String(req.body?.mimeType ?? "").toLowerCase();
   const encoded = typeof req.body?.base64 === "string" ? req.body.base64.replace(/^data:[^,]+,/, "") : "";
-  if (!new Set(["image/png", "image/jpeg", "image/webp"]).has(mime) || !encoded || encoded.length > 7_000_000) return res.status(400).json({ error: "Upload a PNG, JPEG or WebP image no larger than 5 MB." });
+  if (!new Set(["image/png", "image/jpeg", "image/webp", "application/pdf"]).has(mime) || !encoded || encoded.length > 7_000_000) return res.status(400).json({ error: "Upload a PNG, JPEG, WebP or PDF file no larger than 5 MB." });
   const bytes = Buffer.from(encoded, "base64");
-  if (bytes.length > 5 * 1024 * 1024) return res.status(400).json({ error: "Image exceeds the 5 MB upload limit." });
-  const signature = mime === "image/png" ? bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) : mime === "image/jpeg" ? bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff : bytes.subarray(0, 4).toString("ascii") === "RIFF" && bytes.subarray(8, 12).toString("ascii") === "WEBP";
-  if (!signature) return res.status(400).json({ error: "Image file content does not match its image type." });
+  if (bytes.length > 5 * 1024 * 1024) return res.status(400).json({ error: "File exceeds the 5 MB upload limit." });
+  const signature = mime === "application/pdf" ? bytes.subarray(0, 5).toString("ascii") === "%PDF-" : mime === "image/png" ? bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) : mime === "image/jpeg" ? bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff : bytes.subarray(0, 4).toString("ascii") === "RIFF" && bytes.subarray(8, 12).toString("ascii") === "WEBP";
+  if (!signature) return res.status(400).json({ error: "File content does not match its file type." });
   const apiUrl = process.env.MANUS_API_URL; const apiKey = process.env.MANUS_API_KEY;
   if (!apiUrl || !apiKey) return res.status(503).json({ error: "Image storage is not available in this environment." });
-  const suffix = mime === "image/png" ? "png" : mime === "image/jpeg" ? "jpg" : "webp";
+  const suffix = mime === "application/pdf" ? "pdf" : mime === "image/png" ? "png" : mime === "image/jpeg" ? "jpg" : "webp";
   const objectPath = `get-mchongo/uploads/${randomUUID()}.${suffix}`;
   try {
     const base = apiUrl.endsWith("/") ? apiUrl : `${apiUrl}/`;
