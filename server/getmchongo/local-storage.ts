@@ -47,6 +47,11 @@ export async function serveLocalStorage(req: Request, res: Response, next: NextF
   const key = String((req.params as Record<string, string>)[0] ?? "");
   const local = isLocalKey(key) ? await readLocalFile(key) : null;
   if (!local) return next();
-  res.set({ "Content-Type": local.contentType, "X-Content-Type-Options": "nosniff", "Cache-Control": "public, max-age=86400" });
+  res.set({
+    "Content-Type": local.contentType,
+    "Content-Disposition": local.contentType === "application/pdf" ? 'attachment; filename="announcement.pdf"' : "inline",
+    "X-Content-Type-Options": "nosniff",
+    "Cache-Control": "public, max-age=86400",
+  });
   res.send(local.bytes);
 }
