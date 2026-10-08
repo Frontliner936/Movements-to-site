@@ -266,7 +266,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .detail-section p { color: #586b61; font-size: 14px; line-height: 1.85; white-space: pre-line; margin: 10px 0; }
 .job-rich-text { color: #586b61; font-size: 14px; line-height: 1.85; }
 .job-rich-text p { margin: 10px 0; white-space: pre-line; }
-.job-rich-text ul, .job-rich-text ol { margin: 12px 0 16px; padding-left: 23px; }
+.job-rich-text ul, .job-rich-text ol { display: block; margin: 12px 0 16px; padding-left: 28px; list-style-position: outside; }
+.job-rich-text ul { list-style-type: disc !important; }
+.job-rich-text ol { list-style-type: decimal !important; }
 .job-rich-text li { padding-left: 3px; margin: 5px 0; }
 .job-rich-text li::marker { color: var(--gold-dark, #8b6a13); }
 .job-rich-text a { color: var(--green); text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }

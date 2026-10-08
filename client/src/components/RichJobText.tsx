@@ -40,10 +40,10 @@ function linkify(text: string, prefix: string): ReactNode[] {
 
 type Block = { kind: "paragraph"; lines: string[] } | { kind: "list"; ordered: boolean; items: string[] };
 
-function parseBlocks(text: string, forceList = false): Block[] {
+function parseBlocks(text: string, forceList: boolean | "ordered" = false): Block[] {
   if (forceList) {
     const items = text.replace(/\r\n?/g, "\n").split("\n").map(line => line.trim().replace(bulletPrefix, "").trim()).filter(Boolean);
-    return items.length ? [{ kind: "list", ordered: false, items }] : [];
+    return items.length ? [{ kind: "list", ordered: forceList === "ordered", items }] : [];
   }
   const blocks: Block[] = [];
   let paragraph: string[] = [];
@@ -77,7 +77,7 @@ function parseBlocks(text: string, forceList = false): Block[] {
   return blocks;
 }
 
-export default function RichJobText({ text, className = "", forceList = false }: { text: string; className?: string; forceList?: boolean }) {
+export default function RichJobText({ text, className = "", forceList = false }: { text: string; className?: string; forceList?: boolean | "ordered" }) {
   const blocks = parseBlocks(text, forceList);
   if (!blocks.length) return null;
   return <div className={`job-rich-text ${className}`.trim()}>

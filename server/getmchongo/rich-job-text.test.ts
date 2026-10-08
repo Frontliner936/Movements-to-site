@@ -31,4 +31,13 @@ describe("RichJobText", () => {
     expect(html).toContain("<li>Visit project sites weekly</li>");
     expect(html).toContain("<li>Prepare monthly reports</li>");
   });
+
+  it("renders responsibility and requirement lines as numbered list items when requested", () => {
+    const html = renderToStaticMarkup(React.createElement(RichJobText, {
+      text: "• Coordinate site visits\n• Hold a relevant diploma", forceList: "ordered",
+    }));
+    expect(html).toContain("<ol>");
+    expect(html).toContain("<li>Coordinate site visits</li>");
+    expect(html).toContain("<li>Hold a relevant diploma</li>");
+  });
 });
