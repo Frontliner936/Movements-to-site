@@ -688,3 +688,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .home-announcement-content h3 { font-size:20px; }
   .hero-photo-secondary { width:125px; height:102px; right:8px; bottom:14px; }
 }
+
+
+/* Updated brand mark */
+.brand-mark { overflow: visible; }
+.brand-wordmark { letter-spacing: -.035em; }
