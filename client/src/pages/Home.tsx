@@ -4,10 +4,11 @@ import { Brand } from "@/components/Brand";
 import { EmptyBoardIllustration } from "@/components/EditorialVisuals";
 import { JobCard } from "@/components/JobCard";
 import { SiteFooter } from "@/components/SiteFooter";
-import { api, type Job } from "@/lib/api";
+import { announcementKinds, api, type Announcement, type Job } from "@/lib/api";
 
 export default function Home() {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
   const [query, setQuery] = useState("");
@@ -16,6 +17,14 @@ export default function Home() {
   const [view, setView] = useState<"all" | "saved">("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+    api<{ announcements: Announcement[] }>("/api/gm/announcements")
+      .then(data => { if (alive) setAnnouncements(data.announcements.filter(item => item.status === "published").slice(0, 3)); })
+      .catch(() => { if (alive) setAnnouncements([]); });
+    return () => { alive = false; };
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -52,6 +61,10 @@ export default function Home() {
           <figure className="hero-art hero-photo-card">
             <img src="/manus-storage/async-images/oAV3nT3943jAZnR9rKeyaQ/image-1.webp" alt="Young professionals sharing ideas around a laptop in a bright contemporary workspace." />
             <div className="hero-photo-shade" aria-hidden="true" />
+            <div className="hero-photo-secondary">
+              <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=700&q=85" alt="Colleagues collaborating at a bright workplace." loading="eager" />
+              <span>MOVE WITH PURPOSE</span>
+            </div>
             <div className="hero-photo-orbit" aria-hidden="true" />
             <div className="hero-photo-sun" aria-hidden="true" />
             <div className="hero-photo-topline"><span className="hero-photo-live" /> MADE FOR TANZANIA</div>
@@ -60,6 +73,30 @@ export default function Home() {
             <figcaption className="hero-photo-caption">YOUR NEXT CHAPTER <ArrowRight size={13} /></figcaption>
           </figure>
         </section>
+
+        {announcements.length > 0 && (
+          <section className="home-announcements" aria-labelledby="home-announcements-title">
+            <div className="home-announcements-heading">
+              <div>
+                <span className="eyebrow muted-eyebrow">STAY IN THE KNOW</span>
+                <h2 id="home-announcements-title">Latest <em>announcements.</em></h2>
+              </div>
+              <a className="text-link" href="/announcements">View more <ArrowRight size={15} /></a>
+            </div>
+            <div className="home-announcements-grid">
+              {announcements.map(item => (
+                <article className="home-announcement-card" key={item.id}>
+                  {item.imageUrl ? <img src={item.imageUrl} alt={item.imageCaption || item.title} loading="lazy" /> : <div className="home-announcement-icon"><Sparkles size={20} /></div>}
+                  <div className="home-announcement-content">
+                    <div className="announcement-meta"><span className="announcement-kind">{announcementKinds.find(kind => kind.value === item.kind)?.label ?? "News"}</span><time dateTime={item.publishedAt ?? item.createdAt}>{new Date(item.publishedAt ?? item.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short" })}</time></div>
+                    <h3>{item.title}</h3>
+                    {item.body && <p>{item.body}</p>}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="opportunity-photo-strip" aria-label="Career and workplace photography">
           <div className="photo-strip-intro">
