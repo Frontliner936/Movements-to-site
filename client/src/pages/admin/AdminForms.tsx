@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ArrowUpRight, ImagePlus, LoaderCircle, Upload } from "lucide-react";
 import { api, jsonBody, type Company, type Job } from "@/lib/api";
+import { formatJobBulletItems } from "@/lib/jobFormatting";
 
 export type JobDraft = {
   title: string; companyId: string; companyName: string; category: string; location: string; deadline: string;
@@ -44,7 +45,7 @@ export function JobEditor({ initial, companies, showVisibility = true, submitLab
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const update = (key: keyof JobDraft, value: string) => setForm(current => ({ ...current, [key]: value }));
-  async function submit(event: React.FormEvent) { event.preventDefault(); setSaving(true); setError(""); try { await onSave(form); } catch (reason) { setError(reason instanceof Error ? reason.message : "Listing could not be saved."); } finally { setSaving(false); } }
+  async function submit(event: React.FormEvent) { event.preventDefault(); setSaving(true); setError(""); try { await onSave({ ...form, responsibilities: formatJobBulletItems(form.responsibilities), qualifications: formatJobBulletItems(form.qualifications) }); } catch (reason) { setError(reason instanceof Error ? reason.message : "Listing could not be saved."); } finally { setSaving(false); } }
   return <form className="admin-form editor-form" onSubmit={event => void submit(event)}>
     <div className="form-section-heading"><span className="eyebrow muted-eyebrow">LISTING DETAILS</span><strong>{initial?.id ? "Edit opportunity" : "New opportunity"}</strong></div>
     <label>Job title <span className="required-star">*</span><input value={form.title} onChange={event => update("title", event.target.value)} required maxLength={300} /></label>
@@ -52,7 +53,7 @@ export function JobEditor({ initial, companies, showVisibility = true, submitLab
     <div className="form-grid-two"><label>About the company / institution<textarea rows={3} value={form.companyDescription} onChange={event => update("companyDescription", event.target.value)} /></label><label>Company website<input type="url" value={form.companyWebsiteUrl} onChange={event => update("companyWebsiteUrl", event.target.value)} placeholder="https://…" /></label></div>
     <div className="form-grid-three"><label>Category<input value={form.category} onChange={event => update("category", event.target.value)} placeholder="e.g. Technology" maxLength={120} /></label><label>Location<input value={form.location} onChange={event => update("location", event.target.value)} placeholder="As listed" maxLength={240} /></label><label>Deadline<input value={form.deadline} onChange={event => update("deadline", event.target.value)} placeholder="e.g. 30 June 2026" maxLength={240} /></label></div>
     <label>Description<textarea rows={5} value={form.description} onChange={event => update("description", event.target.value)} placeholder="Only include information confirmed by the original listing." /></label>
-    <div className="form-grid-two"><label>Responsibilities<textarea rows={4} value={form.responsibilities} onChange={event => update("responsibilities", event.target.value)} /></label><label>Qualifications / requirements<textarea rows={4} value={form.qualifications} onChange={event => update("qualifications", event.target.value)} /></label></div>
+    <div className="form-grid-two"><label>Responsibilities<textarea rows={4} value={form.responsibilities} onChange={event => update("responsibilities", event.target.value)} placeholder="Enter one responsibility per line." /><small className="field-help">Each non-empty line will be saved as a bullet.</small></label><label>Qualifications / requirements<textarea rows={4} value={form.qualifications} onChange={event => update("qualifications", event.target.value)} placeholder="Enter one qualification per line." /><small className="field-help">Each non-empty line will be saved as a bullet.</small></label></div>
     <label>How to apply<textarea rows={3} value={form.howToApply} onChange={event => update("howToApply", event.target.value)} /></label>
     <div className="form-grid-two"><label>Original application link<input type="url" value={form.applicationUrl} onChange={event => update("applicationUrl", event.target.value)} placeholder="https://…" /></label><label>Original source page<input type="url" value={form.sourceUrl} onChange={event => update("sourceUrl", event.target.value)} placeholder="https://…" /></label></div>
     <ImagePicker label="Company logo" value={form.companyLogoUrl} onChange={value => update("companyLogoUrl", value)} />

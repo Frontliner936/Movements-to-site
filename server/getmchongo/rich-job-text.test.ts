@@ -22,4 +22,13 @@ describe("RichJobText", () => {
     expect(html).toContain('href="https://example.org/apply"');
     expect(html).not.toContain('href="https://example.org/apply."');
   });
+
+  it("renders plain legacy responsibility lines as bullets when forceList is enabled", () => {
+    const html = renderToStaticMarkup(React.createElement(RichJobText, {
+      text: "Visit project sites weekly\nPrepare monthly reports", forceList: true,
+    }));
+    expect(html).toContain("<ul>");
+    expect(html).toContain("<li>Visit project sites weekly</li>");
+    expect(html).toContain("<li>Prepare monthly reports</li>");
+  });
 });
