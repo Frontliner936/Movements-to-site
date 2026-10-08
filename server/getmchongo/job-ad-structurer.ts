@@ -88,6 +88,45 @@ function parseJson(text: string): unknown {
   }
 }
 
+
+async function invokeOpenAIForJobAd(params: {
+  messages: Array<{ role: "system" | "user"; content: MessageContent | MessageContent[] }>;
+  responseFormat?: typeof responseFormat;
+  document?: { url: string; mimeType: "application/pdf" | "image/jpeg" };
+}): Promise<string> {
+  const system = params.messages.find(message => message.role === "system")?.content;
+  const user = params.messages.find(message => message.role === "user")?.content;
+  const inputContent: Array<Record<string, unknown>> = [];
+  if (Array.isArray(user)) {
+    for (const part of user) {
+      if (part.type === "text") inputContent.push({ type: "input_text", text: part.text });
+      else if (part.type === "image_url") inputContent.push({ type: "input_image", image_url: part.image_url.url, detail: part.image_url.detail ?? "high" });
+      else if (part.type === "file_url") inputContent.push({ type: "input_file", file_url: part.file_url.url });
+    }
+  } else if (typeof user === "string") inputContent.push({ type: "input_text", text: user });
+  const payload = {
+    model: "gpt-4.1-mini",
+    input: [
+      { role: "system", content: typeof system === "string" ? system : "" },
+      { role: "user", content: inputContent },
+    ],
+    max_output_tokens: 8000,
+    text: params.responseFormat ? { format: { type: "json_schema", name: params.responseFormat.json_schema.name, strict: true, schema: params.responseFormat.json_schema.schema } } : undefined,
+  };
+  const response = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    headers: { "content-type": "application/json", authorization: `Bearer ${process.env.OPENAI_API_KEY}` },
+    body: JSON.stringify(payload),
+    signal: AbortSignal.timeout(90_000),
+  });
+  if (!response.ok) throw new Error(`OpenAI request failed: ${response.status} ${response.statusText} — ${await response.text()}`);
+  const data = await response.json() as { output_text?: string; output?: Array<{ content?: Array<{ type?: string; text?: string }> }> };
+  if (typeof data.output_text === "string" && data.output_text.trim()) return data.output_text.trim();
+  const text = data.output?.flatMap(item => item.content ?? []).filter(part => part.type === "output_text").map(part => part.text ?? "").join("\n").trim() ?? "";
+  if (!text) throw new Error("OpenAI returned no structured content.");
+  return text;
+}
+
 export async function structureJobAd(options: {
   sourceText: string;
   outputLanguage: OutputLanguage;
@@ -116,11 +155,15 @@ export async function structureJobAd(options: {
       { role: "user" as const, content: userParts },
     ],
   };
-  const first = await invokeLLM({ ...baseRequest, response_format: responseFormat });
-  let text = completionText(first.choices?.[0]?.message?.content);
+  const first = process.env.OPENAI_API_KEY
+    ? await invokeOpenAIForJobAd({ ...baseRequest, responseFormat, document: options.document })
+    : await invokeLLM({ ...baseRequest, response_format: responseFormat });
+  let text = typeof first === "string" ? first : completionText(first.choices?.[0]?.message?.content);
   if (!text) {
-    const retry = await invokeLLM(baseRequest);
-    text = completionText(retry.choices?.[0]?.message?.content);
+    const retry = process.env.OPENAI_API_KEY
+      ? await invokeOpenAIForJobAd({ ...baseRequest, document: options.document })
+      : await invokeLLM(baseRequest);
+    text = typeof retry === "string" ? retry : completionText(retry.choices?.[0]?.message?.content);
   }
   if (!text) throw new Error("The assistant returned no structured content.");
   return normalizeStructuredJobAd(parseJson(text), options.outputLanguage);
