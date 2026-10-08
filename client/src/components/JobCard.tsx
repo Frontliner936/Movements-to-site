@@ -45,7 +45,7 @@ export function JobCard({ job, onChanged }: { job: Job; onChanged: () => void })
         {postedAt && postedLabel && <time className="posted-time" dateTime={postedAt}><Clock3 size={13} />{postedLabel}</time>}
         <span>{job.location && <><MapPin size={14} />{job.location}</>}</span>
         {job.deadline && <span className="deadline-chip">Closes {job.deadline}</span>}
-        <Link href={`/jobs/${job.id}`} className="text-link">View details <ArrowUpRight size={14} /></Link>
+        <Link href={`/jobs/${job.id}`} className="view-more-button">View more <ArrowUpRight size={14} /></Link>
       </div>
       <span className="sr-only" aria-live="polite">{notice}</span>
       <span className="reaction-counts" aria-label={`${job.likeCount} likes and ${job.saveCount} saves`}>{job.likeCount} liked · {job.saveCount} saved</span>

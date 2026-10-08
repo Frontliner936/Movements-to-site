@@ -219,6 +219,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .posted-time { color: var(--green-dark); font-weight: 700; }
 .job-card-footer .posted-time { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; white-space: nowrap; }
 .job-card-footer > span { display: inline-flex; align-items: center; gap: 5px; }
+.job-card-footer .view-more-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 34px; margin-left: auto; padding: 0 13px; color: #fff; background: var(--green-dark); border: 1px solid var(--green-dark); border-radius: 6px; font-size: 11px; font-weight: 700; text-decoration: none; transition: background .16s ease, border-color .16s ease, transform .16s ease; }
+.job-card-footer .view-more-button:hover, .job-card-footer .view-more-button:focus-visible { color: #fff; background: #083a2d; border-color: #083a2d; transform: translateY(-1px); }
 .deadline-chip { background: #fff4d8; color: #8c6c29; padding: 5px 8px; border-radius: 50px; }
 .text-link { display: inline-flex; gap: 7px; align-items: center; color: var(--green); font-size: 11px; font-weight: 700; border: 0; background: transparent; padding: 0; cursor: pointer; transition: gap .18s ease; }
 .text-link:hover { gap: 11px; }
@@ -539,6 +541,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .footer-contact-title { color: #f2c96d; font-size: 8px; font-weight: 700; letter-spacing: .15em; text-transform: uppercase; margin-bottom: 1px; }
 .footer-contact a { display: inline-flex; align-items: center; gap: 7px; color: #d7e2d9; }
 .footer-contact a:hover { color: #f2c96d; }
+.footer-useful-links { display: flex; flex-direction: column; gap: 8px; min-width: 270px; }
+.footer-useful-links-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.footer-useful-link { min-height: 32px; display: inline-flex; align-items: center; justify-content: center; padding: 5px 8px; border: 1px solid rgba(215, 226, 217, .28); border-radius: 5px; color: #d7e2d9; background: rgba(255, 255, 255, .04); font-size: 9px; line-height: 1.25; text-align: center; text-decoration: none; transition: color .16s ease, background .16s ease, border-color .16s ease; }
+.footer-useful-link:hover, .footer-useful-link:focus-visible { color: #f2c96d; background: rgba(255, 255, 255, .09); border-color: #f2c96d; }
 .site-footer .footer-links { margin-left: 0; gap: 14px; flex-wrap: wrap; }
 .site-footer .footer-year { margin-left: 0; white-space: nowrap; }
 .submission-page { width: calc(100% - 48px); max-width: 960px; margin: 0 auto; padding: 34px 0 88px; flex: 1; }
@@ -570,8 +576,9 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .submission-honeypot { position: absolute; top: -10000px; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 @media (max-width: 760px) {
   .site-footer { display: grid; grid-template-columns: 1fr; gap: 15px; padding: 22px 18px; }
-  .footer-brand-copy, .footer-contact, .site-footer .footer-links, .site-footer .footer-year { grid-column: 1; }
+  .footer-brand-copy, .footer-contact, .footer-useful-links, .site-footer .footer-links, .site-footer .footer-year { grid-column: 1; }
   .footer-contact { margin-left: 0; }
+  .footer-useful-links { min-width: 0; }
   .site-footer .footer-links { gap: 14px; }
   .site-footer .footer-year { justify-self: start; }
   .header-actions { gap: 10px; }
