@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
 import { companies, jobs } from "../../drizzle/schema";
+import { readLocalFile } from "./local-storage";
 import { getDb } from "../db";
 
 type ShareJob = Pick<typeof jobs.$inferSelect,
@@ -287,6 +288,8 @@ async function readBoundedBody(response: globalThis.Response): Promise<Buffer> {
 }
 
 async function downloadStoredImage(key: string): Promise<Buffer> {
+  const local = await readLocalFile(key);
+  if (local && ["image/jpeg", "image/png", "image/webp"].includes(local.contentType)) return local.bytes;
   const base = process.env.MANUS_API_URL;
   const apiKey = process.env.MANUS_API_KEY;
   if (!base || !apiKey) throw new Error("Image service is not configured.");
