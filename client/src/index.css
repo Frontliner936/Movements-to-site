@@ -216,7 +216,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .job-company-link:hover { color: var(--green); text-decoration: underline; text-underline-offset: 3px; }
 .job-description-preview { font-size: 12px; line-height: 1.65; color: #758078; margin: 7px 0 13px; max-width: none; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .job-card-footer { display: flex; flex-wrap: wrap; gap: 9px 17px; align-items: center; color: #737d75; font-size: 10px; min-height: 22px; margin-top: auto; }
-.posted-time { display: inline-flex; align-items: center; gap: 5px; color: #727d75; font-size: 10px; white-space: nowrap; }
+.posted-time { color: var(--green-dark); font-weight: 700; }
+.job-card-footer .posted-time { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; white-space: nowrap; }
 .job-card-footer > span { display: inline-flex; align-items: center; gap: 5px; }
 .deadline-chip { background: #fff4d8; color: #8c6c29; padding: 5px 8px; border-radius: 50px; }
 .text-link { display: inline-flex; gap: 7px; align-items: center; color: var(--green); font-size: 11px; font-weight: 700; border: 0; background: transparent; padding: 0; cursor: pointer; transition: gap .18s ease; }
