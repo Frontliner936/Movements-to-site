@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { detectTranslationSource, normalizeStructuredJobAd, safeExtractedHttpUrl, structureJobAd } from "./job-ad-structurer";
+import { detectTranslationSource, normalizeStructuredJobAd, parseTesseractTsv, planFieldTranslations, safeExtractedHttpUrl, structureJobAd } from "./job-ad-structurer";
 
 describe("job-ad extraction normalization", () => {
   it("keeps only safe HTTP(S) URLs and rejects credentials or script schemes", () => {
@@ -33,7 +33,7 @@ describe("job-ad extraction normalization", () => {
         "Location: Arusha",
         "Deadline: 30 November 2026",
         "",
-        "Job Description:",
+        "Description:",
         "Support community health programs and coordinate with local partners.",
         "",
         "Responsibilities:",
@@ -61,6 +61,56 @@ describe("job-ad extraction normalization", () => {
     expect(result.fields.howToApply).toContain("+255 712 345 678");
     expect(result.fields.applicationUrl).toBe("https://example.org/apply");
     expect(result.reviewNotes.some(note => note.includes("without OpenAI"))).toBe(true);
+  });
+
+  it("keeps poster benefits and decorative headings out of responsibilities and qualifications", async () => {
+    const result = await structureJobAd({
+      outputLanguage: "source",
+      sourceText: [
+        "JOB VACANCY", "MARKETING OFFICER", "Company: Example Foundation", "",
+        "Responsibilities:", "• ¢ Plan campaigns", "• Prepare weekly reports", "BENEFITS", "Medical cover provided", "",
+        "Qualifications and Requirements:", "• Diploma in marketing", "• Three years of relevant experience", "Equal Opportunity Employer",
+      ].join("\n"),
+    });
+    expect(result.fields.title).toBe("MARKETING OFFICER");
+    expect(result.fields.responsibilities).toBe("• Plan campaigns\n• Prepare weekly reports");
+    expect(result.fields.qualifications).toBe("• Diploma in marketing\n• Three years of relevant experience");
+    expect(result.fields.responsibilities).not.toContain("Medical cover");
+    expect(result.fields.description).toBe("");
+  });
+
+  it("drops very low-confidence OCR words while retaining readable lines", () => {
+    const header = "level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext";
+    const word = (line: number, index: number, confidence: number, text: string) => ["5", "1", "1", "1", String(line), String(index), "0", "0", "10", "10", String(confidence), text].join("\t");
+    const result = parseTesseractTsv([header, word(1, 1, 87, "Position"), word(1, 2, 75, "Officer"), word(1, 3, 91, "¢"), word(2, 1, 9, "random"), word(3, 1, 91, "Qualifications")].join("\n"));
+    expect(result.text).toBe("Position Officer\nQualifications");
+    expect(result.wordCount).toBe(3);
+    expect(result.droppedWordCount).toBe(1);
+  });
+
+  it("plans translation by field so already-correct English is not translated with Swahili text", () => {
+    const fields = normalizeStructuredJobAd({
+      title: "Meneja wa Masoko",
+      description: "The position requires several years of experience in marketing and management.",
+      responsibilities: "kuratibu miradi na kusimamia shughuli katika jamii",
+      qualifications: "The applicant must have a degree and relevant experience.",
+    }).fields;
+    const plan = planFieldTranslations(fields, "en");
+    expect(plan.translate.map(({ key, source }) => ({ key, source }))).toEqual([
+      { key: "title", source: "sw" },
+      { key: "responsibilities", source: "sw" },
+    ]);
+    expect(plan.uncertain).toEqual([]);
+  });
+
+  it("translates only non-target lines inside a bilingual section", () => {
+    const fields = normalizeStructuredJobAd({
+      responsibilities: "The applicant will coordinate weekly reports with the team and document outcomes.\nWajibu wa mwombaji ni kusimamia miradi na kuandaa ripoti za kila wiki.",
+    }).fields;
+    const plan = planFieldTranslations(fields, "en");
+    expect(plan.translate).toHaveLength(1);
+    expect(plan.translate[0]).toMatchObject({ key: "responsibilities", source: "sw", lineIndex: 1 });
+    expect(plan.translate[0]?.text).toContain("Wajibu wa mwombaji");
   });
 
   it("detects supported source-language direction conservatively", () => {
