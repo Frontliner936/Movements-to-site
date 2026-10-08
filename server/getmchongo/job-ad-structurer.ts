@@ -106,7 +106,7 @@ export async function structureJobAd(options: {
     userParts.push({ type: "image_url", image_url: { url: options.document.url, detail: "high" } });
   }
   const baseRequest = {
-    model: "gemini-3-flash-preview",
+    model: process.env.OPENAI_API_KEY ? "gpt-4.1-mini" : "gemini-3-flash-preview",
     maxTokens: 8000,
     messages: [
       {
