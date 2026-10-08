@@ -48,6 +48,22 @@ export function getPublicSiteOrigin(): string | null {
   }
 }
 
+export function getRequestPublicOrigin(req: Request): string | null {
+  const configured = getPublicSiteOrigin();
+  if (configured) return configured;
+  const firstHeaderValue = (value: string | undefined) => value?.split(",", 1)[0]?.trim();
+  const protocol = (firstHeaderValue(req.get("x-forwarded-proto")) || req.protocol).toLowerCase();
+  const host = firstHeaderValue(req.get("x-forwarded-host")) || firstHeaderValue(req.get("host"));
+  if (protocol !== "https" || !host || host.length > 255 || /[\s/@\\?#]/.test(host)) return null;
+  try {
+    const parsed = new URL(`https://${host}`);
+    if (parsed.username || parsed.password || parsed.pathname !== "/" || parsed.search || parsed.hash) return null;
+    return parsed.origin;
+  } catch {
+    return null;
+  }
+}
+
 function plainText(value: string | null | undefined): string {
   return String(value ?? "")
     .replace(/<script\b[\s\S]*?<\/script>/gi, " ")
@@ -131,14 +147,15 @@ export function buildJobShareMetadata(job: ShareJob, company: ShareCompany, orig
   const title = `${roleAndCompany} | Get Mchongo`;
   const description = (plainText(job.description) || plainText(job.responsibilities) ||
     plainText(job.qualifications) || plainText(job.howToApply) || roleAndCompany).slice(0, 240);
-  const selectedImage = job.imageUrl || job.companyLogoUrl || company?.logoUrl || null;
+  const selectedImage = job.companyLogoUrl || company?.logoUrl || job.imageUrl || null;
   const sourceImageUrl = safeAbsoluteUrl(selectedImage, origin);
   const objectKey = storageObjectKey(selectedImage, origin);
   const shareMillis = Math.max(updatedMillis(job.updatedAt), company ? updatedMillis(company.updatedAt) : 0);
   const shareVersion = selectedImage ? String(shareMillis) : null;
-  const usesGeneratedCard = !!(objectKey && origin);
+  const usesGeneratedCard = !!objectKey;
+  const generatedImagePath = `/og/jobs/${job.id}.jpg?v=${shareMillis}`;
   const imageUrl = usesGeneratedCard
-    ? new URL(`/og/jobs/${job.id}.jpg?v=${shareMillis}`, origin!).href
+    ? origin ? new URL(generatedImagePath, origin).href : generatedImagePath
     : sourceImageUrl;
   const canonicalUrl = origin ? new URL(`/jobs/${job.id}`, origin).href : null;
   return {
@@ -291,8 +308,8 @@ export function registerJobShareMetadata(app: Express): void {
         .leftJoin(companies, eq(jobs.companyId, companies.id))
         .where(and(eq(jobs.id, id), eq(jobs.status, "published"))).limit(1);
       if (!row) return sendImageNotFound(res);
-      const origin = getPublicSiteOrigin();
-      const selected = row.job.imageUrl || row.company?.logoUrl || null;
+      const origin = getRequestPublicOrigin(req);
+      const selected = row.job.companyLogoUrl || row.company?.logoUrl || row.job.imageUrl || null;
       const key = storageObjectKey(selected, origin);
       if (!key) return sendImageNotFound(res);
       const version = Math.max(updatedMillis(row.job.updatedAt), row.company ? updatedMillis(row.company.updatedAt) : 0);
@@ -342,7 +359,7 @@ export function registerJobShareMetadata(app: Express): void {
         const vite = req.app.locals.webdevVite as { transformIndexHtml?: (url: string, content: string) => Promise<string> } | undefined;
         if (vite?.transformIndexHtml) html = await vite.transformIndexHtml(req.originalUrl, html);
       }
-      const origin = getPublicSiteOrigin();
+      const origin = getRequestPublicOrigin(req);
       const requestedVersion = typeof req.query.share === "string" ? req.query.share : null;
       html = renderJobShareHtml(html, row.job, row.company, origin, requestedVersion);
       res.set({ "Cache-Control": "no-cache", "Content-Type": "text/html; charset=utf-8" }).status(200).send(html);

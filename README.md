@@ -20,7 +20,7 @@ Get Mchongo is a React / Express / Drizzle job and opportunity site with a MySQL
    - `ADMIN_PASSWORD` — a strong private password for `/admin/login` (the admin email is `frontlinertech@gmail.com`).
    - `OPENAI_API_KEY` — your provider key, kept server-side as a Railway secret. Without this, public browsing/admin/uploads still work, but AI structuring/translation will return a clear configuration error.
    - `DATABASE_URL` — the existing MySQL connection string.
-   - Optional: `OPENAI_MODEL` (default `gpt-4o-mini`), `OPENAI_API_BASE` (defaults to `https://api.openai.com/v1`), and `PUBLIC_SITE_ORIGIN` (your public HTTPS domain).
+   - Optional: `OPENAI_MODEL` (default `gpt-4o-mini`), `OPENAI_API_BASE` (defaults to `https://api.openai.com/v1`), and `PUBLIC_SITE_ORIGIN` (recommended: your public HTTPS domain for stable job-share previews; Railway HTTPS forwarded headers are used if it is unset).
 5. Review Railway's staged variable changes and deploy them. Check `https://<your-domain>/api/health`, then verify the public site and log into the admin dashboard. Upload a test logo or announcement image, redeploy once, and confirm it still loads.
 6. Scheduled source collection now runs within the app process using the existing admin schedule (East Africa Time). Leave one web-service replica running so a schedule slot is not processed by multiple app replicas. No Railway Cron service or Manus Heartbeat credentials are needed.
 

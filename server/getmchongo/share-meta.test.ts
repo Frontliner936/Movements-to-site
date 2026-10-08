@@ -1,10 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import sharp from "sharp";
-import { buildJobShareMetadata, makeShareCardImage, renderJobShareHtml, SHARE_IMAGE_HEIGHT, SHARE_IMAGE_WIDTH } from "./share-meta";
+import { buildJobShareMetadata, getRequestPublicOrigin, makeShareCardImage, renderJobShareHtml, SHARE_IMAGE_HEIGHT, SHARE_IMAGE_WIDTH } from "./share-meta";
 import type { companies, jobs } from "../../drizzle/schema";
 
 type TestJob = Pick<typeof jobs.$inferSelect,
-  "id" | "title" | "companyName" | "location" | "deadline" | "description" |
+  "id" | "title" | "companyName" | "companyLogoUrl" | "location" | "deadline" | "description" |
   "responsibilities" | "qualifications" | "howToApply" | "applicationUrl" | "sourceUrl" | "imageUrl" | "updatedAt">;
 type TestCompany = Pick<typeof companies.$inferSelect, "name" | "description" | "logoUrl" | "updatedAt"> | null;
 
@@ -12,6 +12,7 @@ const sampleJob: TestJob = {
   id: 42,
   title: "Programme Officer",
   companyName: "Tanzania Research Foundation",
+  companyLogoUrl: "/manus-storage/companies/trf-job-logo.webp",
   location: "Dar es Salaam",
   deadline: "31 October 2026",
   description: "Lead a community programme and support local partners.",
@@ -33,6 +34,8 @@ const sampleCompany: TestCompany = {
 const template = `<!doctype html><html lang="en"><head><meta name="description" content="Generic description"><meta property="og:type" content="website"><meta property="og:title" content="Get Mchongo"><meta property="og:description" content="Generic description"><title>Get Mchongo</title></head><body><div id="root"></div></body></html>`;
 const origin = "https://getmchongo.example";
 
+afterEach(() => vi.unstubAllEnvs());
+
 function shareVersion() {
   return String(Math.max(sampleJob.updatedAt.getTime(), sampleCompany!.updatedAt.getTime()));
 }
@@ -42,7 +45,7 @@ describe("job-specific share metadata", () => {
     const meta = buildJobShareMetadata(sampleJob, sampleCompany, origin);
     expect(meta.title).toBe("Programme Officer — Tanzania Research Foundation | Get Mchongo");
     expect(meta.description).toBe("Lead a community programme and support local partners.");
-    expect(meta.sourceImageUrl).toBe(`${origin}/manus-storage/jobs/programme-officer.webp`);
+    expect(meta.sourceImageUrl).toBe(`${origin}/manus-storage/companies/trf-job-logo.webp`);
     expect(meta.imageUrl).toBe(`${origin}/og/jobs/42.jpg?v=${shareVersion()}`);
     expect(meta.imageWidth).toBe(SHARE_IMAGE_WIDTH);
     expect(meta.imageHeight).toBe(SHARE_IMAGE_HEIGHT);
@@ -50,8 +53,8 @@ describe("job-specific share metadata", () => {
     expect(meta.canonicalUrl).toBe(`${origin}/jobs/42`);
   });
 
-  it("uses the company logo when no listing image was supplied", () => {
-    const meta = buildJobShareMetadata({ ...sampleJob, imageUrl: null }, sampleCompany, origin);
+  it("falls back to the company profile logo when the job has no logo or listing image", () => {
+    const meta = buildJobShareMetadata({ ...sampleJob, companyLogoUrl: null, imageUrl: null }, sampleCompany, origin);
     expect(meta.sourceImageUrl).toBe(`${origin}/manus-storage/companies/trf-logo.webp`);
     expect(meta.imageUrl).toBe(`${origin}/og/jobs/42.jpg?v=${shareVersion()}`);
   });
@@ -61,6 +64,7 @@ describe("job-specific share metadata", () => {
     const html = renderJobShareHtml(template, { ...sampleJob, title: "Analyst <Lead> & Researcher" }, sampleCompany, origin, version);
     expect(html).toContain("<title>Analyst &lt;Lead&gt; &amp; Researcher — Tanzania Research Foundation | Get Mchongo</title>");
     expect(html).toContain('property="og:title" content="Analyst &lt;Lead&gt; &amp; Researcher — Tanzania Research Foundation | Get Mchongo"');
+    expect(html).toContain("<h1>Analyst &lt;Lead&gt; &amp; Researcher</h1><p>Tanzania Research Foundation</p>");
     expect(html).toContain(`property="og:image" content="${origin}/og/jobs/42.jpg?v=${version}"`);
     expect(html).toContain('property="og:image:type" content="image/jpeg"');
     expect(html).toContain('property="og:image:width" content="1200"');
@@ -74,17 +78,17 @@ describe("job-specific share metadata", () => {
     expect(html).toContain('property="og:site_name" content="Get Mchongo"');
   });
 
-  it("does not invent an absolute image or canonical origin when none is configured", () => {
+  it("keeps a versioned relative share-card path when no public origin is configured", () => {
     const meta = buildJobShareMetadata(sampleJob, sampleCompany, null);
-    expect(meta.imageUrl).toBeNull();
+    expect(meta.imageUrl).toBe(`/og/jobs/42.jpg?v=${shareVersion()}`);
     expect(meta.canonicalUrl).toBeNull();
     const html = renderJobShareHtml(template, sampleJob, sampleCompany, null, shareVersion());
     expect(html).not.toContain('property="og:url"');
-    expect(html).not.toContain('property="og:image"');
+    expect(html).toContain(`property="og:image" content="/og/jobs/42.jpg?v=${shareVersion()}"`);
   });
 
   it("keeps direct external image URLs direct and does not invent their dimensions", () => {
-    const directJob = { ...sampleJob, imageUrl: "https://images.example.org/role.webp" };
+    const directJob = { ...sampleJob, companyLogoUrl: null, imageUrl: "https://images.example.org/role.webp" };
     const meta = buildJobShareMetadata(directJob, null, origin);
     expect(meta.imageUrl).toBe("https://images.example.org/role.webp");
     expect(meta.imageWidth).toBeNull();
@@ -92,12 +96,33 @@ describe("job-specific share metadata", () => {
   });
 
   it("rejects non-HTTPS image and application URLs in share HTML", () => {
-    const httpJob = { ...sampleJob, imageUrl: "http://insecure.example/cover.jpg", applicationUrl: "javascript:alert(1)" };
+    const httpJob = { ...sampleJob, companyLogoUrl: null, imageUrl: "http://insecure.example/cover.jpg", applicationUrl: "javascript:alert(1)" };
     const meta = buildJobShareMetadata(httpJob, null, null);
     expect(meta.imageUrl).toBeNull();
     const html = renderJobShareHtml(template, httpJob, null, null);
     expect(html).not.toContain("http://insecure.example/cover.jpg");
     expect(html).not.toContain("javascript:alert");
+  });
+
+  it("derives the public HTTPS origin from Railway forwarded headers", () => {
+    vi.stubEnv("PUBLIC_SITE_ORIGIN", "");
+    const headers: Record<string, string> = {
+      "x-forwarded-proto": "https, http",
+      "x-forwarded-host": "getmchongo.example, internal.railway",
+      host: "internal.railway",
+    };
+    const request = { protocol: "http", get: (name: string) => headers[name.toLowerCase()] } as never;
+    expect(getRequestPublicOrigin(request)).toBe(origin);
+  });
+
+  it("rejects non-HTTPS and malformed forwarded origins", () => {
+    vi.stubEnv("PUBLIC_SITE_ORIGIN", "");
+    const makeRequest = (protocol: string, headers: Record<string, string>) => ({
+      protocol,
+      get: (name: string) => headers[name.toLowerCase()],
+    }) as never;
+    expect(getRequestPublicOrigin(makeRequest("http", { host: "getmchongo.example" }))).toBeNull();
+    expect(getRequestPublicOrigin(makeRequest("http", { "x-forwarded-proto": "https", "x-forwarded-host": "getmchongo.example/path" }))).toBeNull();
   });
 
   it("produces a 1200×630 JPEG card without cropping the inserted source image", async () => {
