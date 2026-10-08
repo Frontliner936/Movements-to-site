@@ -90,7 +90,7 @@ export default function Home() {
                   <div className="home-announcement-content">
                     <div className="announcement-meta"><span className="announcement-kind">{announcementKinds.find(kind => kind.value === item.kind)?.label ?? "News"}</span><time dateTime={item.publishedAt ?? item.createdAt}>{new Date(item.publishedAt ?? item.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short" })}</time></div>
                     <h3>{item.title}</h3>
-                    {item.body && <p>{item.body}</p>}
+                    {item.body && <p>{item.body}</p>}\n                    <a className="text-link home-announcement-view" href="/announcements">View full advert <ArrowRight size={14} /></a>
                   </div>
                 </article>
               ))}
