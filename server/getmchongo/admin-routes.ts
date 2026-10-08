@@ -493,13 +493,23 @@ router.post("/upload", async (req, res) => {
   try {
     const base = apiUrl.endsWith("/") ? apiUrl : `${apiUrl}/`;
     const presign = await fetch(new URL(`v1/storage/presign/put?path=${encodeURIComponent(objectPath)}`, base), { headers: { authorization: `Bearer ${apiKey}` }, signal: AbortSignal.timeout(10_000) });
-    if (!presign.ok) return res.status(502).json({ error: "Could not prepare a secure image upload." });
-    const payload = await presign.json() as { url?: string };
-    if (!payload.url) return res.status(502).json({ error: "The image storage service did not return an upload URL." });
-    const upload = await fetch(payload.url, { method: "PUT", headers: { "content-type": mime }, body: bytes, signal: AbortSignal.timeout(30_000) });
-    if (!upload.ok) return res.status(502).json({ error: "The image could not be stored." });
+    if (presign.ok) {
+      const payload = await presign.json() as { url?: string };
+      if (payload.url) {
+        const upload = await fetch(payload.url, { method: "PUT", headers: { "content-type": mime }, body: bytes, signal: AbortSignal.timeout(30_000) });
+        if (upload.ok) return res.json({ url: `/manus-storage/${objectPath}` });
+      }
+    }
+  } catch {
+    // Fall through to local storage so uploads still work when the Manus storage endpoint is unavailable.
+  }
+
+  try {
+    await saveLocalFile(objectPath, bytes);
     return res.json({ url: `/manus-storage/${objectPath}` });
-  } catch { return res.status(502).json({ error: "The image upload failed. Please try again." }); }
+  } catch {
+    return res.status(503).json({ error: "File storage is not available. Check that UPLOAD_DIR is writable." });
+  }
 });
 
 export function createAdminRouter() { return router; }
