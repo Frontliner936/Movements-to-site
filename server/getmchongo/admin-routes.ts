@@ -10,6 +10,7 @@ import { ADMIN_EMAIL, isAdmin, login, logout, requireAdmin, requireSameOrigin } 
 import { runSource } from "./source-runner";
 import { validateSourceUrl, type SourceType } from "./collector";
 import { MAX_JOB_AD_FILE_BYTES, MAX_JOB_AD_TEXT, structureJobAd, type OutputLanguage } from "./job-ad-structurer";
+import { saveLocalFile } from "./local-storage";
 import { removeTemporaryDocument, storeTemporaryDocument, TemporaryDocumentCapacityError } from "./temporary-documents";
 
 const router = Router();
@@ -473,9 +474,13 @@ router.post("/upload", async (req, res) => {
   const signature = mime === "application/pdf" ? bytes.subarray(0, 5).toString("ascii") === "%PDF-" : mime === "image/png" ? bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) : mime === "image/jpeg" ? bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff : bytes.subarray(0, 4).toString("ascii") === "RIFF" && bytes.subarray(8, 12).toString("ascii") === "WEBP";
   if (!signature) return res.status(400).json({ error: "File content does not match its file type." });
   const apiUrl = process.env.MANUS_API_URL; const apiKey = process.env.MANUS_API_KEY;
-  if (!apiUrl || !apiKey) return res.status(503).json({ error: "Image storage is not available in this environment." });
   const suffix = mime === "application/pdf" ? "pdf" : mime === "image/png" ? "png" : mime === "image/jpeg" ? "jpg" : "webp";
   const objectPath = `get-mchongo/uploads/${randomUUID()}.${suffix}`;
+  if (!apiUrl || !apiKey) {
+    // No Manus storage on this host: keep the file on the server's disk (UPLOAD_DIR).
+    try { await saveLocalFile(objectPath, bytes); return res.json({ url: `/manus-storage/${objectPath}` }); }
+    catch { return res.status(503).json({ error: "File storage is not available. Check that UPLOAD_DIR is writable." }); }
+  }
   try {
     const base = apiUrl.endsWith("/") ? apiUrl : `${apiUrl}/`;
     const presign = await fetch(new URL(`v1/storage/presign/put?path=${encodeURIComponent(objectPath)}`, base), { headers: { authorization: `Bearer ${apiKey}` }, signal: AbortSignal.timeout(10_000) });
