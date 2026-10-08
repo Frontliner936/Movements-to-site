@@ -18,11 +18,15 @@ export default function Announcements() {
   }, []);
   const kindLabel = (kind: Announcement["kind"]) => announcementKinds.find(item => item.value === kind)?.label ?? "News";
 
-  return <div className="site-shell announcements-shell">
-    <header className="site-header"><div className="header-inner"><Brand /><div className="header-actions"><a className="header-submit-link" href="/submit">Post a job <ArrowRight size={14} /></a><a className="header-admin-link" href="/">Opportunities</a></div></div></header>
-    <main className="announcements-page">
-      <a href="/" className="back-link"><ArrowLeft size={14} /> Back to opportunities</a>
-      <section className="announcements-intro"><span className="eyebrow"><span className="eyebrow-dot" />LATEST</span><h1>Announcements</h1><p>Interviews, events, adverts and businesses we want you to know about.</p></section>
+  return <div className="site-shell">
+    <div className="announcements-banner">
+      <header className="site-header"><div className="header-inner"><Brand /><div className="header-actions"><a className="header-submit-link" href="/submit">Post a job <ArrowRight size={14} /></a><a className="header-admin-link" href="/">Opportunities</a></div></div></header>
+      <div className="announcements-page announcements-banner-copy">
+        <a href="/" className="back-link"><ArrowLeft size={14} /> Back to opportunities</a>
+        <section className="announcements-intro"><span className="eyebrow"><span className="eyebrow-dot" />LATEST</span><h1>Announcements</h1><p>Interviews, events, adverts and businesses we want you to know about.</p></section>
+      </div>
+    </div>
+    <main className="announcements-page announcements-content">
       {error && <div className="submission-error" role="alert">{error}</div>}
       {loading ? <p className="announcements-empty">Loading announcements…</p> : items.length === 0 && !error ? <div className="announcements-empty"><Megaphone size={22} /><p>No announcements yet. Please check back soon.</p></div> : <div className="announcement-list">
         {items.map(item => <article className="announcement-card" key={item.id}>

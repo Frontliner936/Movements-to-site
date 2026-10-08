@@ -698,11 +698,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 }
 
 /* Announcements (public page) */
-.announcements-shell { position: relative; isolation: isolate; }
-.announcements-shell::before { content: ""; position: absolute; inset: 0 0 auto; z-index: 0; height: 370px; pointer-events: none; background: linear-gradient(115deg, #d7eee3 0%, #edf1d0 55%, #f6dfc3 100%); }
-.announcements-shell > .site-header, .announcements-shell > .announcements-page { position: relative; z-index: 1; }
-.announcements-shell > .site-header { background: transparent; border-bottom-color: rgba(24, 49, 46, .12); }
+.announcements-banner { width: 100%; background: radial-gradient(ellipse at 8% 0%, rgba(18, 102, 79, .16), transparent 45%), radial-gradient(ellipse at 95% 100%, rgba(242, 201, 109, .5), transparent 48%), linear-gradient(180deg, #cfe9dc 0%, #e3efdc 48%, #f4dfad 100%); border-bottom: 1px solid rgba(12, 75, 58, .16); }
+.announcements-banner .site-header { background: transparent; border-bottom-color: rgba(24, 49, 46, .12); }
+.announcements-banner-copy { padding-top: 27px; padding-bottom: 24px; }
+.announcements-banner-copy .announcements-intro { margin-bottom: 0; }
 .announcements-page { flex: 1; width: min(860px, calc(100% - 40px)); margin: 0 auto; padding: 36px 0 70px; }
+.announcements-content { padding-top: 34px; }
 .announcements-intro { margin: 18px 0 30px; }
 .announcements-intro h1 { font-family: var(--font-display); font-size: clamp(34px, 6vw, 52px); font-weight: 500; letter-spacing: -.03em; margin: 10px 0 8px; color: var(--ink); }
 .announcements-intro p { color: var(--muted-text); font-size: 15px; line-height: 1.6; margin: 0; }
@@ -725,7 +726,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .announcement-actions .secondary-button { min-height: 42px; font-size: 12px; }
 .announcements-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; color: var(--muted-text); padding: 60px 0; border: 1px dashed var(--line); }
 .announcements-empty p { margin: 0; }
-@media (max-width: 640px) { .announcements-shell::before { height: 430px; } .announcement-body { padding: 16px; } .announcement-body h2 { font-size: 23px; } .announcement-photo figcaption { padding: 9px 16px; } }
+@media (max-width: 640px) { .announcements-banner-copy { padding-top: 22px; padding-bottom: 21px; } .announcement-body { padding: 16px; } .announcement-body h2 { font-size: 23px; } .announcement-photo figcaption { padding: 9px 16px; } }
 
 
 /* Homepage announcements preview */
