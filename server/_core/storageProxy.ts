@@ -2,17 +2,16 @@ import type { Express } from "express";
 import { ENV } from "./env";
 
 export function registerStorageProxy(app: Express) {
-  app.get("/manus-storage/*", async (req, res) => {
+  app.get("/manus-storage/*", async (req, res, next) => {
     const key = (req.params as Record<string, string>)[0];
     if (!key) {
       res.status(400).send("Missing storage key");
       return;
     }
 
-    if (!ENV.forgeApiUrl || !ENV.forgeApiKey) {
-      res.status(500).send("Storage proxy not configured");
-      return;
-    }
+    // Allow Manus-hosted deployments to serve managed assets themselves when
+    // this app has no Forge credentials configured.
+    if (!ENV.forgeApiUrl || !ENV.forgeApiKey) return next();
 
     try {
       const forgeUrl = new URL(

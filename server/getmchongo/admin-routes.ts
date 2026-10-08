@@ -11,7 +11,6 @@ import { runSource } from "./source-runner";
 import { validateSourceUrl, type SourceType } from "./collector";
 import { MAX_JOB_AD_FILE_BYTES, MAX_JOB_AD_TEXT, structureJobAd, type OutputLanguage } from "./job-ad-structurer";
 import { saveLocalFile } from "./local-storage";
-import { removeTemporaryDocument, storeTemporaryDocument, TemporaryDocumentCapacityError } from "./temporary-documents";
 
 const router = Router();
 const loginAttempts = new Map<string, { count: number; until: number }>();
@@ -137,13 +136,12 @@ function normalizeJob(body: any, old?: typeof jobs.$inferSelect) {
 
 router.post("/jobs/structure", async (req, res) => {
   let sourceBuffer: Buffer | null = null;
-  let temporaryToken: string | null = null;
+  let document: { mimeType: "application/pdf" | "image/jpeg"; url: string; bytes?: Buffer } | undefined;
   try {
     const sourceText = typeof req.body?.sourceText === "string" ? req.body.sourceText.trim() : "";
     if (sourceText.length > MAX_JOB_AD_TEXT) return res.status(400).json({ error: "Advertisement text must be no more than 40,000 characters." });
     const allowedLanguages = new Set<OutputLanguage>(["source", "English", "Kiswahili"]);
     const outputLanguage: OutputLanguage = allowedLanguages.has(req.body?.outputLanguage) ? req.body.outputLanguage : "source";
-    let document: { mimeType: "application/pdf" | "image/jpeg"; url: string } | undefined;
     const encodedInput = typeof req.body?.fileBase64 === "string" ? req.body.fileBase64.replace(/^data:[^,]+,/, "") : "";
     if (encodedInput) {
       const mimeType = String(req.body?.mimeType ?? "").toLowerCase();
@@ -155,34 +153,21 @@ router.post("/jobs/structure", async (req, res) => {
       const isJpeg = mimeType === "image/jpeg" && sourceBuffer[0] === 0xff && sourceBuffer[1] === 0xd8 && sourceBuffer[2] === 0xff;
       const isWebp = mimeType === "image/webp" && sourceBuffer.subarray(0, 4).toString("ascii") === "RIFF" && sourceBuffer.subarray(8, 12).toString("ascii") === "WEBP";
       if (!isPdf && !isPng && !isJpeg && !isWebp) return res.status(400).json({ error: "The file content does not match its selected type." });
-      if (isPdf) document = { mimeType: "application/pdf", url: "" };
+      if (isPdf) document = { mimeType: "application/pdf", url: "", bytes: sourceBuffer };
       else {
         try {
           const original = sourceBuffer;
           sourceBuffer = await sharp(original, { limitInputPixels: 40_000_000 }).rotate().resize({ width: 2400, height: 2400, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 88 }).toBuffer();
           original.fill(0);
-          document = { mimeType: "image/jpeg", url: "", dataUrl: `data:image/jpeg;base64,${sourceBuffer.toString("base64")}` };
+          document = { mimeType: "image/jpeg", url: "", bytes: sourceBuffer };
         } catch { return res.status(400).json({ error: "The image could not be safely processed. Try another image or paste its text." }); }
       }
     }
     if (!sourceText && !document) return res.status(400).json({ error: "Paste advertisement text or choose a PDF/image." });
-    if (document) {
-      let origin: URL;
-      try {
-        const requestOrigin = req.get("origin") || `${req.protocol}://${req.get("host")}`;
-        origin = new URL(requestOrigin);
-      } catch { return res.status(400).json({ error: "The website address could not be determined for this upload. Refresh the page and try again." }); }
-      if (origin.protocol !== "https:" && process.env.NODE_ENV === "production") {
-        return res.status(400).json({ error: "Uploaded files require the secure HTTPS website. If you are testing locally, paste the advertisement text instead." });
-      }
-      temporaryToken = storeTemporaryDocument(sourceBuffer!, document.mimeType);
-      sourceBuffer = null;
-      document.url = new URL(`/api/gm/temporary-document/${temporaryToken}`, origin.origin).toString();
-    }
+    sourceBuffer = null;
     const result = await structureJobAd({ sourceText, outputLanguage, document });
     return res.json(result);
   } catch (error) {
-    if (error instanceof TemporaryDocumentCapacityError) return res.status(429).json({ error: error.message });
     const message = error instanceof Error ? error.message : String(error);
     console.error("[jobs/structure] Advertisement structuring failed:", error);
     return res.status(502).json({
@@ -190,8 +175,8 @@ router.post("/jobs/structure", async (req, res) => {
       diagnostic: true,
     });
   } finally {
-    if (temporaryToken) removeTemporaryDocument(temporaryToken);
-    else sourceBuffer?.fill(0);
+    document?.bytes?.fill(0);
+    sourceBuffer?.fill(0);
   }
 });
 
