@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowDownRight, ArrowRight, BriefcaseBusiness, ChevronDown, Search, Sparkles } from "lucide-react";
 import { Brand } from "@/components/Brand";
 import { EmptyBoardIllustration } from "@/components/EditorialVisuals";
+import { HideBrokenImage } from "@/components/HideBrokenImage";
 import { JobCard } from "@/components/JobCard";
 import { SiteFooter } from "@/components/SiteFooter";
 import { announcementKinds, api, type Announcement, type Job } from "@/lib/api";
@@ -87,7 +88,7 @@ export default function Home() {
             <div className="home-announcements-grid">
               {announcements.map(item => (
                 <article className="home-announcement-card" key={item.id}>
-                  {item.imageUrl ? <img src={item.imageUrl} alt={item.imageCaption || item.title} loading="lazy" /> : <div className="home-announcement-icon"><Sparkles size={20} /></div>}
+                  {item.imageUrl ? <HideBrokenImage key={item.imageUrl} src={item.imageUrl} alt={item.imageCaption || item.title} loading="lazy" /> : <div className="home-announcement-icon"><Sparkles size={20} /></div>}
                   <div className="home-announcement-content">
                     <div className="announcement-meta"><span className="announcement-kind">{announcementKinds.find(kind => kind.value === item.kind)?.label ?? "News"}</span><time dateTime={item.publishedAt ?? item.createdAt}>{new Date(item.publishedAt ?? item.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short" })}</time></div>
                     <h3>{item.title}</h3>

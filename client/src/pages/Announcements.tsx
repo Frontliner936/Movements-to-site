@@ -1,8 +1,21 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, ExternalLink, FileText, Maximize2, Megaphone, X } from "lucide-react";
 import { Brand } from "@/components/Brand";
+import { HideBrokenImage } from "@/components/HideBrokenImage";
 import { SiteFooter } from "@/components/SiteFooter";
 import { announcementKinds, api, type Announcement } from "@/lib/api";
+
+function AnnouncementPhoto({ item }: { item: Announcement }) {
+  const [failed, setFailed] = useState(false);
+  if (!item.imageUrl || failed) return null;
+
+  return (
+    <figure className="announcement-photo">
+      <HideBrokenImage key={item.imageUrl} src={item.imageUrl} alt={item.imageCaption || item.title} loading="lazy" onError={() => setFailed(true)} />
+      {item.imageCaption && <figcaption>{item.imageCaption}</figcaption>}
+    </figure>
+  );
+}
 
 export default function Announcements() {
   const [items, setItems] = useState<Announcement[]>([]);
@@ -26,7 +39,7 @@ export default function Announcements() {
       {error && <div className="submission-error" role="alert">{error}</div>}
       {loading ? <p className="announcements-empty">Loading announcements…</p> : items.length === 0 && !error ? <div className="announcements-empty"><Megaphone size={22} /><p>No announcements yet. Please check back soon.</p></div> : <div className="announcement-list">
         {items.map(item => <article className="announcement-card" key={item.id}>
-          {item.imageUrl && <figure className="announcement-photo"><img src={item.imageUrl} alt={item.imageCaption || item.title} loading="lazy" />{item.imageCaption && <figcaption>{item.imageCaption}</figcaption>}</figure>}
+          {item.imageUrl && <AnnouncementPhoto key={item.imageUrl} item={item} />}
           <div className="announcement-body">
             <div className="announcement-meta"><span className="announcement-kind">{kindLabel(item.kind)}</span><time dateTime={item.publishedAt ?? item.createdAt}>{new Date(item.publishedAt ?? item.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}</time></div>
             <h2>{item.title}</h2>
