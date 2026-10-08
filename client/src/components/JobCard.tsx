@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { ArrowUpRight, Bookmark, Heart, MapPin } from "lucide-react";
+import { ArrowUpRight, Bookmark, Clock3, Heart, MapPin } from "lucide-react";
 import { api, type Job } from "@/lib/api";
 import { JobQuickShareButtons, JobShareMenu } from "@/components/JobShareMenu";
+import { formatPostedAgo } from "@/lib/timeAgo";
 
 export function CompanyLogo({ name, imageUrl, size = "normal" }: { name?: string | null; imageUrl?: string | null; size?: "normal" | "large" }) {
   const [failed, setFailed] = useState(false);
@@ -16,6 +17,8 @@ export function CompanyLogo({ name, imageUrl, size = "normal" }: { name?: string
 export function JobCard({ job, onChanged }: { job: Job; onChanged: () => void }) {
   const [busy, setBusy] = useState<"like" | "save" | null>(null);
   const [notice, setNotice] = useState("");
+  const postedAt = job.publishedAt ?? job.createdAt ?? null;
+  const postedLabel = formatPostedAgo(postedAt);
   async function toggle(kind: "like" | "save") {
     if (busy) return;
     setBusy(kind); setNotice("");
@@ -39,6 +42,7 @@ export function JobCard({ job, onChanged }: { job: Job; onChanged: () => void })
       {job.companyName && (job.companyHref ? <Link className="job-company-link" href={job.companyHref}>{job.companyName}</Link> : <p className="job-company-name">{job.companyName}</p>)}
       <p className="job-description-preview">{job.description || "Open the listing to view the information shared by the source."}</p>
       <div className="job-card-footer">
+        {postedAt && postedLabel && <time className="posted-time" dateTime={postedAt}><Clock3 size={13} />{postedLabel}</time>}
         <span>{job.location && <><MapPin size={14} />{job.location}</>}</span>
         {job.deadline && <span className="deadline-chip">Closes {job.deadline}</span>}
         <Link href={`/jobs/${job.id}`} className="text-link">View details <ArrowUpRight size={14} /></Link>

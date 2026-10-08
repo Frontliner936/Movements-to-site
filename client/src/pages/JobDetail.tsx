@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useRoute } from "wouter";
-import { ArrowLeft, ArrowUpRight, Bookmark, CalendarDays, ExternalLink, Globe2, Heart, MapPin } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Bookmark, CalendarDays, Clock3, ExternalLink, Globe2, Heart, MapPin } from "lucide-react";
 import { Brand } from "@/components/Brand";
 import { CompanyLogo } from "@/components/JobCard";
 import { JobQuickShareButtons, JobShareMenu } from "@/components/JobShareMenu";
@@ -8,6 +8,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import RichJobText from "@/components/RichJobText";
 import { api, recordJobView, type Job } from "@/lib/api";
 import { applyJobPageMetadata } from "@/lib/pageMetadata";
+import { formatPostedAgo } from "@/lib/timeAgo";
 
 export default function JobDetail() {
   const [, params] = useRoute("/jobs/:id");
@@ -17,6 +18,8 @@ export default function JobDetail() {
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   const id = params?.id;
+  const postedAt = job?.publishedAt ?? job?.createdAt ?? null;
+  const postedLabel = formatPostedAgo(postedAt);
   const trackedJob = useRef<number | null>(null);
   useEffect(() => job ? applyJobPageMetadata(job) : undefined, [job]);
   useEffect(() => {
@@ -51,7 +54,7 @@ export default function JobDetail() {
         <section className="detail-heading">
           <div className="detail-company-line"><CompanyLogo size="large" name={job.companyName} imageUrl={job.companyLogoUrl || job.imageUrl} /><div>{job.companyName && (job.companyHref ? <Link href={job.companyHref} className="detail-company-link">{job.companyName} <ArrowUpRight size={13} /></Link> : <span className="detail-company-name">{job.companyName}</span>)}{job.category && <span className="job-category">{job.category}</span>}</div></div>
           <h1>{job.title}</h1>
-          <div className="detail-meta">{job.location && <span><MapPin size={16} />{job.location}</span>}{job.deadline && <span><CalendarDays size={15} />Deadline: {job.deadline}</span>}</div>
+          <div className="detail-meta">{postedAt && postedLabel && <span><Clock3 size={15} />{postedLabel}</span>}{job.location && <span><MapPin size={16} />{job.location}</span>}{job.deadline && <span><CalendarDays size={15} />Deadline: {job.deadline}</span>}</div>
           <div className="detail-heading-actions"><button type="button" className={`secondary-button ${job.liked ? "is-liked" : ""}`} onClick={() => void toggle("like")} disabled={busy}><Heart size={16} fill={job.liked ? "currentColor" : "none"} /> {job.liked ? "Liked" : "Like"} <span>{job.likeCount}</span></button><button type="button" className={`secondary-button ${job.saved ? "is-saved" : ""}`} onClick={() => void toggle("save")} disabled={busy}><Bookmark size={15} fill={job.saved ? "currentColor" : "none"} /> {job.saved ? "Saved" : "Save"}</button><JobShareMenu job={job} variant="button" onStatus={setNotice} /><JobQuickShareButtons job={job} variant="button" /></div>
         </section>
         <p className="job-view-privacy-note">Visitor counts use a random browser ID for this job only and count once per listing. No IP address or personal profile is stored; Do Not Track is respected.</p>
