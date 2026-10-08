@@ -171,6 +171,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .company-logo { width: 40px; height: 40px; display: grid; place-items: center; flex: none; border-radius: 12px; background: #e8efe6; overflow: hidden; color: var(--green); font-size: 15px; font-weight: 700; }
 .company-logo img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
 .company-logo-large { width: 62px; height: 62px; border-radius: 18px; font-size: 22px; }
+.job-card-topline .company-logo { width: 56px; height: 56px; border-radius: 15px; }
 .job-category { display: inline-flex; align-items: center; border-radius: 99px; padding: 6px 10px; background: #eef4ec; color: #4f6c59; font-size: 10px; font-weight: 700; letter-spacing: .015em; }
 .job-card-actions { display: flex; align-items: center; gap: 3px; margin-left: auto; }
 .icon-button { width: 35px; height: 35px; border: 1px solid transparent; background: transparent; color: #78827b; cursor: pointer; display: inline-grid; place-items: center; border-radius: 9px; transition: color .18s ease, background .18s ease, border-color .18s ease; }
