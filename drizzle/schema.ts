@@ -128,3 +128,21 @@ export const contactMessages = mysqlTable("gm_contact_messages", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   readAt: timestamp("read_at"),
 });
+
+/** Admin-managed announcements (interviews, events, ads, announced businesses). */
+export const announcements = mysqlTable("gm_announcements", {
+  id: int("id").autoincrement().primaryKey(),
+  title: varchar("title", { length: 300 }).notNull(),
+  kind: mysqlEnum("kind", ["interview", "event", "ad", "business", "news"]).default("news").notNull(),
+  body: text("body"),
+  imageUrl: varchar("image_url", { length: 2048 }),
+  imageCaption: varchar("image_caption", { length: 600 }),
+  pdfUrl: varchar("pdf_url", { length: 2048 }),
+  pdfName: varchar("pdf_name", { length: 240 }),
+  linkUrl: varchar("link_url", { length: 2048 }),
+  linkLabel: varchar("link_label", { length: 120 }),
+  status: mysqlEnum("status", ["draft", "published"]).default("draft").notNull(),
+  publishedAt: timestamp("published_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});

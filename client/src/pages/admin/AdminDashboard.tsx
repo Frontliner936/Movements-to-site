@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowUpRight, BarChart3, BriefcaseBusiness, Building2, Clock3, LogOut, MessageCircle, PanelTop, Rss, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, BarChart3, BriefcaseBusiness, Building2, Clock3, LogOut, Megaphone, MessageCircle, PanelTop, Rss, ShieldCheck } from "lucide-react";
 import { Brand } from "@/components/Brand";
 import { api } from "@/lib/api";
 import AdminJobs from "./AdminJobs";
@@ -9,12 +9,13 @@ import AdminSources from "./AdminSources";
 import AdminReview from "./AdminReview";
 import AdminAnalytics from "./AdminAnalytics";
 import AdminMessages from "./AdminMessages";
+import AdminAnnouncements from "./AdminAnnouncements";
 
-type Tab = "overview" | "review" | "messages" | "jobs" | "companies" | "sources" | "analytics";
+type Tab = "overview" | "review" | "messages" | "announcements" | "jobs" | "companies" | "sources" | "analytics";
 type Overview = { jobs: Record<string, number>; companies: number; sources: number; activeSources: number; pending: number; unreadMessages: number; recentRuns: Array<{ id: number; name: string; lastRunAt: string | null; lastRunError: string | null; lastRunCount: number; isActive: boolean }>; schedule: { enabled: boolean; cronExpression: string; lastRunAt: string | null } };
 const tabs: Array<{ id: Tab; label: string; icon: typeof PanelTop }> = [
   { id: "overview", label: "Overview", icon: PanelTop }, { id: "review", label: "Review queue", icon: Clock3 }, { id: "messages", label: "Messages", icon: MessageCircle },
-  { id: "jobs", label: "Jobs", icon: BriefcaseBusiness }, { id: "companies", label: "Companies", icon: Building2 }, { id: "sources", label: "Tracked sources", icon: Rss },
+  { id: "announcements", label: "Announcements", icon: Megaphone }, { id: "jobs", label: "Jobs", icon: BriefcaseBusiness }, { id: "companies", label: "Companies", icon: Building2 }, { id: "sources", label: "Tracked sources", icon: Rss },
   { id: "analytics", label: "Analytics", icon: BarChart3 },
 ];
 
@@ -58,6 +59,7 @@ export default function AdminDashboard() {
       <main className="admin-content">
         {tab === "overview" && <><div className="admin-page-title"><div><span className="eyebrow muted-eyebrow">YOUR BOARD AT A GLANCE</span><h1>Good to see you.</h1><p>Keep the opportunities accurate, current and easy to act on.</p></div><button className="primary-button" onClick={() => setTab("jobs")}>Add a job <ArrowUpRight size={15} /></button></div>{message && <p className="admin-alert error-alert">{message}</p>}<div className="overview-stats">{counts.map(({ label, value, icon: Icon, note }) => <div className="overview-stat" key={label}><span className="stat-icon"><Icon size={18} /></span><span className="stat-label">{label}</span><strong>{value}</strong><small>{note}</small></div>)}</div><button type="button" className="overview-analytics-shortcut" onClick={() => { setTab("analytics"); setMessage(""); }}><span className="overview-analytics-icon"><BarChart3 size={18} /></span><span className="overview-analytics-copy"><strong>Visitor analytics</strong><small>See unique browsers for each published job</small></span><span className="overview-analytics-action">Open report <ArrowUpRight size={15} /></span></button><div className="overview-lower"><section className="admin-panel recent-runs-panel"><div className="panel-heading"><div><span className="eyebrow muted-eyebrow">SOURCE ACTIVITY</span><h2>Recent runs</h2></div><button className="subtle-link" onClick={() => setTab("sources")}>Manage sources <ArrowUpRight size={14} /></button></div>{overview?.recentRuns.length ? <div className="recent-runs">{overview.recentRuns.map(run => <div className="recent-run" key={run.id}><span className={`status-dot ${run.lastRunError ? "status-dot-error" : run.isActive ? "" : "status-dot-muted"}`} /><div className="recent-run-main"><strong>{run.name}</strong><small>{run.lastRunAt ? new Date(run.lastRunAt).toLocaleString() : "Not run yet"}</small>{run.lastRunError && <em>{run.lastRunError}</em>}</div><span className="run-count">{run.lastRunCount} found</span></div>)}</div> : <div className="panel-empty"><Rss size={20} /><p>No tracked sources yet.</p><button className="text-link" onClick={() => setTab("sources")}>Add a source <ArrowUpRight size={13} /></button></div>}</section><section className="admin-panel workflow-panel"><span className="eyebrow muted-eyebrow">EDITORIAL WORKFLOW</span><h2>Nothing goes live by itself.</h2><div className="workflow-steps"><span>SOURCE</span><i>→</i><span>REVIEW</span><i>→</i><strong>YOUR APPROVAL</strong><i>→</i><span>PUBLIC</span></div><p>Collected listings wait here until you review and approve them.</p><button className="secondary-button" onClick={() => setTab("review")}>Open review queue <ArrowUpRight size={14} /></button></section></div><div className="overview-footer-note"><ShieldCheck size={15} />All admin actions are protected. Public pages show published jobs only.</div></>}
         {tab === "review" && <AdminReview onChanged={loadOverview} />}
+        {tab === "announcements" && <AdminAnnouncements />}
         {tab === "jobs" && <AdminJobs onChanged={loadOverview} />}
         {tab === "companies" && <AdminCompanies />}
         {tab === "sources" && <AdminSources onChanged={loadOverview} />}

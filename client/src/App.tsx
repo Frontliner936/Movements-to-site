@@ -7,6 +7,7 @@ import Home from "./pages/Home";
 import JobDetail from "./pages/JobDetail";
 import SubmitOpportunity from "./pages/SubmitOpportunity";
 import ContactUs from "./pages/ContactUs";
+import Announcements from "./pages/Announcements";
 import CompanyProfile from "./pages/CompanyProfile";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -18,6 +19,7 @@ function Router() {
     <Route path="/jobs/:id" component={JobDetail} />
     <Route path="/submit" component={SubmitOpportunity} />
     <Route path="/contact" component={ContactUs} />
+    <Route path="/announcements" component={Announcements} />
     <Route path="/companies/:id" component={CompanyProfile} />
     <Route path="/admin/login" component={AdminLogin} />
     <Route path="/admin" component={AdminDashboard} />

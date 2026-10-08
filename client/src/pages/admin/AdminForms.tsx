@@ -17,7 +17,7 @@ export const toJobDraft = (job?: Partial<Job> & { companyId?: number | null }): 
   title: job.title ?? "", companyId: job.companyId ? String(job.companyId) : "", companyName: job.companyName ?? "", companyDescription: job.companyDescription ?? "", companyLogoUrl: job.companyLogoUrl ?? "", companyWebsiteUrl: job.companyWebsiteUrl ?? "", category: job.category ?? "", location: job.location ?? "", deadline: job.deadline ?? "", description: job.description ?? "", responsibilities: job.responsibilities ?? "", qualifications: job.qualifications ?? "", howToApply: job.howToApply ?? "", applicationUrl: job.applicationUrl ?? "", imageUrl: job.imageUrl ?? "", sourceUrl: job.sourceUrl ?? "", status: job.status === "published" ? "published" : "draft",
 }) : { ...emptyJob };
 
-function ImagePicker({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
+export function ImagePicker({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) {
   const [preview, setPreview] = useState(value);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
