@@ -5,7 +5,6 @@ import type { Request, Response } from "express";
 import sharp from "sharp";
 import { getDb } from "../db";
 import { announcements, companies, contactMessages, jobs, jobReactions, jobViewers, pendingJobs, scanSchedules, sources } from "../../drizzle/schema";
-import { createHeartbeatJob, updateHeartbeatJob } from "../_core/heartbeat";
 import { ADMIN_EMAIL, isAdmin, login, logout, requireAdmin, requireSameOrigin } from "./auth";
 import { runSource } from "./source-runner";
 import { validateSourceUrl, type SourceType } from "./collector";
@@ -136,7 +135,7 @@ function normalizeJob(body: any, old?: typeof jobs.$inferSelect) {
 
 router.post("/jobs/structure", async (req, res) => {
   let sourceBuffer: Buffer | null = null;
-  let document: { mimeType: "application/pdf" | "image/jpeg"; url: string; bytes?: Buffer } | undefined;
+  let document: { mimeType: "application/pdf" | "image/jpeg" | "image/png" | "image/webp"; bytes: Buffer } | undefined;
   try {
     const sourceText = typeof req.body?.sourceText === "string" ? req.body.sourceText.trim() : "";
     if (sourceText.length > MAX_JOB_AD_TEXT) return res.status(400).json({ error: "Advertisement text must be no more than 40,000 characters." });
@@ -153,13 +152,13 @@ router.post("/jobs/structure", async (req, res) => {
       const isJpeg = mimeType === "image/jpeg" && sourceBuffer[0] === 0xff && sourceBuffer[1] === 0xd8 && sourceBuffer[2] === 0xff;
       const isWebp = mimeType === "image/webp" && sourceBuffer.subarray(0, 4).toString("ascii") === "RIFF" && sourceBuffer.subarray(8, 12).toString("ascii") === "WEBP";
       if (!isPdf && !isPng && !isJpeg && !isWebp) return res.status(400).json({ error: "The file content does not match its selected type." });
-      if (isPdf) document = { mimeType: "application/pdf", url: "", bytes: sourceBuffer };
+      if (isPdf) document = { mimeType: "application/pdf", bytes: sourceBuffer };
       else {
         try {
           const original = sourceBuffer;
           sourceBuffer = await sharp(original, { limitInputPixels: 40_000_000 }).rotate().resize({ width: 2400, height: 2400, fit: "inside", withoutEnlargement: true }).jpeg({ quality: 88 }).toBuffer();
           original.fill(0);
-          document = { mimeType: "image/jpeg", url: "", bytes: sourceBuffer };
+          document = { mimeType: "image/jpeg", bytes: sourceBuffer };
         } catch { return res.status(400).json({ error: "The image could not be safely processed. Try another image or paste its text." }); }
       }
     }
@@ -372,19 +371,15 @@ router.post("/schedule", async (req, res) => {
   const enabled = req.body?.enabled === true;
   const cronExpression = String(req.body?.cronExpression ?? "0 0 6 * * *");
   if (!scheduleOptions.has(cronExpression)) return res.status(400).json({ error: "Choose one of the supported daily or twice-daily scan schedules." });
-  const [existing] = await db.select().from(scanSchedules).where(eq(scanSchedules.id, 1)).limit(1);
   try {
-    let heartbeatTaskUid = existing?.heartbeatTaskUid ?? null;
-    if (enabled) {
-      const spec = { cron: cronExpression, path: "/api/scheduled/get-mchongo-sources", method: "POST" as const, description: "Collect active Get Mchongo opportunity sources into admin review." };
-      if (heartbeatTaskUid) await updateHeartbeatJob(heartbeatTaskUid, { cron: spec.cron, path: spec.path, method: spec.method, description: spec.description, enable: true }, "");
-      else heartbeatTaskUid = (await createHeartbeatJob({ name: "get-mchongo-sources", ...spec }, "")).taskUid;
-    } else if (heartbeatTaskUid) await updateHeartbeatJob(heartbeatTaskUid, { enable: false }, "");
-    const values = { heartbeatTaskUid, cronExpression, enabled, updatedAt: now() };
+    const [existing] = await db.select().from(scanSchedules).where(eq(scanSchedules.id, 1)).limit(1);
+    const values = { heartbeatTaskUid: null, cronExpression, enabled, updatedAt: now() };
     if (existing) await db.update(scanSchedules).set(values).where(eq(scanSchedules.id, 1));
     else await db.insert(scanSchedules).values({ id: 1, ...values });
     return res.json({ schedule: { ...values, lastRunAt: existing?.lastRunAt ?? null } });
-  } catch (error) { return res.status(502).json({ error: error instanceof Error ? error.message : "The scan schedule could not be saved." }); }
+  } catch (error) {
+    return res.status(500).json({ error: error instanceof Error ? error.message : "The scan schedule could not be saved." });
+  }
 });
 
 const ANNOUNCEMENT_KINDS = ["interview", "event", "ad", "business", "news"] as const;
@@ -467,33 +462,13 @@ router.post("/upload", async (req, res) => {
   if (bytes.length > 5 * 1024 * 1024) return res.status(400).json({ error: "File exceeds the 5 MB upload limit." });
   const signature = mime === "application/pdf" ? bytes.subarray(0, 5).toString("ascii") === "%PDF-" : mime === "image/png" ? bytes.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) : mime === "image/jpeg" ? bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff : bytes.subarray(0, 4).toString("ascii") === "RIFF" && bytes.subarray(8, 12).toString("ascii") === "WEBP";
   if (!signature) return res.status(400).json({ error: "File content does not match its file type." });
-  const apiUrl = process.env.MANUS_API_URL; const apiKey = process.env.MANUS_API_KEY;
   const suffix = mime === "application/pdf" ? "pdf" : mime === "image/png" ? "png" : mime === "image/jpeg" ? "jpg" : "webp";
   const objectPath = `get-mchongo/uploads/${randomUUID()}.${suffix}`;
-  if (!apiUrl || !apiKey) {
-    // No Manus storage on this host: keep the file on the server's disk (UPLOAD_DIR).
-    try { await saveLocalFile(objectPath, bytes); return res.json({ url: `/manus-storage/${objectPath}` }); }
-    catch { return res.status(503).json({ error: "File storage is not available. Check that UPLOAD_DIR is writable." }); }
-  }
-  try {
-    const base = apiUrl.endsWith("/") ? apiUrl : `${apiUrl}/`;
-    const presign = await fetch(new URL(`v1/storage/presign/put?path=${encodeURIComponent(objectPath)}`, base), { headers: { authorization: `Bearer ${apiKey}` }, signal: AbortSignal.timeout(10_000) });
-    if (presign.ok) {
-      const payload = await presign.json() as { url?: string };
-      if (payload.url) {
-        const upload = await fetch(payload.url, { method: "PUT", headers: { "content-type": mime }, body: bytes, signal: AbortSignal.timeout(30_000) });
-        if (upload.ok) return res.json({ url: `/manus-storage/${objectPath}` });
-      }
-    }
-  } catch {
-    // Fall through to local storage so uploads still work when the Manus storage endpoint is unavailable.
-  }
-
   try {
     await saveLocalFile(objectPath, bytes);
     return res.json({ url: `/manus-storage/${objectPath}` });
   } catch {
-    return res.status(503).json({ error: "File storage is not available. Check that UPLOAD_DIR is writable." });
+    return res.status(503).json({ error: "File storage is not available. Mount a persistent Railway Volume and set UPLOAD_DIR to a writable folder on it." });
   }
 });
 

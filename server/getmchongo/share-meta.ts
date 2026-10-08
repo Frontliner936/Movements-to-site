@@ -33,14 +33,11 @@ export type JobShareMetadata = {
   shareVersion: string | null;
 };
 
-// This is the explicit Preview origin returned by webdev.config for this project.
-// Published deployments use the explicitly configured PUBLIC_SITE_ORIGIN instead.
-const PROJECT_PREVIEW_ORIGIN = "https://8328-ia90ve3azjouffq0ab86r-4ce6a6b4.us1.manus.computer";
 const generatedCardCache = new Map<string, Buffer>();
 
 export function getPublicSiteOrigin(): string | null {
   const configured = process.env.PUBLIC_SITE_ORIGIN;
-  const raw = configured || (process.env.NODE_ENV === "development" ? PROJECT_PREVIEW_ORIGIN : "");
+  const raw = configured || "";
   if (!raw) return null;
   try {
     const parsed = new URL(raw);
@@ -263,54 +260,11 @@ async function readIndexTemplate(): Promise<string> {
   return fs.readFile(templatePath, "utf8");
 }
 
-async function readBoundedBody(response: globalThis.Response): Promise<Buffer> {
-  const declaredSize = Number(response.headers.get("content-length"));
-  if (Number.isFinite(declaredSize) && declaredSize > MAX_SOURCE_BYTES) throw new Error("Image file exceeds the size limit.");
-  if (!response.body) throw new Error("Image file has no content.");
-  const reader = response.body.getReader();
-  const chunks: Buffer[] = [];
-  let total = 0;
-  try {
-    while (true) {
-      const next = await reader.read();
-      if (next.done) break;
-      total += next.value.byteLength;
-      if (total > MAX_SOURCE_BYTES) {
-        await reader.cancel();
-        throw new Error("Image file exceeds the size limit.");
-      }
-      chunks.push(Buffer.from(next.value));
-    }
-  } finally {
-    reader.releaseLock();
-  }
-  return Buffer.concat(chunks, total);
-}
-
 async function downloadStoredImage(key: string): Promise<Buffer> {
   const local = await readLocalFile(key);
-  if (local && ["image/jpeg", "image/png", "image/webp"].includes(local.contentType)) return local.bytes;
-  const base = process.env.MANUS_API_URL;
-  const apiKey = process.env.MANUS_API_KEY;
-  if (!base || !apiKey) throw new Error("Image service is not configured.");
-  const presignEndpoint = new URL(`${base.replace(/\/+$/, "")}/v1/storage/presign/get`);
-  presignEndpoint.searchParams.set("path", key);
-  const presignedResponse = await fetch(presignEndpoint, {
-    headers: { Authorization: `Bearer ${apiKey}` },
-    signal: AbortSignal.timeout(15_000),
-  });
-  if (!presignedResponse.ok) throw new Error("Image storage request failed.");
-  const presignedBody = await presignedResponse.json() as { url?: unknown; error?: unknown };
-  if (typeof presignedBody.url !== "string") throw new Error("Image storage returned no download URL.");
-  const signed = new URL(presignedBody.url);
-  if (signed.protocol !== "https:" || !signed.hostname.endsWith(".cloudfront.net") || signed.username || signed.password) {
-    throw new Error("Image storage returned an unsupported download URL.");
-  }
-  const imageResponse = await fetch(signed, { signal: AbortSignal.timeout(15_000) });
-  if (!imageResponse.ok) throw new Error("Stored image could not be downloaded.");
-  const contentType = (imageResponse.headers.get("content-type") ?? "").split(";", 1)[0]!.trim().toLowerCase();
-  if (!["image/jpeg", "image/png", "image/webp"].includes(contentType)) throw new Error("Stored object is not a supported image.");
-  return readBoundedBody(imageResponse);
+  if (!local || !["image/jpeg", "image/png", "image/webp"].includes(local.contentType)) throw new Error("The share image is not available on local storage.");
+  if (local.bytes.byteLength > MAX_SOURCE_BYTES) throw new Error("Image file exceeds the size limit.");
+  return local.bytes;
 }
 
 export async function makeShareCardImage(source: Buffer): Promise<Buffer> {

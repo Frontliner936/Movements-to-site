@@ -7,7 +7,6 @@ import { announcements, companies, contactMessages, jobs, jobReactions, jobViewe
 import { requireSameOrigin } from "./auth";
 import { findDuplicateMatches } from "./duplicates";
 import { getJobShareImageUrl, getPublicSiteOrigin } from "./share-meta";
-import { getTemporaryDocument } from "./temporary-documents";
 
 const visitorKey = (req: Request) => {
   const value = String(req.get("x-visitor-key") ?? "");
@@ -71,22 +70,6 @@ async function addReactionSummary(rows: Array<{ job: typeof jobs.$inferSelect; c
 
 export function createPublicRouter() {
   const router = Router();
-  router.get("/temporary-document/:token", (req, res) => {
-    const token = String(req.params.token ?? "");
-    if (!/^[a-f0-9]{64}$/.test(token)) return res.status(404).end();
-    const document = getTemporaryDocument(token);
-    if (!document) return res.status(404).end();
-    const filename = document.mimeType === "application/pdf" ? "source.pdf" : "source.jpg";
-    return res.status(200).set({
-      "Content-Type": document.mimeType,
-      "Content-Length": String(document.buffer.length),
-      "Content-Disposition": `inline; filename="${filename}"`,
-      "Cache-Control": "private, no-store, max-age=0",
-      "X-Content-Type-Options": "nosniff",
-      "X-Robots-Tag": "noindex, nofollow, noarchive",
-      "Content-Security-Policy": "sandbox; default-src 'none'",
-    }).send(document.buffer);
-  });
   router.get("/announcements", async (_req, res) => {
     const db = await getDb();
     if (!db) return res.status(503).json({ error: "Announcements are temporarily unavailable." });

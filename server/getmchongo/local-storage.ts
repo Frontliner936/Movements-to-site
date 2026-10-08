@@ -1,9 +1,9 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import type { NextFunction, Request, Response } from "express";
+import type { Request, Response } from "express";
 
 /**
- * Fallback file storage for hosts without Manus storage (e.g. Railway).
+ * Persistent local file storage for self-hosted deployments (e.g. Railway).
  * Files live on disk in UPLOAD_DIR. On Railway, a mounted Volume is used
  * automatically via RAILWAY_VOLUME_MOUNT_PATH when UPLOAD_DIR is not set.
  */
@@ -47,11 +47,11 @@ export async function readLocalFile(key: string): Promise<{ bytes: Buffer; conte
   } catch { return null; }
 }
 
-/** Serves files saved on this server; anything else falls through (e.g. to the platform's own storage). */
-export async function serveLocalStorage(req: Request, res: Response, next: NextFunction) {
+/** Serves files saved on this server. A missing upload must not fall through to the SPA HTML response. */
+export async function serveLocalStorage(req: Request, res: Response) {
   const key = String((req.params as Record<string, string>)[0] ?? "");
   const local = isLocalKey(key) ? await readLocalFile(key) : null;
-  if (!local) return next();
+  if (!local) return res.set({ "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" }).status(404).end();
   res.set({
     "Content-Type": local.contentType,
     "Content-Disposition": local.contentType === "application/pdf" ? 'attachment; filename="announcement.pdf"' : "inline",

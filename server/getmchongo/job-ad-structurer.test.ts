@@ -26,36 +26,27 @@ describe("job-ad extraction normalization", () => {
     expect(result.reviewNotes).toContain("One or more extracted URLs were not valid public HTTP(S) links and were removed.");
   });
 
-  it("uploads selected image bytes and attaches the uploaded file to the Manus task", async () => {
-    vi.stubEnv("MANUS_API_KEY", "test-key");
-    const uploadedBodies: Array<BodyInit | null | undefined> = [];
+  it("sends selected photo bytes as vision input using an OpenAI-compatible endpoint", async () => {
+    vi.stubEnv("OPENAI_API_KEY", "test-key");
+    vi.stubEnv("OPENAI_API_BASE", "https://api.openai.com/v1");
     const requests: Array<{ url: string; init?: RequestInit }> = [];
     const fetchMock = vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
-      const url = String(input);
-      requests.push({ url, init });
-      if (url === "https://upload.test/file") {
-        uploadedBodies.push(init?.body);
-        return new Response(null, { status: 200 });
-      }
-      const payload = url.includes("/v2/file.upload")
-        ? { file: { id: "file-123" }, upload_url: "https://upload.test/file" }
-        : url.includes("/v2/file.detail")
-          ? { file: { status: "uploaded" } }
-          : url.includes("/v2/task.create")
-            ? { task_id: "task-123" }
-            : { messages: [{ type: "structured_output_result", structured_output_result: { success: true, value: {} } }] };
-      return new Response(JSON.stringify(payload), { status: 200 });
+      requests.push({ url: String(input), init });
+      return new Response(JSON.stringify({ choices: [{ message: { content: "{}" } }] }), { status: 200 });
     });
     vi.stubGlobal("fetch", fetchMock);
 
     await structureJobAd({
       sourceText: "",
       outputLanguage: "source",
-      document: { mimeType: "image/jpeg", url: "", bytes: Buffer.from([1, 2, 3]), filename: "ad.jpg" },
+      document: { mimeType: "image/jpeg", bytes: Buffer.from([1, 2, 3]), filename: "ad.jpg" },
     });
 
-    expect(uploadedBodies[0]).toEqual(new Uint8Array([1, 2, 3]));
-    const taskRequest = requests.find(request => request.url.includes("/v2/task.create"));
-    expect(JSON.parse(String(taskRequest?.init?.body)).message.content).toContainEqual({ type: "file", file_id: "file-123", visibility: "visible" });
+    expect(requests).toHaveLength(1);
+    expect(requests[0].url).toBe("https://api.openai.com/v1/chat/completions");
+    const payload = JSON.parse(String(requests[0].init?.body));
+    expect(payload.model).toBe("gpt-4o-mini");
+    expect(payload.messages[1].content).toContainEqual({ type: "image_url", image_url: { url: "data:image/jpeg;base64,AQID", detail: "high" } });
+    expect(requests[0].init?.headers).toMatchObject({ authorization: "Bearer test-key" });
   });
 });

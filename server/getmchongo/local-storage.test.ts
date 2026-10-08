@@ -1,8 +1,8 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { isLocalKey, readLocalFile, saveLocalFile } from "./local-storage";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { isLocalKey, readLocalFile, saveLocalFile, serveLocalStorage } from "./local-storage";
 
 const key = "get-mchongo/uploads/123e4567-e89b-12d3-a456-426614174000.pdf";
 let dir: string;
@@ -25,5 +25,15 @@ describe("local file storage", () => {
   });
   it("returns null for a missing file", async () => {
     expect(await readLocalFile("get-mchongo/uploads/123e4567-e89b-12d3-a456-426614174999.png")).toBeNull();
+  });
+  it("returns a real 404 for a missing upload instead of falling through to the SPA", async () => {
+    const response = {
+      set: vi.fn().mockReturnThis(),
+      status: vi.fn().mockReturnThis(),
+      end: vi.fn().mockReturnThis(),
+    };
+    await serveLocalStorage({ params: { 0: "get-mchongo/uploads/123e4567-e89b-12d3-a456-426614174999.png" } } as never, response as never);
+    expect(response.status).toHaveBeenCalledWith(404);
+    expect(response.end).toHaveBeenCalledOnce();
   });
 });
