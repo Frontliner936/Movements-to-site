@@ -18,7 +18,7 @@ export default function Announcements() {
   }, []);
   const kindLabel = (kind: Announcement["kind"]) => announcementKinds.find(item => item.value === kind)?.label ?? "News";
 
-  return <div className="site-shell">
+  return <div className="site-shell announcements-shell">
     <header className="site-header"><div className="header-inner"><Brand /><div className="header-actions"><a className="header-submit-link" href="/submit">Post a job <ArrowRight size={14} /></a><a className="header-admin-link" href="/">Opportunities</a></div></div></header>
     <main className="announcements-page">
       <a href="/" className="back-link"><ArrowLeft size={14} /> Back to opportunities</a>
