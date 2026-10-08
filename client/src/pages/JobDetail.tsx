@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowUpRight, Bookmark, CalendarDays, ExternalLink, Globe2, 
 import { Brand } from "@/components/Brand";
 import { CompanyLogo, shareJob } from "@/components/JobCard";
 import { SiteFooter } from "@/components/SiteFooter";
+import RichJobText from "@/components/RichJobText";
 import { api, recordJobView, type Job } from "@/lib/api";
 import { applyJobPageMetadata } from "@/lib/pageMetadata";
 
@@ -61,11 +62,11 @@ export default function JobDetail() {
         <p className="job-view-privacy-note">Visitor counts use a random browser ID for this job only and count once per listing. No IP address or personal profile is stored; Do Not Track is respected.</p>
         <div className="detail-layout">
           <div className="detail-content">
-            {(job.companyDescription || job.companyWebsiteUrl || job.companyHref) && <section className="detail-section"><span className="eyebrow muted-eyebrow">ABOUT THE ORGANISATION</span><h2>{job.companyName || "Company profile"}</h2>{job.companyDescription && <p>{job.companyDescription}</p>}{job.companyWebsiteUrl && <a href={job.companyWebsiteUrl} target="_blank" rel="noreferrer" className="text-link"><Globe2 size={14} />Official company website <ArrowUpRight size={14} /></a>}{job.companyHref && <Link href={job.companyHref} className="text-link">View company profile <ArrowUpRight size={14} /></Link>}</section>}
-            {job.description && <section className="detail-section"><span className="eyebrow muted-eyebrow">THE OPPORTUNITY</span><h2>About the role</h2><p>{job.description}</p></section>}
-            {job.responsibilities && <section className="detail-section"><span className="eyebrow muted-eyebrow">THE WORK</span><h2>Responsibilities</h2><p>{job.responsibilities}</p></section>}
-            {job.qualifications && <section className="detail-section"><span className="eyebrow muted-eyebrow">WHAT YOU'LL NEED</span><h2>Qualifications & requirements</h2><p>{job.qualifications}</p></section>}
-            {job.howToApply && <section className="detail-section"><span className="eyebrow muted-eyebrow">NEXT STEP</span><h2>How to apply</h2><p>{job.howToApply}</p></section>}
+            {(job.companyDescription || job.companyWebsiteUrl || job.companyHref) && <section className="detail-section"><span className="eyebrow muted-eyebrow">ABOUT THE ORGANISATION</span><h2>{job.companyName || "Company profile"}</h2>{job.companyDescription && <RichJobText text={job.companyDescription} />}{job.companyWebsiteUrl && <a href={job.companyWebsiteUrl} target="_blank" rel="noreferrer" className="text-link"><Globe2 size={14} />Official company website <ArrowUpRight size={14} /></a>}{job.companyHref && <Link href={job.companyHref} className="text-link">View company profile <ArrowUpRight size={14} /></Link>}</section>}
+            {job.description && <section className="detail-section"><span className="eyebrow muted-eyebrow">THE OPPORTUNITY</span><h2>About the role</h2><RichJobText text={job.description} /></section>}
+            {job.responsibilities && <section className="detail-section"><span className="eyebrow muted-eyebrow">THE WORK</span><h2>Responsibilities</h2><RichJobText text={job.responsibilities} /></section>}
+            {job.qualifications && <section className="detail-section"><span className="eyebrow muted-eyebrow">WHAT YOU'LL NEED</span><h2>Qualifications & requirements</h2><RichJobText text={job.qualifications} /></section>}
+            {job.howToApply && <section className="detail-section"><span className="eyebrow muted-eyebrow">NEXT STEP</span><h2>How to apply</h2><RichJobText text={job.howToApply} /></section>}
             {job.sourceUrl && job.sourceUrl !== job.applicationUrl && <a className="source-link" href={job.sourceUrl} target="_blank" rel="noreferrer">View original source page <ExternalLink size={14} /></a>}
           </div>
           <aside className="apply-card"><span className="eyebrow muted-eyebrow">READY WHEN YOU ARE</span><h2>Make your next move.</h2><p>Applications go directly to the original opportunity source.</p>{job.applicationUrl ? <a className="primary-button apply-button" href={job.applicationUrl} target="_blank" rel="noopener noreferrer">Apply on original site <ExternalLink size={16} /></a> : <p className="missing-apply">No application link was listed by the source.</p>}<span className="apply-footnote"><span className="green-dot" />Original application link</span><span className="sr-only" aria-live="polite">{notice}</span></aside>

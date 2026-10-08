@@ -252,6 +252,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .detail-section { padding: 0 0 29px; margin: 0 0 29px; border-bottom: 1px solid var(--line); }
 .detail-section h2 { font-family: var(--font-display); font-size: 27px; font-weight: 500; letter-spacing: -.025em; margin: 10px 0; }
 .detail-section p { color: #586b61; font-size: 14px; line-height: 1.85; white-space: pre-line; margin: 10px 0; }
+.job-rich-text { color: #586b61; font-size: 14px; line-height: 1.85; }
+.job-rich-text p { margin: 10px 0; white-space: pre-line; }
+.job-rich-text ul, .job-rich-text ol { margin: 12px 0 16px; padding-left: 23px; }
+.job-rich-text li { padding-left: 3px; margin: 5px 0; }
+.job-rich-text li::marker { color: var(--gold-dark, #8b6a13); }
+.job-rich-text a { color: var(--green); text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
 .source-link { display: inline-flex; align-items: center; gap: 7px; color: #67776d; font-size: 10px; }
 .source-link:hover { color: var(--green); }
 .apply-card { position: sticky; top: 20px; background: #eef3eb; padding: 25px 23px; border: 1px solid #e4ebe0; }
