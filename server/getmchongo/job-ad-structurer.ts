@@ -1,4 +1,4 @@
-import { invokeLLM, type MessageContent } from "../_core/llm";
+type MessageContent = string | { type: "text"; text: string } | { type: "image_url"; image_url: { url: string; detail?: "auto" | "low" | "high" } } | { type: "file_url"; file_url: { url: string; mime_type?: string } };
 
 export const MAX_JOB_AD_TEXT = 40_000;
 export const MAX_JOB_AD_FILE_BYTES = 5 * 1024 * 1024;
@@ -144,8 +144,12 @@ export async function structureJobAd(options: {
   } else if (options.document?.mimeType === "image/jpeg") {
     userParts.push({ type: "image_url", image_url: { url: options.document.url, detail: "high" } });
   }
+  if (!process.env.OPENAI_API_KEY?.trim()) {
+    throw new Error("OPENAI_API_KEY is not configured. Add it to the server environment and redeploy.");
+  }
+
   const baseRequest = {
-    model: process.env.OPENAI_API_KEY ? "gpt-4.1-mini" : "gemini-3-flash-preview",
+    model: "gpt-4.1-mini",
     maxTokens: 8000,
     messages: [
       {
@@ -155,14 +159,11 @@ export async function structureJobAd(options: {
       { role: "user" as const, content: userParts },
     ],
   };
-  const first = process.env.OPENAI_API_KEY
-    ? await invokeOpenAIForJobAd({ ...baseRequest, responseFormat, document: options.document })
-    : await invokeLLM({ ...baseRequest, response_format: responseFormat });
-  let text = typeof first === "string" ? first : completionText(first.choices?.[0]?.message?.content);
-  if (!text) {
-    const retry = process.env.OPENAI_API_KEY
-      ? await invokeOpenAIForJobAd({ ...baseRequest, document: options.document })
-      : await invokeLLM(baseRequest);
+  const first = await invokeOpenAIForJobAd({
+    ...baseRequest,
+    responseFormat,
+    document: options.document,
+  });
     text = typeof retry === "string" ? retry : completionText(retry.choices?.[0]?.message?.content);
   }
   if (!text) throw new Error("The assistant returned no structured content.");
