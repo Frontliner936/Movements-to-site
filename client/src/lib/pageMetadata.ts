@@ -47,7 +47,7 @@ export function applyJobPageMetadata(job: Job) {
   const description = (clean(job.description) || clean(job.responsibilities) || clean(job.qualifications) || title).slice(0, 240);
   let imageUrl: string | null = null;
   try {
-    const candidate = job.shareImageUrl || job.imageUrl || job.companyLogoUrl;
+    const candidate = job.shareImageUrl || job.companyLogoUrl || job.imageUrl;
     if (candidate) {
       const url = new URL(candidate, window.location.origin);
       if (url.protocol === "https:" && !url.username && !url.password) imageUrl = url.href;
