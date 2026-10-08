@@ -30,13 +30,17 @@ export function JobCard({ job, onChanged }: { job: Job; onChanged: () => void })
     <article className="job-card">
       <div className="job-card-topline">
         <CompanyLogo name={job.companyName} imageUrl={job.companyLogoUrl || job.imageUrl} />
-        {job.category && <span className="job-category">{job.category}</span>}
+        <div className="job-card-heading">
+          <Link href={`/jobs/${job.id}`} className="job-card-title">{job.title}<ArrowUpRight size={16} aria-hidden="true" /></Link>
+          <div className="job-card-heading-meta">
+            {job.companyName && (job.companyHref ? <Link className="job-company-link" href={job.companyHref}>{job.companyName}</Link> : <p className="job-company-name">{job.companyName}</p>)}
+            {job.category && <span className="job-category">{job.category}</span>}
+          </div>
+        </div>
         <div className="job-card-actions">
           <JobShareMenu job={job} variant="icon" onStatus={setNotice} />
         </div>
       </div>
-      <Link href={`/jobs/${job.id}`} className="job-card-title">{job.title}<ArrowUpRight size={16} aria-hidden="true" /></Link>
-      {job.companyName && (job.companyHref ? <Link className="job-company-link" href={job.companyHref}>{job.companyName}</Link> : <p className="job-company-name">{job.companyName}</p>)}
       <p className="job-description-preview">{job.description || "Open the listing to view the information shared by the source."}</p>
       <div className="job-card-footer">
         {postedAt && postedLabel && <time className="posted-time" dateTime={postedAt}><Clock3 size={13} />{postedLabel}</time>}

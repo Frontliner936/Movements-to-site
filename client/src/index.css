@@ -184,6 +184,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .jobs-feed > .job-card:nth-child(5n+4) { --card-accent: var(--violet); --card-wash: var(--violet-soft); }
 .jobs-feed > .job-card:nth-child(5n) { --card-accent: var(--green); --card-wash: var(--green-soft); }
 .job-card-topline { display: flex; align-items: center; gap: 12px; min-height: 43px; }
+.job-card-heading { flex: 1; min-width: 0; }
+.job-card-heading .job-card-title { width: 100%; max-width: 100%; min-width: 0; align-items: flex-start; gap: 5px; margin: 0 0 5px; font-size: 21px; line-height: 1.12; overflow-wrap: anywhere; }
+.job-card-heading-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 8px; }
+.job-card-heading-meta .job-company-name, .job-card-heading-meta .job-company-link { margin: 0; }
 .company-logo { width: 40px; height: 40px; display: grid; place-items: center; flex: none; border-radius: 12px; background: #e8efe6; overflow: hidden; color: var(--green); font-size: 15px; font-weight: 700; }
 .company-logo img { width: 100%; height: 100%; object-fit: contain; background: #fff; }
 .company-logo-large { width: 62px; height: 62px; border-radius: 18px; font-size: 22px; }
