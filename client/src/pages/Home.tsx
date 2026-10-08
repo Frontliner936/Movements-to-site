@@ -98,26 +98,6 @@ export default function Home() {
           </section>
         )}
 
-        <section className="opportunity-photo-strip" aria-label="Career and workplace photography">
-          <div className="photo-strip-intro">
-            <span className="eyebrow muted-eyebrow">OPPORTUNITY IN MOTION</span>
-            <h2>Work worth<br /><em>moving toward.</em></h2>
-            <p>From first applications to new teams, every opportunity starts with a person ready for the next step.</p>
-          </div>
-          <figure className="opportunity-photo opportunity-photo-tall">
-            <img src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1000&q=85" alt="Professionals collaborating around a table in a modern workplace." loading="lazy" />
-            <figcaption>Find your people.</figcaption>
-          </figure>
-          <figure className="opportunity-photo opportunity-photo-wide">
-            <img src="https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1200&q=85" alt="Colleagues working together around a laptop in an office." loading="lazy" />
-            <figcaption>Build your next chapter.</figcaption>
-          </figure>
-          <figure className="opportunity-photo opportunity-photo-small">
-            <img src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=900&q=85" alt="Team members discussing ideas during a work meeting." loading="lazy" />
-            <figcaption>Make the move.</figcaption>
-          </figure>
-        </section>
-
         <section className="opportunities-section" id="opportunities" aria-labelledby="opportunities-title">
           <div className="section-heading-row">
             <div><span className="eyebrow muted-eyebrow">FIND YOUR OPENING</span><h2 id="opportunities-title">Opportunities <span className="heading-period">.</span></h2></div>
@@ -149,6 +129,26 @@ export default function Home() {
               {!jobs.length && !query && !category && !location && view === "all" && <div className="empty-board-actions"><a className="empty-submit-link" href="/submit">Employer? Submit an opportunity <ArrowRight size={14} /></a><a className="empty-admin-link" href="/admin/login">Administrator? Add the first listing <ArrowRight size={14} /></a></div>}
             </div>
           ) : null}
+        </section>
+
+        <section className="opportunity-photo-strip" aria-label="Career and workplace photography">
+          <div className="photo-strip-intro">
+            <span className="eyebrow muted-eyebrow">OPPORTUNITY IN MOTION</span>
+            <h2>Work worth<br /><em>moving toward.</em></h2>
+            <p>From first applications to new teams, every opportunity starts with a person ready for the next step.</p>
+          </div>
+          <figure className="opportunity-photo opportunity-photo-tall">
+            <img src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1000&q=85" alt="Professionals collaborating around a table in a modern workplace." loading="lazy" />
+            <figcaption>Find your people.</figcaption>
+          </figure>
+          <figure className="opportunity-photo opportunity-photo-wide">
+            <img src="https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1200&q=85" alt="Colleagues working together around a laptop in an office." loading="lazy" />
+            <figcaption>Build your next chapter.</figcaption>
+          </figure>
+          <figure className="opportunity-photo opportunity-photo-small">
+            <img src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=900&q=85" alt="Team members discussing ideas during a work meeting." loading="lazy" />
+            <figcaption>Make the move.</figcaption>
+          </figure>
         </section>
 
         <section className="how-section" id="how-it-works"><div className="how-number">02 / THE MCHONGO WAY</div><div className="how-copy"><h2>Real opportunities.<br /><em>Original application links.</em></h2><p>Get Mchongo brings opportunities together in one clear place. When a role catches your eye, you go straight to the original application — no extra hoops.</p><a href="#opportunities" className="text-link">Browse the board <ArrowRight size={15} /></a></div><figure className="how-photo-frame"><img src="/manus-storage/async-images/oAV3nT3943jAZnR9rKeyaQ/image-2.webp" alt="A professional reviews her notes beside a laptop in a sunlit creative workspace." /><figcaption className="how-photo-overlay"><span>ONE CLEAR NEXT STEP</span><div className="how-photo-icons"><span><Search size={13} /></span><i /><span><span className="how-save-mark">▱</span></span><i /><span><ArrowRight size={14} /></span></div></figcaption></figure></section>
