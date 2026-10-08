@@ -53,7 +53,7 @@ export default function Home() {
         <section className="hero-wrap" aria-labelledby="hero-title">
           <div className="hero-copy">
             <span className="eyebrow"><span className="eyebrow-dot" />TANZANIA'S OPPORTUNITY BOARD</span>
-            <h1 id="hero-title">Your next move<br /><em>starts here.</em></h1>
+            <h1 id="hero-title"><span className="hero-highlight">Your next move</span><br /><em>starts here.</em></h1>
             <p className="hero-description">Good work opens doors. Find jobs and opportunities worth your next step — with the original application link, always.</p>
             <a href="#opportunities" className="hero-cta">Explore opportunities <ArrowDownRight size={17} /></a>
             <p className="hero-footnote"><span className="small-sun">✳</span> Clear opportunities. No noise.</p>
