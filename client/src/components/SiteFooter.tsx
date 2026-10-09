@@ -1,4 +1,4 @@
-import { Mail, MessageCircle, Phone } from "lucide-react";
+import { ArrowRight, Mail, MessageCircle, Phone } from "lucide-react";
 import { Brand } from "@/components/Brand";
 
 export function SiteFooter() {
@@ -17,8 +17,13 @@ export function SiteFooter() {
         <a className="footer-useful-link" href="https://chatgpt.com/" target="_blank" rel="noopener noreferrer">ChatGPT</a>
         <a className="footer-useful-link" href="https://www.utumishi.go.tz/pages/remuneration-and-staff-welfare" target="_blank" rel="noopener noreferrer">Government salary scale</a>
         <a className="footer-useful-link" href="https://matokeo.necta.go.tz/" target="_blank" rel="noopener noreferrer">NECTA results</a>
+        <a className="footer-useful-link" href="https://jobs.kazi.go.tz/" target="_blank" rel="noopener noreferrer">Kazi Portal</a>
+        <a className="footer-useful-link" href="https://www.veta.go.tz/" target="_blank" rel="noopener noreferrer">VETA courses</a>
+        <a className="footer-useful-link" href="https://www.nactvet.go.tz/student-information-verification" target="_blank" rel="noopener noreferrer">NACTVET verification</a>
+        <a className="footer-useful-link" href="https://kazi.go.tz/uploads/documents/en-1776351342-ELRA,%20CAP%20366.pdf" target="_blank" rel="noopener noreferrer">Employment rights (Mainland)</a>
       </div>
     </div>
+    <a className="footer-cv-services-link" href="/cv-services"><span><strong>CV Services</strong><small>Compare packages and get personalized support</small></span><ArrowRight size={16} aria-hidden="true" /></a>
     <div className="footer-links"><a href="/">Opportunities</a><a href="/announcements">Announcements</a><a href="/submit">Post a job</a><a href="/contact"><MessageCircle size={13} />Send a message</a><a href="/admin/login">Admin access</a></div>
     <span className="footer-year">© {new Date().getFullYear()} GET MCHONGO</span>
   </footer>;

@@ -9,6 +9,7 @@ import SubmitOpportunity from "./pages/SubmitOpportunity";
 import ContactUs from "./pages/ContactUs";
 import Announcements from "./pages/Announcements";
 import CompanyProfile from "./pages/CompanyProfile";
+import CvServices from "./pages/CvServices";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import NotFound from "./pages/NotFound";
@@ -21,6 +22,7 @@ function Router() {
     <Route path="/contact" component={ContactUs} />
     <Route path="/announcements" component={Announcements} />
     <Route path="/companies/:id" component={CompanyProfile} />
+    <Route path="/cv-services" component={CvServices} />
     <Route path="/admin/login" component={AdminLogin} />
     <Route path="/admin" component={AdminDashboard} />
     <Route path="/404" component={NotFound} />

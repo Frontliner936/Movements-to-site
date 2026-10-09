@@ -53,3 +53,14 @@
 - The administrator can choose to keep the source language (default), or request English or Kiswahili output.
 - The assistant can populate the existing editor's job title, company/institution name and details, category, location, deadline, description, responsibilities, qualifications, how-to-apply instructions and application URL. Extract only facts present in the supplied ad; do not invent missing information, leave unsupported values blank, validate URLs and show review notes.
 - Uploaded files are temporary and never saved as public listing assets; the extracted content fills the existing job editor as an unpublished draft. An administrator must inspect and explicitly save/publish it; the assistant never publishes or stores the file automatically.
+
+
+## [x] CV services and expanded job-seeker links
+- Add Kazi Portal, VETA courses, NACTVET verification, and Mainland employment-rights resources to the footer’s **Useful links** section, alongside the existing Ajira, interview, ChatGPT, salary-scale, and NECTA resources.
+- Add a separate **CV Services** footer button that opens a public `/cv-services` page.
+- Show these packages, descriptions, inclusions, and prices: **Basic CV — TSh 7,000; Professional ATS CV — TSh 10,000; Executive / Specialist CV — TSh 15,000; CV + Application Letter — TSh 12,000; Application Letter Only — TSh 2,000.** Mark Professional ATS CV as recommended.
+- Include these expandable categories: First-Time Job Seeker CV; Experienced Professional CV; Academic CV; Hospitality & General Jobs CV; Technical & Specialist CV; Executive & Management CV. Each category shows its description, suitable audience, relevant packages, and an order action.
+- Explain ATS-aware structure, job-specific keywords and relevant skills, professional summaries, genuine achievements, grammar/spelling/formatting improvements, PDF and editable Word files according to package, and support for first-time and experienced applicants.
+- Provide **Order via WhatsApp**, **Improve My Existing CV**, and **Ask About a Package** actions using `https://wa.me/255743738062`; display phone number `0743738062`.
+- Never promise guaranteed employment, interviews, or ATS selection. Never invent a customer’s qualifications or achievements.
+- Keep all package prices and service data together in `client/src/lib/cvServices.ts`; the existing admin has no general site-pricing controls, so no database or payment system is added.
