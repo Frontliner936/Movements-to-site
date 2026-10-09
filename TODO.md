@@ -71,3 +71,11 @@
 - When more than 9 opportunities match the current view and filters, show the shining two-tone gold **View more jobs** control; it opens an independent page containing the proceeding opportunities after the first 9.
 - Preserve the homepage search, category, location, and All/Saved view when opening the separate page.
 - Provide a **Back to previous page** control that returns visitors to the page they came from, with a safe fallback to the main opportunities page when they opened the separate page directly.
+
+
+## [x] About Us page and top navigation button
+- Add an **About us** button in the top header that opens a dedicated public page.
+- Introduce MichongoDaily with the headline **“Connecting Tanzanians with Opportunities. Empowering Careers. Inspiring Growth.”** and explain its role in sharing employment and career-development information from trusted and credible sources.
+- Describe government and private-sector jobs, NGO vacancies, internships, graduate programmes, scholarships, training programmes, and other personal/professional growth opportunities.
+- Include the supplied **Our Aim**, **Our Mission**, **Our Vision**, and **Our Commitment** statements, including the encouragement to verify application details with original advertisers and the goal of supporting CV writing and application-letter services.
+- End with **“MichongoDaily — Your Daily Gateway to Opportunities.”** and provide clear links to opportunities and CV services.

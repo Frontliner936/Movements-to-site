@@ -987,3 +987,57 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .more-jobs-empty .secondary-button { display: inline-flex; align-items: center; gap: 8px; }
 .jobs-load-more-button:focus-visible, .more-jobs-back:focus-visible { outline: 3px solid #17664f; outline-offset: 3px; }
 @media (max-width: 640px) { .more-jobs-page { width: calc(100% - 32px); padding-top: 22px; padding-bottom: 52px; } .more-jobs-page-heading { margin-top: 24px; } .more-jobs-empty { padding: 24px 18px; } }
+
+
+/* About Us: an editorial, values-led introduction to MichongoDaily. */
+.about-page { flex: 1; background: var(--paper); }
+.about-container { width: calc(100% - 72px); max-width: 1180px; margin: 0 auto; padding: 32px 0 82px; }
+.about-hero { position: relative; display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(265px, .7fr); align-items: stretch; gap: clamp(28px, 5vw, 64px); overflow: hidden; padding: clamp(30px, 5vw, 62px); border: 1px solid #dce6db; border-top: 4px solid var(--sun); border-radius: 18px; background: linear-gradient(118deg, #e9f3e7 0%, #f7f3e6 58%, #f1dfc3 100%); box-shadow: 0 16px 40px rgba(29, 67, 51, .07); }
+.about-hero-copy { position: relative; z-index: 1; }
+.about-hero-copy h1 { max-width: 690px; margin: 16px 0 12px; color: #173a32; font-family: var(--font-display); font-size: clamp(42px, 5.8vw, 70px); font-weight: 500; letter-spacing: -.055em; line-height: 1.01; }
+.about-hero-copy h1 em { color: var(--green); font-style: normal; }
+.about-hero-tagline { margin: 0 0 18px; color: #b18021; font-size: 13px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.about-intro { max-width: 700px; margin: 0; color: #53685d; font-size: 14px; line-height: 1.8; }
+.about-hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 26px; }
+.about-hero-actions .primary-button { min-height: 45px; gap: 10px; border-radius: 7px; text-decoration: none; }
+.about-secondary-link { display: inline-flex; align-items: center; gap: 7px; color: #17664f; font-size: 11px; font-weight: 700; text-decoration: none; }
+.about-secondary-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.about-hero-card { position: relative; z-index: 0; display: flex; min-height: 300px; flex-direction: column; justify-content: center; overflow: hidden; padding: 28px; border-radius: 15px; background: #173a32; color: #fffdf5; box-shadow: 0 16px 35px rgba(23, 58, 50, .18); }
+.about-hero-card-icon { width: 44px; height: 44px; display: grid; place-items: center; margin-bottom: 20px; border: 1px solid rgba(242, 201, 109, .45); border-radius: 50%; background: rgba(242, 201, 109, .1); color: #f2c96d; }
+.about-card-eyebrow { color: #f2c96d; font-size: 9px; font-weight: 800; letter-spacing: .16em; }
+.about-hero-card h2 { position: relative; z-index: 1; margin: 13px 0 12px; font-family: var(--font-display); font-size: clamp(24px, 2.6vw, 34px); font-weight: 500; letter-spacing: -.03em; line-height: 1.14; }
+.about-hero-card h2 em { color: #f2c96d; font-style: normal; }
+.about-hero-card p { position: relative; z-index: 1; max-width: 240px; margin: 0; color: #d0ddd2; font-size: 11px; line-height: 1.7; }
+.about-card-route { position: absolute; right: -68px; bottom: -85px; width: 220px; height: 220px; border: 1px solid rgba(242, 201, 109, .25); border-radius: 50%; box-shadow: 0 0 0 24px rgba(242, 201, 109, .05), 0 0 0 50px rgba(242, 201, 109, .035); }
+.about-opportunities { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: 34px; align-items: center; padding: 58px 0 48px; border-bottom: 1px solid var(--line); }
+.about-section-heading h2 { margin: 9px 0 9px; color: var(--ink); font-family: var(--font-display); font-size: clamp(27px, 3.3vw, 38px); font-weight: 500; letter-spacing: -.04em; line-height: 1.1; }
+.about-section-heading p { max-width: 400px; margin: 0; color: #6a786f; font-size: 12px; line-height: 1.75; }
+.about-opportunity-types { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 12px; }
+.about-opportunity-type { min-height: 60px; display: flex; align-items: center; gap: 11px; padding: 10px 12px; border: 1px solid #e4e7dd; border-radius: 9px; background: rgba(255, 254, 250, .8); color: #394f44; }
+.about-opportunity-type > span { width: 34px; height: 34px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 9px; background: #f4edd9; color: #a8781c; }
+.about-opportunity-type strong { font-size: 10px; font-weight: 700; line-height: 1.45; }
+.about-values { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding: 48px 0 58px; }
+.about-value-card { min-width: 0; padding: 23px; border: 1px solid #e3e6dc; border-left: 3px solid var(--green); border-radius: 4px 13px 4px 4px; background: #fffefa; box-shadow: 0 5px 18px rgba(30, 55, 43, .035); }
+.about-value-aim { border-left-color: #d7a235; }
+.about-value-mission { border-left-color: var(--green); }
+.about-value-vision { border-left-color: var(--blue); }
+.about-value-commitment { grid-column: 1 / -1; border-left-color: var(--coral); background: linear-gradient(110deg, #fffefa, #faf2e8); }
+.about-value-topline { display: flex; align-items: center; gap: 10px; color: #869187; font-size: 8px; font-weight: 800; letter-spacing: .13em; }
+.about-value-icon { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 11px; background: #eef3e9; color: var(--green); }
+.about-value-aim .about-value-icon { background: #f8efd8; color: #a8781c; }
+.about-value-vision .about-value-icon { background: #eaf1f7; color: #47718e; }
+.about-value-commitment .about-value-icon { background: #f8e9e3; color: #b96f5d; }
+.about-value-card h2 { margin: 18px 0 9px; color: #203b31; font-family: var(--font-display); font-size: clamp(21px, 2.5vw, 29px); font-weight: 500; letter-spacing: -.025em; line-height: 1.17; }
+.about-value-card p { margin: 0; color: #5e7065; font-size: 12px; line-height: 1.8; }
+.about-value-card p + p { margin-top: 10px; }
+.about-cta { display: flex; align-items: center; justify-content: space-between; gap: 28px; padding: 27px 31px; border-radius: 14px; background: #173a32; color: #fffdf5; }
+.about-cta .eyebrow { color: #f2c96d; }
+.about-cta h2 { margin: 9px 0 8px; font-family: var(--font-display); font-size: clamp(24px, 3vw, 35px); font-weight: 500; letter-spacing: -.035em; }
+.about-cta p { max-width: 560px; margin: 0 0 12px; color: #cbd8ca; font-size: 11px; line-height: 1.7; }
+.about-cta strong { color: #f2c96d; font-size: 10px; letter-spacing: .02em; }
+.about-cta-actions { display: flex; min-width: 180px; flex-direction: column; align-items: stretch; gap: 12px; }
+.about-cta-primary { min-height: 43px; display: inline-flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 13px; border-radius: 7px; background: #f2c96d; color: #173a32; font-size: 10px; font-weight: 800; text-decoration: none; }
+.about-cta-primary:hover { background: #ffdc8a; }
+.about-cta-secondary { color: #f2c96d; font-size: 10px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+@media (max-width: 920px) { .about-hero { grid-template-columns: minmax(0, 1.1fr) minmax(230px, .9fr); gap: 24px; } .about-opportunities { grid-template-columns: 1fr; gap: 20px; } }
+@media (max-width: 680px) { .about-container { width: calc(100% - 36px); padding: 22px 0 55px; } .about-hero { grid-template-columns: 1fr; gap: 22px; padding: 25px 19px; } .about-hero-copy h1 { font-size: clamp(38px, 11vw, 54px); } .about-intro { font-size: 13px; } .about-hero-card { min-height: 245px; padding: 22px; } .about-opportunities { padding: 40px 0 35px; } .about-opportunity-types { grid-template-columns: 1fr; } .about-values { grid-template-columns: 1fr; gap: 10px; padding: 35px 0 42px; } .about-value-commitment { grid-column: auto; } .about-value-card { padding: 19px; } .about-cta { display: block; padding: 23px 20px; } .about-cta-actions { margin-top: 20px; } }
