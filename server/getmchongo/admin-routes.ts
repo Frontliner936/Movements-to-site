@@ -87,8 +87,14 @@ router.patch("/messages/:id/read", async (req, res) => {
 
 router.get("/analytics/jobs", async (_req, res) => {
   const db = await getDb(); if (!db) return sendDbUnavailable(res);
-  const [whatsappMetric] = await db.select({ total: siteMetrics.total }).from(siteMetrics)
-    .where(eq(siteMetrics.metricKey, "whatsapp_channel_clicks")).limit(1);
+  let whatsappChannelClicks: number | null = null;
+  try {
+    const [whatsappMetric] = await db.select({ total: siteMetrics.total }).from(siteMetrics)
+      .where(eq(siteMetrics.metricKey, "whatsapp_channel_clicks")).limit(1);
+    whatsappChannelClicks = Number(whatsappMetric?.total ?? 0);
+  } catch {
+    // Keep existing job analytics available until the additive metrics migration is applied.
+  }
   const published = await db.select({ job: jobs, company: companies }).from(jobs)
     .leftJoin(companies, eq(jobs.companyId, companies.id))
     .where(eq(jobs.status, "published")).orderBy(desc(jobs.publishedAt), desc(jobs.createdAt));
@@ -104,7 +110,7 @@ router.get("/analytics/jobs", async (_req, res) => {
       uniqueVisitors: Number(stats?.uniqueVisitors ?? 0), lastViewedAt: stats?.lastViewedAt ?? null,
     };
   });
-  return res.json({ jobs: rows, whatsappChannelClicks: Number(whatsappMetric?.total ?? 0) });
+  return res.json({ jobs: rows, whatsappChannelClicks });
 });
 
 function normalizeJob(body: any, old?: typeof jobs.$inferSelect) {

@@ -19,7 +19,7 @@ const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", tim
 
 export default function AdminAnalytics() {
   const [jobs, setJobs] = useState<JobAnalytics[]>([]);
-  const [whatsappChannelClicks, setWhatsappChannelClicks] = useState(0);
+  const [whatsappChannelClicks, setWhatsappChannelClicks] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -28,9 +28,9 @@ export default function AdminAnalytics() {
     setRefreshing(true);
     setError("");
     try {
-      const result = await api<{ jobs: JobAnalytics[]; whatsappChannelClicks?: number }>("/api/gm/admin/analytics/jobs");
+      const result = await api<{ jobs: JobAnalytics[]; whatsappChannelClicks?: number | null }>("/api/gm/admin/analytics/jobs");
       setJobs(result.jobs);
-      setWhatsappChannelClicks(result.whatsappChannelClicks ?? 0);
+      setWhatsappChannelClicks(result.whatsappChannelClicks ?? null);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not load visitor analytics.");
     } finally {
@@ -53,7 +53,7 @@ export default function AdminAnalytics() {
     <div className="overview-stats analytics-summary">
       <div className="overview-stat"><span className="stat-icon"><BarChart3 size={18} /></span><span className="stat-label">Published listings</span><strong>{numberFormat.format(jobs.length)}</strong><small>Jobs currently shown in this report</small></div>
       <div className="overview-stat"><span className="stat-icon"><Eye size={18} /></span><span className="stat-label">Visitor entries across listings</span><strong>{numberFormat.format(visitorsAcrossListings)}</strong><small>A browser can appear once in more than one job row</small></div>
-      <div className="overview-stat"><span className="stat-icon"><FaWhatsapp size={18} /></span><span className="stat-label">WhatsApp channel clicks</span><strong>{numberFormat.format(whatsappChannelClicks)}</strong><small>Total clicks on the homepage channel link</small></div>
+      <div className="overview-stat"><span className="stat-icon"><FaWhatsapp size={18} /></span><span className="stat-label">WhatsApp channel clicks</span><strong>{whatsappChannelClicks === null ? "—" : numberFormat.format(whatsappChannelClicks)}</strong><small>{whatsappChannelClicks === null ? "Apply the click-metrics migration to enable counting" : "Total clicks on the homepage channel link"}</small></div>
     </div>
     <section className="admin-panel analytics-panel">
       <div className="panel-heading"><div><span className="eyebrow muted-eyebrow">PUBLISHED JOBS</span><h2>Visitors by opportunity</h2></div><span className="analytics-definition">Unique browsers, counted once per job</span></div>
