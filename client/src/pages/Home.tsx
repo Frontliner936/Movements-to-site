@@ -8,11 +8,10 @@ import { JobCard } from "@/components/JobCard";
 import { SiteFooter } from "@/components/SiteFooter";
 import { announcementKinds, api, recordWhatsAppChannelClick, type Announcement, type Job } from "@/lib/api";
 
-const JOBS_PER_BATCH = 9;
+const INITIAL_JOB_COUNT = 9;
 
 export default function Home() {
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [visibleJobCount, setVisibleJobCount] = useState(JOBS_PER_BATCH);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
@@ -45,12 +44,17 @@ export default function Home() {
     return () => { alive = false; };
   }, [query, category, location]);
 
-  useEffect(() => {
-    setVisibleJobCount(JOBS_PER_BATCH);
-  }, [query, category, location, view]);
-
   const visibleJobs = useMemo(() => view === "saved" ? jobs.filter(job => job.saved) : jobs, [jobs, view]);
-  const displayedJobs = visibleJobs.slice(0, visibleJobCount);
+  const displayedJobs = visibleJobs.slice(0, INITIAL_JOB_COUNT);
+  const moreJobsUrl = useMemo(() => {
+    const params = new URLSearchParams();
+    if (query.trim()) params.set("q", query.trim());
+    if (category) params.set("category", category);
+    if (location) params.set("location", location);
+    if (view === "saved") params.set("view", "saved");
+    const search = params.toString();
+    return `/more-jobs${search ? `?${search}` : ""}`;
+  }, [query, category, location, view]);
   const clearFilters = () => { setQuery(""); setCategory(""); setLocation(""); setView("all"); };
 
   return (
@@ -136,8 +140,8 @@ export default function Home() {
           {!error && loading ? <div className="loading-state"><span className="loading-dot" /><span>Looking for the right opportunity…</span></div> : null}
           {!error && !loading && visibleJobs.length > 0 ? <div className="jobs-feed" id="jobs-feed">{displayedJobs.map(job => <JobCard key={job.id} job={job} onChanged={() => { void api<{ jobs: Job[] }>(`/api/gm/jobs?${new URLSearchParams({ ...(query ? { q: query } : {}), ...(category ? { category } : {}), ...(location ? { location } : {}) })}`).then(data => setJobs(data.jobs)); }} />)}</div> : null}
           {!error && !loading && visibleJobs.length > displayedJobs.length ? <div className="jobs-load-more">
-            <button className="jobs-load-more-button" type="button" aria-controls="jobs-feed" onClick={() => setVisibleJobCount(current => Math.min(current + JOBS_PER_BATCH, visibleJobs.length))}><span>View more jobs</span><ArrowDownRight size={17} aria-hidden="true" /></button>
-            <span className="jobs-load-more-status" aria-live="polite">Showing {displayedJobs.length} of {visibleJobs.length} opportunities</span>
+            <a className="jobs-load-more-button" href={moreJobsUrl}><span>View more jobs</span><ArrowDownRight size={17} aria-hidden="true" /></a>
+            <span className="jobs-load-more-status">Showing the first {displayedJobs.length} of {visibleJobs.length} opportunities</span>
           </div> : null}
           {!error && !loading && visibleJobs.length === 0 ? (
             <div className="empty-opportunities">

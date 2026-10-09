@@ -66,8 +66,8 @@
 - Keep all package prices and service data together in `client/src/lib/cvServices.ts`; the existing admin has no general site-pricing controls, so no database or payment system is added.
 
 
-## [x] Progressive opportunity feed with gold “View more jobs” button
-- Initially show up to 9 job opportunities in the homepage feed. Keep additional fetched opportunities (including the 10th and later) available rather than discarding them.
-- When more than 9 opportunities match the current view and filters, display a button labelled **View more jobs** with a prominent, shining two-tone gold treatment.
-- Each click reveals the next 9 opportunities; keep the button available until all matching opportunities are shown, and show how many are currently displayed.
-- Reset the visible batch to the first 9 when the search, category, location, or All/Saved view changes.
+## [x] Separate page for proceeding job opportunities
+- Initially show 9 job opportunities in the homepage feed and keep further fetched opportunities available.
+- When more than 9 opportunities match the current view and filters, show the shining two-tone gold **View more jobs** control; it opens an independent page containing the proceeding opportunities after the first 9.
+- Preserve the homepage search, category, location, and All/Saved view when opening the separate page.
+- Provide a **Back to previous page** control that returns visitors to the page they came from, with a safe fallback to the main opportunities page when they opened the separate page directly.
