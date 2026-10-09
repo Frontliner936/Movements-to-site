@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDownRight, ArrowRight, BriefcaseBusiness, ChevronDown, Search, Sparkles } from "lucide-react";
+import { FaWhatsapp } from "react-icons/fa6";
 import { Brand } from "@/components/Brand";
 import { EmptyBoardIllustration } from "@/components/EditorialVisuals";
 import { HideBrokenImage } from "@/components/HideBrokenImage";
@@ -55,6 +56,10 @@ export default function Home() {
         <section className="hero-wrap" aria-labelledby="hero-title">
           <div className="hero-copy">
             <span className="eyebrow"><span className="eyebrow-dot" />TANZANIA'S OPPORTUNITY BOARD</span>
+            <a className="whatsapp-channel-link" href="https://whatsapp.com/channel/0029Vb6lza03wtb62igZVt0V" target="_blank" rel="noopener noreferrer" aria-label="Join our WhatsApp channel">
+              <FaWhatsapp size={16} aria-hidden="true" />
+              <span>Our channel</span>
+            </a>
             <h1 id="hero-title"><span className="hero-highlight">Your next move</span><br /><em>starts here.</em></h1>
             <p className="hero-description">Good work opens doors. Find jobs and opportunities worth your next step — with the original application link, always.</p>
             <a href="#opportunities" className="hero-cta">Explore opportunities <ArrowDownRight size={17} /></a>
