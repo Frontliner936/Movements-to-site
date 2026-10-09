@@ -3,7 +3,7 @@ import { and, count, desc, eq, inArray, like, or, sql } from "drizzle-orm";
 import { Router } from "express";
 import type { Request } from "express";
 import { getDb } from "../db";
-import { announcements, companies, contactMessages, jobs, jobReactions, jobViewers, pendingJobs } from "../../drizzle/schema";
+import { announcements, companies, contactMessages, jobs, jobReactions, jobViewers, pendingJobs, siteMetrics } from "../../drizzle/schema";
 import { requireSameOrigin } from "./auth";
 import { findDuplicateMatches } from "./duplicates";
 import { getJobShareImageUrl, getPublicSiteOrigin } from "./share-meta";
@@ -194,6 +194,19 @@ export function createPublicRouter() {
     await db.insert(jobViewers).values({ jobId: id, visitorKey: viewerHash })
       .onDuplicateKeyUpdate({ set: { lastViewedAt: sql`CURRENT_TIMESTAMP` } });
     return res.json({ recorded: true });
+  });
+
+  router.post("/analytics/whatsapp-channel-click", async (req, res) => {
+    if (!requireSameOrigin(req, res)) return;
+    const db = await getDb();
+    if (!db) return res.status(503).json({ error: "Click analytics are temporarily unavailable." });
+    try {
+      await db.insert(siteMetrics).values({ metricKey: "whatsapp_channel_clicks", total: 1 })
+        .onDuplicateKeyUpdate({ set: { total: sql`${siteMetrics.total} + 1` } });
+      return res.status(204).end();
+    } catch {
+      return res.status(503).json({ error: "Click analytics are temporarily unavailable." });
+    }
   });
 
   router.get("/companies/:id", async (req, res) => {

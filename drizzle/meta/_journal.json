@@ -43,6 +43,13 @@
       "when": 1791446108547,
       "tag": "0005_flippant_rogue",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1791527066622,
+      "tag": "0006_whatsapp_channel_clicks",
+      "breakpoints": true
     }
   ]
 }

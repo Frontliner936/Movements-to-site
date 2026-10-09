@@ -6,7 +6,7 @@ import { EmptyBoardIllustration } from "@/components/EditorialVisuals";
 import { HideBrokenImage } from "@/components/HideBrokenImage";
 import { JobCard } from "@/components/JobCard";
 import { SiteFooter } from "@/components/SiteFooter";
-import { announcementKinds, api, type Announcement, type Job } from "@/lib/api";
+import { announcementKinds, api, recordWhatsAppChannelClick, type Announcement, type Job } from "@/lib/api";
 
 export default function Home() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -56,7 +56,7 @@ export default function Home() {
         <section className="hero-wrap" aria-labelledby="hero-title">
           <div className="hero-copy">
             <span className="eyebrow"><span className="eyebrow-dot" />TANZANIA'S OPPORTUNITY BOARD</span>
-            <a className="whatsapp-channel-link" href="https://whatsapp.com/channel/0029Vb6lza03wtb62igZVt0V" target="_blank" rel="noopener noreferrer" aria-label="Join our WhatsApp channel">
+            <a className="whatsapp-channel-link" href="https://whatsapp.com/channel/0029Vb6lza03wtb62igZVt0V" target="_blank" rel="noopener noreferrer" aria-label="Join our WhatsApp channel" onClick={recordWhatsAppChannelClick}>
               <FaWhatsapp size={16} aria-hidden="true" />
               <span>Our channel</span>
             </a>

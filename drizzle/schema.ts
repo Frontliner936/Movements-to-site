@@ -146,3 +146,10 @@ export const announcements = mysqlTable("gm_announcements", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
+
+/** Aggregate site click totals; no visitor identifiers or request details are stored. */
+export const siteMetrics = mysqlTable("gm_site_metrics", {
+  metricKey: varchar("metric_key", { length: 80 }).primaryKey(),
+  total: int("total").default(0).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});

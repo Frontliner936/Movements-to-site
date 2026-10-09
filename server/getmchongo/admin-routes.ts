@@ -4,7 +4,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import sharp from "sharp";
 import { getDb } from "../db";
-import { announcements, companies, contactMessages, jobs, jobReactions, jobViewers, pendingJobs, scanSchedules, sources } from "../../drizzle/schema";
+import { announcements, companies, contactMessages, jobs, jobReactions, jobViewers, pendingJobs, scanSchedules, siteMetrics, sources } from "../../drizzle/schema";
 import { ADMIN_EMAIL, isAdmin, login, logout, requireAdmin, requireSameOrigin } from "./auth";
 import { runSource } from "./source-runner";
 import { validateSourceUrl, type SourceType } from "./collector";
@@ -87,6 +87,8 @@ router.patch("/messages/:id/read", async (req, res) => {
 
 router.get("/analytics/jobs", async (_req, res) => {
   const db = await getDb(); if (!db) return sendDbUnavailable(res);
+  const [whatsappMetric] = await db.select({ total: siteMetrics.total }).from(siteMetrics)
+    .where(eq(siteMetrics.metricKey, "whatsapp_channel_clicks")).limit(1);
   const published = await db.select({ job: jobs, company: companies }).from(jobs)
     .leftJoin(companies, eq(jobs.companyId, companies.id))
     .where(eq(jobs.status, "published")).orderBy(desc(jobs.publishedAt), desc(jobs.createdAt));
@@ -102,7 +104,7 @@ router.get("/analytics/jobs", async (_req, res) => {
       uniqueVisitors: Number(stats?.uniqueVisitors ?? 0), lastViewedAt: stats?.lastViewedAt ?? null,
     };
   });
-  return res.json({ jobs: rows });
+  return res.json({ jobs: rows, whatsappChannelClicks: Number(whatsappMetric?.total ?? 0) });
 });
 
 function normalizeJob(body: any, old?: typeof jobs.$inferSelect) {

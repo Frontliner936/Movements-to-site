@@ -76,6 +76,16 @@ export async function recordJobView(jobId: number): Promise<void> {
   });
 }
 
+export function recordWhatsAppChannelClick(): void {
+  void fetch("/api/gm/analytics/whatsapp-channel-click", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: "{}",
+    credentials: "omit",
+    keepalive: true,
+  }).catch(() => undefined);
+}
+
 export class ApiError extends Error {
   constructor(message: string, readonly status: number) { super(message); this.name = "ApiError"; }
 }
