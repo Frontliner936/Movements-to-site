@@ -67,7 +67,14 @@ export default function JobDetail() {
             {job.howToApply && <section className="detail-section"><span className="eyebrow muted-eyebrow">NEXT STEP</span><h2>How to apply</h2><RichJobText text={job.howToApply} /></section>}
             {job.sourceUrl && job.sourceUrl !== job.applicationUrl && <a className="source-link" href={job.sourceUrl} target="_blank" rel="noreferrer">View original source page <ExternalLink size={14} /></a>}
           </div>
-          <aside className="apply-card"><span className="eyebrow muted-eyebrow">READY WHEN YOU ARE</span><h2>Make your next move.</h2><p>Applications go directly to the original opportunity source.</p>{job.applicationUrl ? <a className="primary-button apply-button" href={job.applicationUrl} target="_blank" rel="noopener noreferrer">Apply on original site <ExternalLink size={16} /></a> : <p className="missing-apply">No application link was listed by the source.</p>}<span className="apply-footnote"><span className="green-dot" />Original application link</span><span className="sr-only" aria-live="polite">{notice}</span></aside>
+          <aside className="apply-card">
+            <span className="eyebrow muted-eyebrow">READY WHEN YOU ARE</span>
+            <h2>Make your next move.</h2>
+            <p>Applications go directly to the original opportunity source.</p>
+            {job.applicationUrl ? <a className="primary-button apply-button" href={job.applicationUrl} target="_blank" rel="noopener noreferrer">Apply now <ExternalLink size={16} /></a> : <p className="missing-apply">No application link was listed by the source.</p>}
+            <span className="apply-footnote"><span className="green-dot" />Original application link</span>
+            <span className="sr-only" aria-live="polite">{notice}</span>
+          </aside>
         </div>
       </> : null}
     </main>
