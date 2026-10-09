@@ -1,6 +1,7 @@
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
+import { ArrowLeft, Home as HomeIcon } from "lucide-react";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
@@ -34,6 +35,17 @@ function Router() {
   </Switch>;
 }
 
+function FloatingHomeButton() {
+  const [location] = useLocation();
+  if (location === "/") return null;
+
+  return <a className="floating-home-button" href="/" aria-label="Return to the homepage" title="Back to home">
+    <span className="floating-home-icon"><HomeIcon size={17} strokeWidth={2.2} aria-hidden="true" /></span>
+    <span className="floating-home-label">Home</span>
+    <ArrowLeft className="floating-home-arrow" size={13} aria-hidden="true" />
+  </a>;
+}
+
 export default function App() {
-  return <ErrorBoundary><ThemeProvider defaultTheme="light"><TooltipProvider><Toaster richColors position="top-right" /><Router /></TooltipProvider></ThemeProvider></ErrorBoundary>;
+  return <ErrorBoundary><ThemeProvider defaultTheme="light"><TooltipProvider><Toaster richColors position="top-right" /><Router /><FloatingHomeButton /></TooltipProvider></ThemeProvider></ErrorBoundary>;
 }

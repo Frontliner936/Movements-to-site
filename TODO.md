@@ -79,3 +79,8 @@
 - Describe government and private-sector jobs, NGO vacancies, internships, graduate programmes, scholarships, training programmes, and other personal/professional growth opportunities.
 - Include the supplied **Our Aim**, **Our Mission**, **Our Vision**, and **Our Commitment** statements, including the encouragement to verify application details with original advertisers and the goal of supporting CV writing and application-letter services.
 - End with **“MichongoDaily — Your Daily Gateway to Opportunities.”** and provide clear links to opportunities and CV services.
+
+
+## [x] Floating return-home button on inner pages
+- Show a compact floating button fixed to the middle-right side of every page after a visitor leaves the homepage, including job details and other routes; do not show it on the homepage itself.
+- Use an attractive, non-intrusive capsule/pill shape and provide a direct return to the homepage.
