@@ -64,3 +64,10 @@
 - Provide **Order via WhatsApp**, **Improve My Existing CV**, and **Ask About a Package** actions using `https://wa.me/255743738062`; display phone number `0743738062`.
 - Never promise guaranteed employment, interviews, or ATS selection. Never invent a customer’s qualifications or achievements.
 - Keep all package prices and service data together in `client/src/lib/cvServices.ts`; the existing admin has no general site-pricing controls, so no database or payment system is added.
+
+
+## [x] Progressive opportunity feed with gold “View more jobs” button
+- Initially show up to 12 job opportunities in the homepage feed. Keep additional fetched opportunities (including the 13th and later) available rather than discarding them.
+- When more than 12 opportunities match the current view and filters, display a button labelled **View more jobs** with a prominent, shining two-tone gold treatment.
+- Each click reveals the next 12 opportunities; keep the button available until all matching opportunities are shown, and show how many are currently displayed.
+- Reset the visible batch to the first 12 when the search, category, location, or All/Saved view changes.

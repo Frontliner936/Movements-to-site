@@ -8,8 +8,11 @@ import { JobCard } from "@/components/JobCard";
 import { SiteFooter } from "@/components/SiteFooter";
 import { announcementKinds, api, recordWhatsAppChannelClick, type Announcement, type Job } from "@/lib/api";
 
+const JOBS_PER_BATCH = 12;
+
 export default function Home() {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [visibleJobCount, setVisibleJobCount] = useState(JOBS_PER_BATCH);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [locations, setLocations] = useState<string[]>([]);
@@ -42,7 +45,12 @@ export default function Home() {
     return () => { alive = false; };
   }, [query, category, location]);
 
+  useEffect(() => {
+    setVisibleJobCount(JOBS_PER_BATCH);
+  }, [query, category, location, view]);
+
   const visibleJobs = useMemo(() => view === "saved" ? jobs.filter(job => job.saved) : jobs, [jobs, view]);
+  const displayedJobs = visibleJobs.slice(0, visibleJobCount);
   const clearFilters = () => { setQuery(""); setCategory(""); setLocation(""); setView("all"); };
 
   return (
@@ -126,7 +134,11 @@ export default function Home() {
 
           {error ? <div className="notice-card error-card"><strong>Could not load listings.</strong><p>{error}</p><button type="button" className="text-link" onClick={() => window.location.reload()}>Try again <ArrowRight size={14} /></button></div> : null}
           {!error && loading ? <div className="loading-state"><span className="loading-dot" /><span>Looking for the right opportunity…</span></div> : null}
-          {!error && !loading && visibleJobs.length > 0 ? <div className="jobs-feed">{visibleJobs.map(job => <JobCard key={job.id} job={job} onChanged={() => { void api<{ jobs: Job[] }>(`/api/gm/jobs?${new URLSearchParams({ ...(query ? { q: query } : {}), ...(category ? { category } : {}), ...(location ? { location } : {}) })}`).then(data => setJobs(data.jobs)); }} />)}</div> : null}
+          {!error && !loading && visibleJobs.length > 0 ? <div className="jobs-feed" id="jobs-feed">{displayedJobs.map(job => <JobCard key={job.id} job={job} onChanged={() => { void api<{ jobs: Job[] }>(`/api/gm/jobs?${new URLSearchParams({ ...(query ? { q: query } : {}), ...(category ? { category } : {}), ...(location ? { location } : {}) })}`).then(data => setJobs(data.jobs)); }} />)}</div> : null}
+          {!error && !loading && visibleJobs.length > displayedJobs.length ? <div className="jobs-load-more">
+            <button className="jobs-load-more-button" type="button" aria-controls="jobs-feed" onClick={() => setVisibleJobCount(current => Math.min(current + JOBS_PER_BATCH, visibleJobs.length))}><span>View more jobs</span><ArrowDownRight size={17} aria-hidden="true" /></button>
+            <span className="jobs-load-more-status" aria-live="polite">Showing {displayedJobs.length} of {visibleJobs.length} opportunities</span>
+          </div> : null}
           {!error && !loading && visibleJobs.length === 0 ? (
             <div className="empty-opportunities">
               <div className="empty-board-illustration" aria-hidden="true"><EmptyBoardIllustration /><span className="empty-art-orbit" /><span className="empty-art-spark">✳</span></div>
