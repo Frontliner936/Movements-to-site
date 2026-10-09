@@ -40,4 +40,21 @@ describe("RichJobText", () => {
     expect(html).toContain("<li>Coordinate site visits</li>");
     expect(html).toContain("<li>Hold a relevant diploma</li>");
   });
+
+  it("separates legacy source duties concatenated at sentence boundaries", () => {
+    const html = renderToStaticMarkup(React.createElement(RichJobText, {
+      text: "• Attend to emergency medical duties.Conduct ward rounds.Perform surgical duties.Provide clinical services", forceList: "ordered",
+    }));
+    expect(html.match(/<li>/g)).toHaveLength(4);
+    expect(html).toContain("<li>Conduct ward rounds.</li>");
+  });
+
+  it("separates common duty starts when source extraction lost punctuation", () => {
+    const html = renderToStaticMarkup(React.createElement(RichJobText, {
+      text: "Programme designHelp with cash transfersEnsure a minimum transition rate", forceList: "ordered",
+    }));
+    expect(html.match(/<li>/g)).toHaveLength(3);
+    expect(html).toContain("<li>Help with cash transfers</li>");
+    expect(html).toContain("<li>Ensure a minimum transition rate</li>");
+  });
 });

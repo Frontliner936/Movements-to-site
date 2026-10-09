@@ -36,6 +36,33 @@ const cleanText = (input: unknown, limit = 20_000): string | null => {
   const value = $.text().replace(/\u00a0/g, " ").replace(/[\t\r ]+/g, " ").replace(/\n\s*\n+/g, "\n\n").trim();
   return value ? value.slice(0, limit) : null;
 };
+
+function cleanListText(input: unknown, limit = 12_000): string | null {
+  if (input === undefined || input === null) return null;
+  if (Array.isArray(input)) {
+    const items = input.map(item => cleanListText(item, limit)).filter((item): item is string => !!item);
+    return items.length ? items.join("\n").slice(0, limit) : null;
+  }
+  if (typeof input === "object") {
+    const value = input as Record<string, unknown>;
+    const nested = value["#text"] ?? value.text ?? value.description ?? value.name ?? value.value;
+    return nested === undefined ? null : cleanListText(nested, limit);
+  }
+  if (typeof input !== "string" && typeof input !== "number") return null;
+  const raw = String(input).trim();
+  if (!raw) return null;
+  const normalizeLines = (value: string) => value.replace(/\u00a0/g, " ").split(/\r?\n/)
+    .map(line => line.replace(/[\t ]+/g, " ").trim()).filter(Boolean).join("\n").slice(0, limit);
+  if (!/<[a-z][\s\S]*?>/i.test(raw)) return normalizeLines(raw) || null;
+
+  const $ = cheerio.load(raw, {}, false);
+  const listItems = $("li").toArray().map(node => $(node).text().replace(/\s+/g, " ").trim()).filter(Boolean);
+  if (listItems.length) return normalizeLines(listItems.join("\n")) || null;
+  $("br").replaceWith("\n");
+  $("p,div,section,article").each((_, node) => { $(node).append("\n"); });
+  return normalizeLines($.root().text()) || null;
+}
+
 const firstString = (...values: unknown[]): string | null => {
   for (const value of values) {
     if (typeof value === "string" && value.trim()) return value.trim();
@@ -118,14 +145,20 @@ function absolutize(raw: string | null, base: string) {
   if (!raw) return null;
   try { const url = new URL(raw, base); return ["http:", "https:"].includes(url.protocol) ? url.toString() : null; } catch { return null; }
 }
-function buildCandidate(values: Partial<CollectedCandidate>, sourceUrl: string | null, fallbackCompany: string | undefined, rawContext: string | null): CollectedCandidate {
+type CandidateInput = Omit<Partial<CollectedCandidate>, "responsibilities" | "qualifications" | "howToApply"> & {
+  responsibilities?: unknown;
+  qualifications?: unknown;
+  howToApply?: unknown;
+};
+
+function buildCandidate(values: CandidateInput, sourceUrl: string | null, fallbackCompany: string | undefined, rawContext: string | null): CollectedCandidate {
   return {
     title: (cleanText(values.title, 300) ?? "").slice(0, 300),
     companyName: cleanText(values.companyName ?? fallbackCompany, 240),
     category: cleanText(values.category, 120), location: cleanText(values.location, 240),
     deadline: cleanText(values.deadline, 240), description: cleanText(values.description, 20_000),
-    responsibilities: cleanText(values.responsibilities, 12_000), qualifications: cleanText(values.qualifications, 12_000),
-    howToApply: cleanText(values.howToApply, 8_000), applicationUrl: values.applicationUrl ?? null,
+    responsibilities: cleanListText(values.responsibilities, 12_000), qualifications: cleanListText(values.qualifications, 12_000),
+    howToApply: cleanListText(values.howToApply, 8_000), applicationUrl: values.applicationUrl ?? null,
     imageUrl: values.imageUrl ?? null, sourceUrl, rawContext: cleanText(rawContext, 30_000),
   };
 }
@@ -143,8 +176,8 @@ export function parseRss(body: string, base: string, settings: SourceSettings): 
     return buildCandidate({
       title: firstString(item.title) ?? "", companyName: firstString(item.company, item.companyName),
       category: firstString(item.category), location: firstString(item.location), deadline: firstString(item.deadline, item.validThrough),
-      description, responsibilities: firstString(item.responsibilities), qualifications: firstString(item.qualifications, item.requirements),
-      howToApply: firstString(item.howToApply, item.how_to_apply), applicationUrl: page,
+      description, responsibilities: item.responsibilities, qualifications: item.qualifications ?? item.requirements,
+      howToApply: item.howToApply ?? item.how_to_apply, applicationUrl: page,
       imageUrl: absolutize(firstString(item.image, item.logo), base),
     }, page ?? base, settings.companyName, description);
   }).filter(item => item.title);
@@ -171,9 +204,9 @@ export function parseJson(body: string, base: string, settings: SourceSettings):
       location: firstString(path(item, "location", ["location", "jobLocation.name", "city"])),
       deadline: firstString(path(item, "deadline", ["deadline", "validThrough", "applicationDeadline"])),
       description,
-      responsibilities: firstString(path(item, "responsibilities", ["responsibilities", "duties"])),
-      qualifications: firstString(path(item, "qualifications", ["qualifications", "requirements", "education"])),
-      howToApply: firstString(path(item, "howToApply", ["howToApply", "applicationInstructions"])),
+      responsibilities: path(item, "responsibilities", ["responsibilities", "duties"]),
+      qualifications: path(item, "qualifications", ["qualifications", "requirements", "education"]),
+      howToApply: path(item, "howToApply", ["howToApply", "applicationInstructions"]),
       applicationUrl: itemUrl,
       imageUrl: absolutize(firstString(path(item, "imageUrl", ["logo", "image", "company.logo"])), base),
     }, itemUrl ?? base, settings.companyName, JSON.stringify(item).slice(0, 30_000));
@@ -211,13 +244,13 @@ function sectionAfterHeading($: cheerio.CheerioAPI, matcher: RegExp) {
     if (output) return;
     const heading = $(node);
     if (!matcher.test(heading.text())) return;
-    let text = "";
+    let html = "";
     let sibling = heading.next();
     while (sibling.length && !/^h[1-5]$/.test(sibling.get(0)?.tagName?.toLowerCase() ?? "")) {
-      text += ` ${sibling.text()}`;
+      html += sibling.toString();
       sibling = sibling.next();
     }
-    output = cleanText(text, 8_000);
+    output = cleanListText(html, 8_000);
   });
   return output;
 }
@@ -231,9 +264,9 @@ export function extractHtmlPage(html: string, url: string, settings: SourceSetti
   const rawLocation = posting?.jobLocation;
   const location = rawLocation ? objectOrArray(rawLocation).map(place => nestedName(place?.address ?? place)).filter(Boolean).join(", ") : firstString($("[itemprop='jobLocation']").text(), $(".job-location,.location").first().text());
   const deadline = firstString(posting?.validThrough, $("[itemprop='validThrough']").attr("content"), $(".application-deadline,.deadline").first().text());
-  const responsibilities = firstString(posting?.responsibilities, sectionAfterHeading($, /responsibilit|what you.?ll do|duties|majukumu/i));
-  const qualifications = firstString(posting?.qualifications, posting?.educationRequirements, posting?.experienceRequirements, sectionAfterHeading($, /qualification|requirement|what you.?ll need|eligibility/i));
-  const howToApply = firstString(posting?.howToApply, sectionAfterHeading($, /how to apply|application process|apply now/i));
+  const responsibilities = posting?.responsibilities ?? sectionAfterHeading($, /responsibilit|what you.?ll do|duties|majukumu/i);
+  const qualifications = posting?.qualifications ?? posting?.educationRequirements ?? posting?.experienceRequirements ?? sectionAfterHeading($, /qualification|requirement|what you.?ll need|eligibility/i);
+  const howToApply = posting?.howToApply ?? sectionAfterHeading($, /how to apply|application process|apply now/i);
   const applyHref = $("a").toArray().map(el => ({ text: $(el).text(), href: $(el).attr("href") })).find(item => item.href && /apply|application|submit/i.test(item.text));
   const applicationUrl = absolutize(firstString(posting?.url, applyHref?.href), url);
   const orgLogo = firstString(posting?.hiringOrganization?.logo?.url, posting?.hiringOrganization?.logo, $("meta[property='og:image']").attr("content"));

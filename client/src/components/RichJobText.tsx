@@ -40,9 +40,20 @@ function linkify(text: string, prefix: string): ReactNode[] {
 
 type Block = { kind: "paragraph"; lines: string[] } | { kind: "list"; ordered: boolean; items: string[] };
 
+function splitCollapsedListText(text: string): string {
+  return text
+    .replace(/(?<=[\p{Ll}\p{N}])[.!?](?=\p{Lu})/gu, "$&\n")
+    .replace(/(?<=[\p{Ll}\p{N}])[.!?][\t ]+(?=\p{Lu})/gu, "$&\n")
+    .replace(/(?<=[\p{Ll}])(?=(?:Act|Assist|Build|Conduct|Coordinate|Contribute|Develop|Drive|Ensure|Establish|Facilitate|Help|Implement|Lead|Maintain|Manage|Monitor|Oversee|Participate|Perform|Prepare|Provide|Review|Support|Teach|Undertake|Work|At\s+least|Bachelor|Certified|Demonstrated|Degree|Diploma|Excellent|Experience|Fluent|Graduate|Minimum|Master|Proven|Relevant|Strong|University|Valid|A\s+(?:bachelor|degree|diploma|relevant|minimum))\b)/gu, "\n")
+    .replace(/[\t ]*([•▪‣])[\t ]*(?=\S)/gu, "\n$1 ")
+    .replace(/[\t ]+([-*])[\t ]+(?=\S)/g, "\n$1 ");
+}
+
 function parseBlocks(text: string, forceList: boolean | "ordered" = false): Block[] {
   if (forceList) {
-    const items = text.replace(/\r\n?/g, "\n").split("\n").map(line => line.trim().replace(bulletPrefix, "").trim()).filter(Boolean);
+    const normalized = text.replace(/\r\n?/g, "\n");
+    const listText = normalized.includes("\n") ? normalized : splitCollapsedListText(normalized);
+    const items = listText.split("\n").map(line => line.trim().replace(bulletPrefix, "").trim()).filter(Boolean);
     return items.length ? [{ kind: "list", ordered: forceList === "ordered", items }] : [];
   }
   const blocks: Block[] = [];

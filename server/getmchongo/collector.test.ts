@@ -21,6 +21,16 @@ describe("Get Mchongo source collection", () => {
     expect(candidates[0].responsibilities).toBeNull();
   });
 
+  it("preserves array-valued responsibilities and qualifications from JSON feeds", () => {
+    const candidates = parseJson(JSON.stringify({ jobs: [{
+      title: "Community Officer",
+      responsibilities: ["Coordinate field visits", "Prepare weekly reports"],
+      qualifications: ["Diploma in community development", "Two years of relevant experience"],
+    }] }), "https://api.example.org/jobs", {});
+    expect(candidates[0].responsibilities).toBe("Coordinate field visits\nPrepare weekly reports");
+    expect(candidates[0].qualifications).toBe("Diploma in community development\nTwo years of relevant experience");
+  });
+
   it("extracts Schema.org JobPosting fields without fabricating missing values", () => {
     const html = `<html><head><script type="application/ld+json">${JSON.stringify({
       "@context": "https://schema.org", "@type": "JobPosting", title: "Finance Associate", description: "<p>Support financial operations for the programme.</p>", responsibilities: "Prepare monthly reconciliations.", qualifications: "A relevant accounting qualification.", validThrough: "2026-12-01", hiringOrganization: { name: "Lake Zone Initiative", logo: "https://example.org/logo.png" }, jobLocation: { address: { addressLocality: "Mwanza", addressRegion: "Mwanza Region" } }, url: "https://example.org/jobs/finance-associate",
@@ -28,6 +38,15 @@ describe("Get Mchongo source collection", () => {
     const candidate = extractHtmlPage(html, "https://example.org/jobs/finance-associate", {});
     expect(candidate).toMatchObject({ title: "Finance Associate", companyName: "Lake Zone Initiative", location: "Mwanza, Mwanza Region", deadline: "2026-12-01", responsibilities: "Prepare monthly reconciliations.", qualifications: "A relevant accounting qualification.", applicationUrl: "https://example.org/jobs/finance-associate", imageUrl: "https://example.org/logo.png" });
     expect(candidate?.howToApply).toBeNull();
+  });
+
+  it("keeps HTML list items separate when extracting sections from tracked career pages", () => {
+    const html = `<main><h1>Community Health Officer</h1>
+      <h2>Responsibilities</h2><ul><li>Coordinate community health visits</li><li>Prepare monthly activity reports</li></ul>
+      <h2>Qualifications</h2><ol><li>Diploma in public health</li><li>Two years of experience</li></ol></main>`;
+    const candidate = extractHtmlPage(html, "https://example.org/jobs/health-officer", {});
+    expect(candidate?.responsibilities).toBe("Coordinate community health visits\nPrepare monthly activity reports");
+    expect(candidate?.qualifications).toBe("Diploma in public health\nTwo years of experience");
   });
 
   it("keeps the source page but leaves an absent application link blank", () => {
