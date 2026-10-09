@@ -53,7 +53,10 @@ export function JobCard({ job, onChanged }: { job: Job; onChanged: () => void })
         <Link href={`/jobs/${job.id}`} className="view-more-button">View more <ArrowUpRight size={14} /></Link>
       </div>
       <span className="sr-only" aria-live="polite">{notice}</span>
-      <span className="reaction-counts" aria-label={`${job.likeCount} likes and ${job.saveCount} saves`}>{job.likeCount} liked · {job.saveCount} saved</span>
+      <div className="reaction-counts" aria-label={`${job.likeCount} visitors liked and ${job.saveCount} visitors saved this opportunity`}>
+        <span><Heart size={12} aria-hidden="true" />{job.likeCount} likes</span>
+        <span><Bookmark size={12} aria-hidden="true" />{job.saveCount} saves</span>
+      </div>
     </article>
   );
 }

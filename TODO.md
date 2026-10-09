@@ -84,3 +84,8 @@
 ## [x] Floating return-home button on inner pages
 - Show a compact floating button fixed to the middle-right side of every page after a visitor leaves the homepage, including job details and other routes; do not show it on the homepage itself.
 - Use an attractive, non-intrusive capsule/pill shape and provide a direct return to the homepage.
+
+
+## [x] Show public like and save counts per opportunity
+- Count visitors who have actively liked and saved each specific opportunity, and show the exact like and save totals directly on the visitor-facing job listings and opportunity detail page, not only in admin.
+- Update the displayed totals after a visitor likes or saves/unsaves that opportunity; use the existing per-visitor reaction tracking.
