@@ -8,7 +8,7 @@ import { JobCard } from "@/components/JobCard";
 import { SiteFooter } from "@/components/SiteFooter";
 import { announcementKinds, api, recordWhatsAppChannelClick, type Announcement, type Job } from "@/lib/api";
 
-const JOBS_PER_BATCH = 12;
+const JOBS_PER_BATCH = 9;
 
 export default function Home() {
   const [jobs, setJobs] = useState<Job[]>([]);

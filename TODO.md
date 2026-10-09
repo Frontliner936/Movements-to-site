@@ -67,7 +67,7 @@
 
 
 ## [x] Progressive opportunity feed with gold “View more jobs” button
-- Initially show up to 12 job opportunities in the homepage feed. Keep additional fetched opportunities (including the 13th and later) available rather than discarding them.
-- When more than 12 opportunities match the current view and filters, display a button labelled **View more jobs** with a prominent, shining two-tone gold treatment.
-- Each click reveals the next 12 opportunities; keep the button available until all matching opportunities are shown, and show how many are currently displayed.
-- Reset the visible batch to the first 12 when the search, category, location, or All/Saved view changes.
+- Initially show up to 9 job opportunities in the homepage feed. Keep additional fetched opportunities (including the 10th and later) available rather than discarding them.
+- When more than 9 opportunities match the current view and filters, display a button labelled **View more jobs** with a prominent, shining two-tone gold treatment.
+- Each click reveals the next 9 opportunities; keep the button available until all matching opportunities are shown, and show how many are currently displayed.
+- Reset the visible batch to the first 9 when the search, category, location, or All/Saved view changes.
