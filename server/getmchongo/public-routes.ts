@@ -206,7 +206,9 @@ export function createPublicRouter() {
     const db = await getDb();
     if (!db) return res.status(503).json({ error: "Homepage analytics are temporarily unavailable." });
     try {
-      await db.insert(homeViewers).values({ visitorKey: viewerHash }).onDuplicateKeyUpdate({ set: { lastViewedAt: sql`CURRENT_TIMESTAMP` } });
+      const viewedAt = new Date();
+      await db.insert(homeViewers).values({ visitorKey: viewerHash, firstViewedAt: viewedAt, lastViewedAt: viewedAt })
+        .onDuplicateKeyUpdate({ set: { lastViewedAt: viewedAt } });
       return res.status(204).end();
     } catch {
       return res.status(503).json({ error: "Homepage analytics are temporarily unavailable." });
