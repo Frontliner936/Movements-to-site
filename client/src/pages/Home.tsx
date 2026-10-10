@@ -60,7 +60,7 @@ export default function Home() {
   return (
     <div className="site-shell">
       <header className="site-header home-page-header">
-        <div className="header-inner"><Brand /><nav className="main-nav" aria-label="Main navigation"><a className="nav-current" href="#opportunities">Opportunities</a><a href="#how-it-works">How it works</a><a href="/announcements">Announcements</a></nav><div className="header-actions"><a className="header-submit-link" href="/submit">Post a job <ArrowRight size={14} /></a><a className="header-contact-link" href="/about-us">About us</a><a className="header-contact-link" href="/contact">Contact us</a><a className="header-admin-link" href="/admin/login">Admin <ArrowRight size={14} /></a></div></div>
+        <div className="header-inner"><Brand /><nav className="main-nav" aria-label="Main navigation"><a className="nav-current" href="#opportunities">Opportunities</a><a href="#how-it-works">How it works</a><a href="/announcements">Announcements</a></nav><div className="header-actions"><a className="remote-jobs-nav-link" href="/remote-jobs">View Remote Jobs <ArrowRight size={14} /></a><a className="header-submit-link" href="/submit">Post a job <ArrowRight size={14} /></a><a className="header-contact-link" href="/about-us">About us</a><a className="header-contact-link" href="/contact">Contact us</a><a className="header-admin-link" href="/admin/login">Admin <ArrowRight size={14} /></a></div></div>
       </header>
 
       <main>
@@ -70,7 +70,7 @@ export default function Home() {
             <span className="eyebrow"><span className="eyebrow-dot" />TANZANIA'S OPPORTUNITY BOARD</span>
             <a className="whatsapp-channel-link" href="https://whatsapp.com/channel/0029Vb6lza03wtb62igZVt0V" target="_blank" rel="noopener noreferrer" aria-label="Join our WhatsApp channel" onClick={recordWhatsAppChannelClick}>
               <FaWhatsapp size={16} aria-hidden="true" />
-              <span>Our channel</span>
+              <span>Join channel</span>
             </a>
             <h1 id="hero-title"><span className="hero-highlight">Your next move</span><br /><em>starts here.</em></h1>
             <p className="hero-description">Good work opens doors. Find jobs and opportunities worth your next step — with the original application link, always.</p>

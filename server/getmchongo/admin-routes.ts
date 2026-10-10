@@ -132,6 +132,7 @@ function normalizeJob(body: any, old?: typeof jobs.$inferSelect) {
     title, companyId, companyName, companyDescription, companyLogoUrl, companyWebsiteUrl,
     category: body.category === undefined ? old?.category ?? null : textValue(body.category, 120),
     location: body.location === undefined ? old?.location ?? null : textValue(body.location, 240),
+    isRemote: body.isRemote === undefined ? old?.isRemote ?? false : body.isRemote === true,
     deadline: body.deadline === undefined ? old?.deadline ?? null : textValue(body.deadline, 240),
     description: body.description === undefined ? old?.description ?? null : textValue(body.description, 30_000),
     responsibilities: body.responsibilities === undefined ? old?.responsibilities ?? null : textValue(body.responsibilities, 12_000),

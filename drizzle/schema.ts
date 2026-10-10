@@ -52,6 +52,7 @@ export const jobs = mysqlTable("gm_jobs", {
   companyWebsiteUrl: varchar("company_website_url", { length: 2048 }),
   category: varchar("category", { length: 120 }),
   location: varchar("location", { length: 240 }),
+  isRemote: boolean("is_remote").default(false).notNull(),
   deadline: varchar("deadline", { length: 240 }),
   description: text("description"),
   responsibilities: text("responsibilities"),

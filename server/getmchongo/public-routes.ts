@@ -82,7 +82,9 @@ export function createPublicRouter() {
     const q = typeof req.query.q === "string" ? req.query.q.trim().slice(0, 160) : "";
     const category = typeof req.query.category === "string" ? req.query.category.trim().slice(0, 120) : "";
     const location = typeof req.query.location === "string" ? req.query.location.trim().slice(0, 160) : "";
+    const remoteOnly = req.query.remote === "true";
     const predicates = [eq(jobs.status, "published")];
+    if (remoteOnly) predicates.push(eq(jobs.isRemote, true));
     if (q) {
       const term = `%${q.replace(/[\\%_]/g, "\\$&")}%`;
       const searchPredicate = or(like(jobs.title, term), like(jobs.companyName, term), like(companies.name, term));

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { ArrowUpRight, Bookmark, Clock3, Heart, MapPin } from "lucide-react";
+import { ArrowUpRight, Bookmark, Clock3, Heart, MapPin, Wifi } from "lucide-react";
 import { api, type Job } from "@/lib/api";
 import { JobShareMenu } from "@/components/JobShareMenu";
 import { formatPostedAgo } from "@/lib/timeAgo";
@@ -35,6 +35,7 @@ export function JobCard({ job, onChanged }: { job: Job; onChanged: () => void })
           <div className="job-card-heading-meta">
             {job.companyName && (job.companyHref ? <Link className="job-company-link" href={job.companyHref}>{job.companyName}</Link> : <p className="job-company-name">{job.companyName}</p>)}
             {job.category && <span className="job-category">{job.category}</span>}
+            {job.isRemote && <span className="remote-job-badge"><Wifi size={12} />Remote</span>}
           </div>
         </div>
         <div className="job-card-actions">
