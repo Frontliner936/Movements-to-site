@@ -79,6 +79,50 @@ describe("job-ad extraction normalization", () => {
     expect(result.fields.description).toBe("");
   });
 
+  it("reads label-only headings and picks up a deadline stated in a sentence", async () => {
+    const result = await structureJobAd({
+      outputLanguage: "source",
+      sourceText: [
+        "JOB VACANCY", "Position", "Community Health Officer", "Company", "Example Foundation", "Location", "Mwanza",
+        "Applications must be submitted by 30 November 2026.", "Responsibilities and Duties", "Coordinate community visits", "Prepare monthly reports",
+        "Qualifications and Experience Required", "Bachelor's degree in public health", "At least three years of relevant experience",
+      ].join("\n"),
+    });
+    expect(result.fields.title).toBe("Community Health Officer");
+    expect(result.fields.companyName).toBe("Example Foundation");
+    expect(result.fields.location).toBe("Mwanza");
+    expect(result.fields.deadline).toBe("30 November 2026");
+    expect(result.fields.responsibilities.split("\n")).toEqual(["• Coordinate community visits", "• Prepare monthly reports"]);
+    expect(result.fields.qualifications.split("\n")).toEqual(["• Bachelor's degree in public health", "• At least three years of relevant experience"]);
+  });
+
+  it("splits compact pasted text containing multiple inline field labels", async () => {
+    const result = await structureJobAd({
+      outputLanguage: "source",
+      sourceText: "VACANCY | JOB TITLE: Finance Officer | COMPANY: Lake Zone Initiative | LOCATION: Mwanza | APPLICATION DEADLINE: 15 Dec 2026 | RESPONSIBILITIES: Prepare monthly reports; Reconcile accounts | QUALIFICATIONS & REQUIREMENTS: Bachelor's degree in accounting; Three years of experience",
+    });
+    expect(result.fields.title).toBe("Finance Officer");
+    expect(result.fields.companyName).toBe("Lake Zone Initiative");
+    expect(result.fields.location).toBe("Mwanza");
+    expect(result.fields.deadline).toBe("15 Dec 2026");
+    expect(result.fields.responsibilities.split("\n")).toEqual(["• Prepare monthly reports", "• Reconcile accounts"]);
+    expect(result.fields.qualifications.split("\n")).toEqual(["• Bachelor's degree in accounting", "• Three years of experience"]);
+  });
+
+  it("separates unmistakable responsibilities and qualifications when pasted without section headings", async () => {
+    const result = await structureJobAd({
+      outputLanguage: "source",
+      sourceText: [
+        "MARKETING OFFICER", "- Coordinate outreach campaigns", "- Prepare weekly performance reports",
+        "- Bachelor's degree in marketing", "- At least three years of relevant experience", "Applications close on 20 October 2026.",
+      ].join("\n"),
+    });
+    expect(result.fields.title).toBe("MARKETING OFFICER");
+    expect(result.fields.deadline).toBe("20 October 2026");
+    expect(result.fields.responsibilities.split("\n")).toEqual(["• Coordinate outreach campaigns", "• Prepare weekly performance reports"]);
+    expect(result.fields.qualifications.split("\n")).toEqual(["• Bachelor's degree in marketing", "• At least three years of relevant experience"]);
+  });
+
   it("drops very low-confidence OCR words while retaining readable lines", () => {
     const header = "level\tpage_num\tblock_num\tpar_num\tline_num\tword_num\tleft\ttop\twidth\theight\tconf\ttext";
     const word = (line: number, index: number, confidence: number, text: string) => ["5", "1", "1", "1", String(line), String(index), "0", "0", "10", "10", String(confidence), text].join("\t");

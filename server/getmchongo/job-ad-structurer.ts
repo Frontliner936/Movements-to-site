@@ -75,20 +75,66 @@ function stripLeadingListMarkers(value: string): string {
 const sectionAliases: Record<SectionKey, string[]> = {
   description: ["description", "job description", "job summary", "position summary", "role overview", "about the role", "overview", "maelezo ya kazi", "muhtasari wa nafasi"],
   companyDescription: ["about the company", "about the organisation", "about the organization", "company profile", "organisation profile", "organization profile", "kuhusu kampuni", "kuhusu taasisi"],
-  responsibilities: ["responsibilities", "key responsibilities", "duties", "key duties", "duties and responsibilities", "roles and responsibilities", "main responsibilities", "key accountabilities", "what you will do", "majukumu", "majukumu makuu", "kazi na majukumu", "wajibu na majukumu"],
-  qualifications: ["qualifications", "requirements", "qualifications and requirements", "qualifications and experience", "minimum qualifications", "minimum requirements", "education and experience", "skills and experience", "candidate requirements", "what you will need", "sifa", "vigezo", "sifa na vigezo", "elimu na uzoefu", "vigezo vya mwombaji"],
+  responsibilities: ["responsibilities", "key responsibilities", "duties", "key duties", "job duties", "job responsibilities", "duties and responsibilities", "key duties and responsibilities", "responsibilities and duties", "roles and responsibilities", "main responsibilities", "key accountabilities", "key tasks", "main tasks", "what you will do", "majukumu", "majukumu makuu", "kazi na majukumu", "wajibu na majukumu"],
+  qualifications: ["qualifications", "requirements", "qualifications and requirements", "qualifications and experience", "qualifications and experience required", "minimum qualifications", "minimum requirements", "education and experience", "skills and experience", "candidate requirements", "candidate profile", "person specification", "what you will need", "sifa", "vigezo", "sifa na vigezo", "elimu na uzoefu", "vigezo vya mwombaji"],
   howToApply: ["how to apply", "application procedure", "application instructions", "application process", "method of application", "applying", "jinsi ya kuomba", "namna ya kutuma maombi", "maombi", "kutuma maombi"],
 };
 const metadataLabels: Array<{ key: keyof JobAdFields; labels: string[] }> = [
-  { key: "title", labels: ["job title", "position title", "position", "vacancy", "role", "nafasi ya kazi"] },
+  { key: "title", labels: ["job title", "position title", "job position", "position applied for", "vacancy title", "position", "vacancy", "role", "nafasi ya kazi"] },
   { key: "companyName", labels: ["company", "company name", "employer", "hiring organization", "hiring organisation", "organization", "organisation", "institution", "kampuni", "mwajiri", "taasisi"] },
-  { key: "location", labels: ["location", "work location", "duty station", "mahali pa kazi"] },
-  { key: "deadline", labels: ["deadline", "closing date", "application deadline", "application closing date", "tarehe ya mwisho"] },
+  { key: "location", labels: ["location", "work location", "job location", "duty station", "place of work", "mahali pa kazi"] },
+  { key: "deadline", labels: ["deadline", "closing date", "application deadline", "application closing date", "last date to apply", "deadline to apply", "tarehe ya mwisho"] },
   { key: "category", labels: ["category", "job category", "field"] },
   { key: "companyWebsiteUrl", labels: ["company website", "organization website", "organisation website", "website"] },
   { key: "companyLogoUrl", labels: ["company logo url", "logo url"] },
   { key: "applicationUrl", labels: ["application url", "apply url", "application link", "apply link"] },
 ];
+
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function aliasPattern(alias: string): string {
+  return normalizeLabel(alias).split(" ").map(word => word === "and" ? "(?:and|&|/)" : escapeRegex(word)).join("\\s+");
+}
+
+const inlineAdLabelPattern = [...new Set([
+  ...metadataLabels.flatMap(rule => rule.labels),
+  ...Object.values(sectionAliases).flat(),
+])].sort((a, b) => b.length - a.length).map(aliasPattern).join("|");
+const inlineAdLabelRegex = new RegExp(`(^|[\\s|;])(${inlineAdLabelPattern})(?:\\s*[:：]|\\s+[—–-])\\s*`, "gi");
+
+function splitInlineAdLabels(line: string): string {
+  return line.replace(inlineAdLabelRegex, (match, _boundary: string, label: string, offset: number) => `${offset > 0 ? "\n" : ""}${label}: `)
+    .replace(/[ \t]*[|;][ \t]*(?=\n|$)/g, "");
+}
+
+function metadataHeadingKey(line: string): keyof JobAdFields | null {
+  const label = normalizeLabel(stripLeadingListMarkers(line).replace(/[:：]+$/, ""));
+  return metadataLabels.find(rule => rule.labels.some(item => normalizeLabel(item) === label))?.key ?? null;
+}
+
+const monthNames = "jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?";
+const explicitDateRegex = new RegExp(`\\b(?:\\d{1,2}(?:st|nd|rd|th)?\\s+(?:${monthNames})\\s*,?\\s+\\d{4}|(?:${monthNames})\\s+\\d{1,2}(?:st|nd|rd|th)?\\s*,?\\s+\\d{4}|\\d{1,2}[./-]\\d{1,2}[./-]\\d{2,4}|\\d{4}-\\d{2}-\\d{2})\\b`, "i");
+const deadlineCueRegex = /\b(?:application.{0,24}deadline|closing date|deadline|application.{0,30}clos(?:e|es|ed|ing)|last date|apply by|apply before|submit.{0,30}by|received by|tarehe ya mwisho|mwisho wa kutuma maombi|maombi.{0,30}(?:hadi|mwisho))\b/i;
+
+function inferExplicitDeadline(line: string): string | null {
+  if (!deadlineCueRegex.test(line)) return null;
+  return line.match(explicitDateRegex)?.[0]?.replace(/[,\s]+$/, "") ?? null;
+}
+
+const qualificationCueRegex = /\b(?:minimum (?:education|qualification|requirement)|qualifications?|requirements?|education|degree|diploma|certificate|bachelor|master|phd|years?.{0,30}experience|experience in|proficien(?:t|cy)|skills?|must have|should have|candidate must|applicants? (?:must|should|need)|licen[cs]e|registration|sifa|vigezo|elimu|shahada|stashahada|cheti|uzoefu|ujuzi|mwenye)\b/i;
+const responsibilityCueRegex = /\b(?:responsibilities|duties|key tasks|accountabilities|responsible for|will be expected to|you will)\b/i;
+const responsibilityActionRegex = /^(?:manage|lead|coordinate|prepare|support|develop|provide|monitor|implement|conduct|supervise|maintain|ensure|review|analy[sz]e|deliver|facilitate|organize|organise|collect|report|design|oversee|assist|liaise|track|create|perform|carry out|undertake|kusimamia|kuratibu|kuandaa|kusaidia|kuhakikisha|kufuatilia|kutekeleza|kufanya|kutoa|kuongoza|kukusanya|kuandika|kushauri)\b/i;
+
+function classifyUnlabelledLine(line: string): SectionKey | null {
+  const cleaned = stripLeadingListMarkers(line);
+  if (qualificationCueRegex.test(cleaned)) return "qualifications";
+  if (responsibilityCueRegex.test(cleaned) || responsibilityActionRegex.test(cleaned)) return "responsibilities";
+  return null;
+}
+
+const likelyJobTitleRegex = /\b(?:officer|manager|assistant|engineer|analyst|accountant|director|coordinator|supervisor|specialist|technician|administrator|executive|teacher|nurse|doctor|driver|clerk|intern|consultant|lecturer|researcher|inspector|attendant|meneja|afisa|mhasibu|mwalimu|mhandisi|mkurugenzi|mratibu|msaidizi|mshauri|mtaalamu|daktari|muuguzi|mkaguzi)\b/i;
 
 function parseMetadata(line: string): { key: keyof JobAdFields; value: string } | null {
   const cleaned = stripLeadingListMarkers(line);
@@ -161,14 +207,25 @@ function parseAdText(sourceText: string, outputLanguage: OutputLanguage = "sourc
   };
   const unassigned: string[] = [];
   let activeSection: SectionKey | null = null;
-  const lines = sourceText.replace(/\r\n?/g, "\n").replace(/[\t ]+/g, " ").split("\n");
+  let pendingMetadata: keyof JobAdFields | null = null;
+  const lines = sourceText.replace(/\r\n?/g, "\n").split("\n").flatMap(line => splitInlineAdLabels(line).split("\n"));
 
   for (const rawLine of lines) {
     const line = rawLine.trim();
     if (!line) {
       if (activeSection) sectionLines[activeSection].push("");
-      else unassigned.push("");
       continue;
+    }
+    if (pendingMetadata) {
+      const startsAnotherField = parseMetadata(line) || parseSectionHeading(line) || metadataHeadingKey(line);
+      const isUnrelatedHeading = unrelatedSectionHeadings.has(normalizeLabel(line.replace(/[:：]+$/, ""))) || /[:：]\s*$/.test(line);
+      if (!startsAnotherField && !isUnrelatedHeading) {
+        fields[pendingMetadata] = stripLeadingListMarkers(line);
+        pendingMetadata = null;
+        activeSection = null;
+        continue;
+      }
+      pendingMetadata = null;
     }
     const metadata = parseMetadata(line);
     if (metadata) {
@@ -182,6 +239,12 @@ function parseAdText(sourceText: string, outputLanguage: OutputLanguage = "sourc
       if (heading.inline) sectionLines[activeSection].push(heading.inline);
       continue;
     }
+    const metadataKey = metadataHeadingKey(line);
+    if (metadataKey) {
+      pendingMetadata = metadataKey;
+      activeSection = null;
+      continue;
+    }
     if (activeSection && isUnrecognizedSectionHeading(line)) {
       activeSection = null;
       unassigned.push(line);
@@ -191,14 +254,34 @@ function parseAdText(sourceText: string, outputLanguage: OutputLanguage = "sourc
     else unassigned.push(line);
   }
 
-  const remaining = [...unassigned];
+  if (!fields.deadline) {
+    for (const line of lines) {
+      const deadline = inferExplicitDeadline(line);
+      if (deadline) { fields.deadline = deadline; break; }
+    }
+  }
+
+  const remaining: string[] = [];
+  for (const line of unassigned) {
+    if (!line.trim()) continue;
+    const deadline = inferExplicitDeadline(line);
+    if (deadline) {
+      if (!fields.deadline) fields.deadline = deadline;
+      continue;
+    }
+    const looseSection = classifyUnlabelledLine(line);
+    if (looseSection) sectionLines[looseSection].push(line);
+    else remaining.push(line);
+  }
   if (!fields.title) {
-    const first = remaining.find(line => {
+    const isTitleCandidate = (line: string) => {
       const cleaned = stripLeadingListMarkers(line);
       return cleaned.length >= 3 && cleaned.length <= 120 && /[A-Za-z]/.test(cleaned) && !/^https?:\/\//i.test(cleaned)
         && !/[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/.test(cleaned) && !genericTitleHeadings.has(normalizeLabel(cleaned))
         && !unrelatedSectionHeadings.has(normalizeLabel(cleaned));
-    });
+    };
+    const first = remaining.find(line => isTitleCandidate(line) && likelyJobTitleRegex.test(stripLeadingListMarkers(line)))
+      ?? remaining.find(isTitleCandidate);
     if (first) {
       fields.title = first;
       remaining.splice(remaining.indexOf(first), 1);
