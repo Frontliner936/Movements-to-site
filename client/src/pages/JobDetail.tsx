@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useRoute } from "wouter";
-import { ArrowLeft, ArrowUpRight, Bookmark, CalendarDays, Clock3, ExternalLink, Globe2, Heart, MapPin } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Bookmark, CalendarDays, Clock3, ExternalLink, Globe2, Heart, MapPin, Wifi } from "lucide-react";
 import { Brand } from "@/components/Brand";
 import { CompanyLogo } from "@/components/JobCard";
 import { JobQuickShareButtons, JobShareMenu } from "@/components/JobShareMenu";
@@ -52,7 +52,7 @@ export default function JobDetail() {
       {!loading && error ? <div className="empty-opportunities detail-empty"><span className="eyebrow muted-eyebrow">NOT AVAILABLE</span><h2>This opportunity isn't here.</h2><p>{error}</p><Link href="/" className="text-link">Back to the opportunities board <ArrowLeft size={15} /></Link></div> : null}
       {!loading && job ? <>
         <section className="detail-heading">
-          <div className="detail-company-line"><CompanyLogo size="large" name={job.companyName} imageUrl={job.companyLogoUrl || job.imageUrl} /><div>{job.companyName && (job.companyHref ? <Link href={job.companyHref} className="detail-company-link">{job.companyName} <ArrowUpRight size={13} /></Link> : <span className="detail-company-name">{job.companyName}</span>)}{job.category && <span className="job-category">{job.category}</span>}</div></div>
+          <div className="detail-company-line"><CompanyLogo size="large" name={job.companyName} imageUrl={job.companyLogoUrl || job.imageUrl} /><div>{job.companyName && (job.companyHref ? <Link href={job.companyHref} className="detail-company-link">{job.companyName} <ArrowUpRight size={13} /></Link> : <span className="detail-company-name">{job.companyName}</span>)}{job.category && <span className="job-category">{job.category}</span>}{job.isRemote && <span className="remote-job-badge"><Wifi size={12} />Remote</span>}</div></div>
           <h1>{job.title}</h1>
           <div className="detail-meta">{postedAt && postedLabel && <span className="posted-time"><Clock3 size={15} />{postedLabel}</span>}{job.location && <span><MapPin size={16} />{job.location}</span>}{job.deadline && <span><CalendarDays size={15} />Deadline: {job.deadline}</span>}</div>
           <div className="detail-heading-actions"><button type="button" className={`secondary-button ${job.liked ? "is-liked" : ""}`} aria-label={`${job.liked ? "Unlike" : "Like"} this opportunity; ${job.likeCount} likes`} onClick={() => void toggle("like")} disabled={busy}><Heart size={16} fill={job.liked ? "currentColor" : "none"} /> {job.liked ? "Liked" : "Like"} <span>{job.likeCount}</span></button><button type="button" className={`secondary-button ${job.saved ? "is-saved" : ""}`} aria-label={`${job.saved ? "Remove saved" : "Save"} opportunity; ${job.saveCount} saves`} onClick={() => void toggle("save")} disabled={busy}><Bookmark size={15} fill={job.saved ? "currentColor" : "none"} /> {job.saved ? "Saved" : "Save"} <span>{job.saveCount}</span></button><JobShareMenu job={job} variant="button" onStatus={setNotice} /><JobQuickShareButtons job={job} variant="button" /></div>

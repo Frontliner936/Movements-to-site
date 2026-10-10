@@ -50,6 +50,13 @@
       "when": 1791527066622,
       "tag": "0006_whatsapp_channel_clicks",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1791640310633,
+      "tag": "0007_remote_jobs",
+      "breakpoints": true
     }
   ]
 }

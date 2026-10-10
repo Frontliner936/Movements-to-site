@@ -19,6 +19,7 @@ export type Job = {
   companyHref: string | null;
   category: string | null;
   location: string | null;
+  isRemote: boolean;
   deadline: string | null;
   description: string | null;
   responsibilities: string | null;
