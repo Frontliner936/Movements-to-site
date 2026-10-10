@@ -43,6 +43,7 @@ Get Mchongo is a React / Express / Drizzle job and opportunity site with a MySQL
 
 - New uploads go directly to the persistent Railway Volume. The legacy `/manus-storage/` URL prefix is intentionally retained so database image URL fields and schema do not need to change; those requests are served from this app's local storage.
 - Remote roles are marked explicitly in the admin job editor. The public `/remote-jobs` page shows published listings with this flag. Before deploying code that uses a new schema migration, apply the additive SQL migration to the existing Railway MySQL database (or run the configured Drizzle migrations against that same database); existing jobs default to non-remote.
+- Homepage reach analytics count unique anonymous browsers that load the homepage, independently of job-detail views. Before deploying this feature, apply `drizzle/0008_homepage_visitors.sql` to the existing Railway MySQL database. Browser identifiers are hashed before storage; this is an approximate browser count, not a count of identified people.
 - Automatic source scans are started by the web app itself; saving the schedule no longer calls Manus Heartbeat.
 - The two homepage hero/workplace photos that previously used Manus-only storage now use existing workplace photos already used elsewhere on the page.
 

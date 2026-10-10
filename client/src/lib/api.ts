@@ -77,6 +77,17 @@ export async function recordJobView(jobId: number): Promise<void> {
   });
 }
 
+export function recordHomeView(): void {
+  const visitorKey = getVisitorKey();
+  void fetch("/api/gm/analytics/home-view", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-home-viewer-key": visitorKey },
+    body: "{}",
+    credentials: "same-origin",
+    keepalive: true,
+  }).catch(() => undefined);
+}
+
 export function recordWhatsAppChannelClick(): void {
   void fetch("/api/gm/analytics/whatsapp-channel-click", {
     method: "POST",

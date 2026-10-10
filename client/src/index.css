@@ -501,7 +501,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .hero-photo-note strong { font-size: 13px; }
 }
 
-.analytics-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-bottom: 15px; }
+.analytics-summary { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-bottom: 15px; }
 .analytics-panel { min-width: 0; }
 .analytics-definition { color: #7d897f; font-size: 9px; }
 .analytics-table-scroll { width: 100%; overflow-x: auto; margin-top: 18px; }

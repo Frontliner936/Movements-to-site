@@ -20,6 +20,8 @@ const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", tim
 export default function AdminAnalytics() {
   const [jobs, setJobs] = useState<JobAnalytics[]>([]);
   const [whatsappChannelClicks, setWhatsappChannelClicks] = useState<number | null>(null);
+  const [homepageVisitors, setHomepageVisitors] = useState<number | null>(null);
+  const [lastHomepageVisit, setLastHomepageVisit] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -28,9 +30,11 @@ export default function AdminAnalytics() {
     setRefreshing(true);
     setError("");
     try {
-      const result = await api<{ jobs: JobAnalytics[]; whatsappChannelClicks?: number | null }>("/api/gm/admin/analytics/jobs");
+      const result = await api<{ jobs: JobAnalytics[]; whatsappChannelClicks?: number | null; homepageVisitors?: number | null; lastHomepageVisit?: string | null }>("/api/gm/admin/analytics/jobs");
       setJobs(result.jobs);
       setWhatsappChannelClicks(result.whatsappChannelClicks ?? null);
+      setHomepageVisitors(result.homepageVisitors ?? null);
+      setLastHomepageVisit(result.lastHomepageVisit ?? null);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not load visitor analytics.");
     } finally {
@@ -46,12 +50,13 @@ export default function AdminAnalytics() {
 
   return <section className="admin-section analytics-section">
     <div className="admin-page-title">
-      <div><span className="eyebrow muted-eyebrow">JOB AUDIENCE</span><h1>Visitor analytics.</h1><p>See job visitors and clicks on our WhatsApp channel link.</p></div>
+      <div><span className="eyebrow muted-eyebrow">SITE AUDIENCE</span><h1>Visitor analytics.</h1><p>See homepage reach, job visitors and WhatsApp channel clicks.</p></div>
       <button type="button" className="secondary-button" onClick={() => void load()} disabled={refreshing}><RefreshCw size={14} className={refreshing ? "spin" : ""} />Refresh</button>
     </div>
     {error && <p className="admin-alert error-alert">{error}</p>}
     <div className="overview-stats analytics-summary">
       <div className="overview-stat"><span className="stat-icon"><BarChart3 size={18} /></span><span className="stat-label">Published listings</span><strong>{numberFormat.format(jobs.length)}</strong><small>Jobs currently shown in this report</small></div>
+      <div className="overview-stat"><span className="stat-icon"><Eye size={18} /></span><span className="stat-label">Home page visitors</span><strong>{homepageVisitors === null ? "—" : numberFormat.format(homepageVisitors)}</strong><small>{homepageVisitors === null ? "Apply the homepage analytics migration to enable counting" : lastHomepageVisit ? `Last visit ${dateFormat.format(new Date(lastHomepageVisit))}` : "Unique browsers reaching the homepage"}</small></div>
       <div className="overview-stat"><span className="stat-icon"><Eye size={18} /></span><span className="stat-label">Visitor entries across listings</span><strong>{numberFormat.format(visitorsAcrossListings)}</strong><small>A browser can appear once in more than one job row</small></div>
       <div className="overview-stat"><span className="stat-icon"><FaWhatsapp size={18} /></span><span className="stat-label">WhatsApp channel clicks</span><strong>{whatsappChannelClicks === null ? "—" : numberFormat.format(whatsappChannelClicks)}</strong><small>{whatsappChannelClicks === null ? "Apply the click-metrics migration to enable counting" : "Total clicks on the homepage channel link"}</small></div>
     </div>
@@ -69,6 +74,6 @@ export default function AdminAnalytics() {
         </tr>)}</tbody>
       </table></div>}
     </section>
-    <p className="analytics-privacy-note">Job counts are approximate unique browsers per job—not identified people. WhatsApp clicks are a site-wide aggregate total; no visitor identifiers, IP addresses or user-agent strings are stored for them.</p>
+    <p className="analytics-privacy-note">Homepage and job visitor counts are approximate unique browsers, not identified people. A browser is counted once for the homepage and once per job; clearing browser storage or using another browser/device may count again. Anonymous browser keys are hashed before storage; IP addresses and user-agent strings are not stored by this feature.</p>
   </section>;
 }

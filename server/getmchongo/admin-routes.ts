@@ -4,7 +4,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import sharp from "sharp";
 import { getDb } from "../db";
-import { announcements, companies, contactMessages, jobs, jobReactions, jobViewers, pendingJobs, scanSchedules, siteMetrics, sources } from "../../drizzle/schema";
+import { announcements, companies, contactMessages, homeViewers, jobs, jobReactions, jobViewers, pendingJobs, scanSchedules, siteMetrics, sources } from "../../drizzle/schema";
 import { ADMIN_EMAIL, isAdmin, login, logout, requireAdmin, requireSameOrigin } from "./auth";
 import { runSource } from "./source-runner";
 import { validateSourceUrl, type SourceType } from "./collector";
@@ -88,12 +88,21 @@ router.patch("/messages/:id/read", async (req, res) => {
 router.get("/analytics/jobs", async (_req, res) => {
   const db = await getDb(); if (!db) return sendDbUnavailable(res);
   let whatsappChannelClicks: number | null = null;
+  let homepageVisitors: number | null = null;
+  let lastHomepageVisit: Date | null = null;
   try {
     const [whatsappMetric] = await db.select({ total: siteMetrics.total }).from(siteMetrics)
       .where(eq(siteMetrics.metricKey, "whatsapp_channel_clicks")).limit(1);
     whatsappChannelClicks = Number(whatsappMetric?.total ?? 0);
   } catch {
     // Keep existing job analytics available until the additive metrics migration is applied.
+  }
+  try {
+    const [homeSummary] = await db.select({ total: count(), lastViewedAt: max(homeViewers.lastViewedAt) }).from(homeViewers);
+    homepageVisitors = Number(homeSummary?.total ?? 0);
+    lastHomepageVisit = homeSummary?.lastViewedAt ?? null;
+  } catch {
+    // Keep job and WhatsApp analytics available until the homepage visitor migration is applied.
   }
   const published = await db.select({ job: jobs, company: companies }).from(jobs)
     .leftJoin(companies, eq(jobs.companyId, companies.id))
@@ -110,7 +119,7 @@ router.get("/analytics/jobs", async (_req, res) => {
       uniqueVisitors: Number(stats?.uniqueVisitors ?? 0), lastViewedAt: stats?.lastViewedAt ?? null,
     };
   });
-  return res.json({ jobs: rows, whatsappChannelClicks });
+  return res.json({ jobs: rows, whatsappChannelClicks, homepageVisitors, lastHomepageVisit });
 });
 
 function normalizeJob(body: any, old?: typeof jobs.$inferSelect) {

@@ -6,7 +6,7 @@ import { EmptyBoardIllustration } from "@/components/EditorialVisuals";
 import { HideBrokenImage } from "@/components/HideBrokenImage";
 import { JobCard } from "@/components/JobCard";
 import { SiteFooter } from "@/components/SiteFooter";
-import { announcementKinds, api, recordWhatsAppChannelClick, type Announcement, type Job } from "@/lib/api";
+import { announcementKinds, api, recordHomeView, recordWhatsAppChannelClick, type Announcement, type Job } from "@/lib/api";
 
 const INITIAL_JOB_COUNT = 9;
 
@@ -21,6 +21,8 @@ export default function Home() {
   const [view, setView] = useState<"all" | "saved">("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  useEffect(() => { recordHomeView(); }, []);
 
   useEffect(() => {
     let alive = true;
