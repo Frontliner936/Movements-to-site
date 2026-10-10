@@ -734,7 +734,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .home-page-header .header-actions { gap: 7px; margin-left: auto; }
 .home-page-header .main-nav a, .home-page-header .header-actions > a { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 11px; border: 1px solid #111; border-radius: 4px; background: #111; color: #fff; font-size: 11px; font-weight: 700; text-decoration: none; white-space: nowrap; transition: background .16s ease, border-color .16s ease, transform .16s ease; }
 .home-page-header .main-nav a:hover, .home-page-header .main-nav a:focus-visible, .home-page-header .header-actions > a:hover, .home-page-header .header-actions > a:focus-visible { background: #303030; border-color: #303030; color: #fff; transform: translateY(-1px); }
-.home-page-header .main-nav a[href="#how-it-works"], .home-page-header .main-nav a[href="/announcements"] { min-height: 31px; padding: 0 8px; font-size: 9px; }
 .home-top-band { width: 100%; background: linear-gradient(110deg, #d7eee3 0%, #e9f0d2 52%, #f4dfb6 100%); }
 .home-top-band .hero-copy h1 em { color: #090b09; }
 .home-announcements { position: relative; width: calc(100% - 72px); max-width: 1240px; margin: 0 auto; padding: 31px 0 76px; }
