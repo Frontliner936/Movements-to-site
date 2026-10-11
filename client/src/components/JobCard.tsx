@@ -30,7 +30,7 @@ export function JobCard({ job, onChanged }: { job: Job; onChanged: () => void })
   return (
     <article className={`job-card${job.isSocialPost ? " job-card-social-post" : ""}`}>
       <div className="job-card-topline">
-        <CompanyLogo name={job.isSocialPost ? "Social advert" : job.companyName} imageUrl={job.isSocialPost ? job.imageUrl : job.companyLogoUrl || job.imageUrl} imageAlt={job.isSocialPost ? "Social advert listing image" : undefined} />
+        <CompanyLogo name={job.isSocialPost ? "Social advert" : job.companyName} imageUrl={job.isSocialPost ? job.companyLogoUrl : job.companyLogoUrl || job.imageUrl} imageAlt={job.isSocialPost ? "Company profile photo" : undefined} />
         <div className="job-card-heading">
           <Link href={`/jobs/${job.id}`} className="job-card-title">{job.title}<ArrowUpRight size={16} aria-hidden="true" /></Link>
           <div className="job-card-heading-meta">
