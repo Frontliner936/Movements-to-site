@@ -6,11 +6,11 @@ import { JobShareMenu } from "@/components/JobShareMenu";
 import { HideBrokenImage } from "@/components/HideBrokenImage";
 import { formatPostedAgo } from "@/lib/timeAgo";
 
-export function CompanyLogo({ name, imageUrl, size = "normal" }: { name?: string | null; imageUrl?: string | null; size?: "normal" | "large" }) {
+export function CompanyLogo({ name, imageUrl, imageAlt, size = "normal" }: { name?: string | null; imageUrl?: string | null; imageAlt?: string; size?: "normal" | "large" }) {
   const [failed, setFailed] = useState(false);
   return (
     <span className={`company-logo ${size === "large" ? "company-logo-large" : ""}`}>
-      {imageUrl && !failed ? <img src={imageUrl} alt={name ? `${name} logo` : "Company logo"} onError={() => setFailed(true)} /> : <span aria-hidden="true">{(name || "?").trim().slice(0, 1).toUpperCase()}</span>}
+      {imageUrl && !failed ? <img src={imageUrl} alt={imageAlt ?? (name ? `${name} logo` : "Company logo")} onError={() => setFailed(true)} /> : <span aria-hidden="true">{(name || "?").trim().slice(0, 1).toUpperCase()}</span>}
     </span>
   );
 }
@@ -30,7 +30,7 @@ export function JobCard({ job, onChanged }: { job: Job; onChanged: () => void })
   return (
     <article className={`job-card${job.isSocialPost ? " job-card-social-post" : ""}`}>
       <div className="job-card-topline">
-        <CompanyLogo name={job.isSocialPost ? "Social advert" : job.companyName} imageUrl={job.isSocialPost ? null : job.companyLogoUrl || job.imageUrl} />
+        <CompanyLogo name={job.isSocialPost ? "Social advert" : job.companyName} imageUrl={job.isSocialPost ? job.imageUrl : job.companyLogoUrl || job.imageUrl} imageAlt={job.isSocialPost ? "Social advert listing image" : undefined} />
         <div className="job-card-heading">
           <Link href={`/jobs/${job.id}`} className="job-card-title">{job.title}<ArrowUpRight size={16} aria-hidden="true" /></Link>
           <div className="job-card-heading-meta">

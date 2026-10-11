@@ -1128,3 +1128,5 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .social-post-section-heading { margin-top: 16px; font-size: 14px; }
   .social-post-list-line { grid-template-columns: 20px minmax(0,1fr); gap: 7px; padding: 9px; }
 }
+
+.social-post-image-field { display: flex; flex-direction: column; gap: 6px; }
