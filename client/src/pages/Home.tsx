@@ -80,10 +80,10 @@ export default function Home() {
             <p className="hero-footnote"><span className="small-sun">✳</span> Clear opportunities. No noise.</p>
           </div>
           <figure className="hero-art hero-photo-card">
-            <img src="https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1600&q=85" alt="Young professionals sharing ideas around a laptop in a bright contemporary workspace." />
+            <img src="/images/tanzania-career-hero.webp" alt="Tanzanian professionals collaborating around a laptop in a bright Dar es Salaam office." />
             <div className="hero-photo-shade" aria-hidden="true" />
             <div className="hero-photo-secondary">
-              <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?auto=format&fit=crop&w=700&q=85" alt="Colleagues collaborating at a bright workplace." loading="eager" />
+              <img src="/images/tanzania-hero-detail.webp" alt="Tanzanian woman professional working at her desk in Dar es Salaam." loading="eager" />
               <span>MOVE WITH PURPOSE</span>
             </div>
             <div className="hero-photo-orbit" aria-hidden="true" />
@@ -165,20 +165,20 @@ export default function Home() {
             <p>From first applications to new teams, every opportunity starts with a person ready for the next step.</p>
           </div>
           <figure className="opportunity-photo opportunity-photo-tall">
-            <img src="https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&w=1000&q=85" alt="Professionals collaborating around a table in a modern workplace." loading="lazy" />
+            <img src="/images/tanzania-career-team.webp" alt="Tanzanian colleagues sharing ideas in a modern workplace." loading="lazy" />
             <figcaption>Find your people.</figcaption>
           </figure>
           <figure className="opportunity-photo opportunity-photo-wide">
-            <img src="https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1200&q=85" alt="Colleagues working together around a laptop in an office." loading="lazy" />
+            <img src="/images/tanzania-career-hero.webp" alt="Black Tanzanian professionals collaborating around a laptop." loading="lazy" />
             <figcaption>Build your next chapter.</figcaption>
           </figure>
           <figure className="opportunity-photo opportunity-photo-small">
-            <img src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=900&q=85" alt="Team members discussing ideas during a work meeting." loading="lazy" />
+            <img src="/images/tanzania-career-colleagues.webp" alt="East African professionals sharing ideas in a Dar es Salaam office." loading="lazy" />
             <figcaption>Make the move.</figcaption>
           </figure>
         </section>
 
-        <section className="how-section" id="how-it-works"><div className="how-number">02 / THE MCHONGO WAY</div><div className="how-copy"><h2>Real opportunities.<br /><em>Original application links.</em></h2><p>Get Mchongo brings opportunities together in one clear place. When a role catches your eye, you go straight to the original application — no extra hoops.</p><a href="#opportunities" className="text-link">Browse the board <ArrowRight size={15} /></a></div><figure className="how-photo-frame"><img src="https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&w=1200&q=85" alt="A professional reviews her notes beside a laptop in a sunlit creative workspace." /><figcaption className="how-photo-overlay"><span>ONE CLEAR NEXT STEP</span><div className="how-photo-icons"><span><Search size={13} /></span><i /><span><span className="how-save-mark">▱</span></span><i /><span><ArrowRight size={14} /></span></div></figcaption></figure></section>
+        <section className="how-section" id="how-it-works"><div className="how-number">02 / THE MCHONGO WAY</div><div className="how-copy"><h2>Real opportunities.<br /><em>Original application links.</em></h2><p>Get Mchongo brings opportunities together in one clear place. When a role catches your eye, you go straight to the original application — no extra hoops.</p><a href="#opportunities" className="text-link">Browse the board <ArrowRight size={15} /></a></div><figure className="how-photo-frame"><img src="/images/tanzania-career-applicant.webp" alt="A Tanzanian job seeker reviewing her CV beside a laptop." /><figcaption className="how-photo-overlay"><span>ONE CLEAR NEXT STEP</span><div className="how-photo-icons"><span><Search size={13} /></span><i /><span><span className="how-save-mark">▱</span></span><i /><span><ArrowRight size={14} /></span></div></figcaption></figure></section>
       </main>
 
       <SiteFooter />
