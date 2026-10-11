@@ -3,7 +3,7 @@ import { and, count, desc, eq, inArray, like, or, sql } from "drizzle-orm";
 import { Router } from "express";
 import type { Request } from "express";
 import { getDb } from "../db";
-import { announcements, companies, contactMessages, homeViewers, jobs, jobReactions, jobViewers, pendingJobs, siteMetrics } from "../../drizzle/schema";
+import { announcements, companies, contactMessages, jobs, jobReactions, jobViewers, pendingJobs, siteMetrics } from "../../drizzle/schema";
 import { requireSameOrigin } from "./auth";
 import { findDuplicateMatches } from "./duplicates";
 import { getJobShareImageUrl, getPublicSiteOrigin } from "./share-meta";
@@ -200,15 +200,11 @@ export function createPublicRouter() {
 
   router.post("/analytics/home-view", async (req, res) => {
     if (!requireSameOrigin(req, res)) return;
-    const rawViewer = String(req.get("x-home-viewer-key") ?? "");
-    if (!/^[a-z0-9-]{16,64}$/i.test(rawViewer)) return res.status(400).json({ error: "A valid anonymous browser key is required." });
-    const viewerHash = createHash("sha256").update(rawViewer).digest("hex");
     const db = await getDb();
     if (!db) return res.status(503).json({ error: "Homepage analytics are temporarily unavailable." });
     try {
-      const viewedAt = new Date();
-      await db.insert(homeViewers).values({ visitorKey: viewerHash, firstViewedAt: viewedAt, lastViewedAt: viewedAt })
-        .onDuplicateKeyUpdate({ set: { lastViewedAt: viewedAt } });
+      await db.insert(siteMetrics).values({ metricKey: "homepage_visitors", total: 1 })
+        .onDuplicateKeyUpdate({ set: { total: sql`${siteMetrics.total} + 1` } });
       return res.status(204).end();
     } catch {
       return res.status(503).json({ error: "Homepage analytics are temporarily unavailable." });

@@ -148,17 +148,9 @@ export const announcements = mysqlTable("gm_announcements", {
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
-/** Aggregate site click totals; no visitor identifiers or request details are stored. */
+/** Aggregate site event totals; no visitor identifiers or request details are stored. */
 export const siteMetrics = mysqlTable("gm_site_metrics", {
   metricKey: varchar("metric_key", { length: 80 }).primaryKey(),
   total: int("total").default(0).notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-});
-
-/** Hashed anonymous browser identifiers used only for unique homepage reach totals. */
-export const homeViewers = mysqlTable("gm_home_viewers", {
-  id: int("id").autoincrement().primaryKey(),
-  visitorKey: varchar("visitor_key", { length: 64 }).notNull().unique(),
-  firstViewedAt: timestamp("first_viewed_at").defaultNow().notNull(),
-  lastViewedAt: timestamp("last_viewed_at").defaultNow().notNull(),
 });

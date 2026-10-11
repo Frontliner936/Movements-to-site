@@ -56,7 +56,7 @@ export default function AdminAnalytics() {
     {error && <p className="admin-alert error-alert">{error}</p>}
     <div className="overview-stats analytics-summary">
       <div className="overview-stat"><span className="stat-icon"><BarChart3 size={18} /></span><span className="stat-label">Published listings</span><strong>{numberFormat.format(jobs.length)}</strong><small>Jobs currently shown in this report</small></div>
-      <div className="overview-stat"><span className="stat-icon"><Eye size={18} /></span><span className="stat-label">Home page visitors</span><strong>{homepageVisitors === null ? "—" : numberFormat.format(homepageVisitors)}</strong><small>{homepageVisitors === null ? "Apply the homepage analytics migration to enable counting" : lastHomepageVisit ? `Last visit ${dateFormat.format(new Date(lastHomepageVisit))}` : "Unique browsers reaching the homepage"}</small></div>
+      <div className="overview-stat"><span className="stat-icon"><Eye size={18} /></span><span className="stat-label">Home page visitors</span><strong>{homepageVisitors === null ? "—" : numberFormat.format(homepageVisitors)}</strong><small>{homepageVisitors === null ? "Uses the existing site analytics counter" : lastHomepageVisit ? `Last visit ${dateFormat.format(new Date(lastHomepageVisit))}` : "Browser visits counted once per day"}</small></div>
       <div className="overview-stat"><span className="stat-icon"><Eye size={18} /></span><span className="stat-label">Visitor entries across listings</span><strong>{numberFormat.format(visitorsAcrossListings)}</strong><small>A browser can appear once in more than one job row</small></div>
       <div className="overview-stat"><span className="stat-icon"><FaWhatsapp size={18} /></span><span className="stat-label">WhatsApp channel clicks</span><strong>{whatsappChannelClicks === null ? "—" : numberFormat.format(whatsappChannelClicks)}</strong><small>{whatsappChannelClicks === null ? "Apply the click-metrics migration to enable counting" : "Total clicks on the homepage channel link"}</small></div>
     </div>
@@ -74,6 +74,6 @@ export default function AdminAnalytics() {
         </tr>)}</tbody>
       </table></div>}
     </section>
-    <p className="analytics-privacy-note">Homepage and job visitor counts are approximate unique browsers, not identified people. A browser is counted once for the homepage and once per job; clearing browser storage or using another browser/device may count again. Anonymous browser keys are hashed before storage; IP addresses and user-agent strings are not stored by this feature.</p>
+    <p className="analytics-privacy-note">Homepage totals count one visit per browser per day; job totals count a browser once per job. These are approximate browser counts, not identified people. Clearing browser storage or using another browser/device may count again. No homepage browser key, IP address or user-agent string is stored.</p>
   </section>;
 }

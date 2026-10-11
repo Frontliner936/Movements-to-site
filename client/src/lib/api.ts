@@ -78,14 +78,27 @@ export async function recordJobView(jobId: number): Promise<void> {
 }
 
 export function recordHomeView(): void {
-  const visitorKey = getVisitorKey();
+  const day = new Date().toISOString().slice(0, 10);
+  const stateKey = "gm-home-view-counted-day";
+  try {
+    const state = localStorage.getItem(stateKey);
+    if (state === day || state === `pending:${day}`) return;
+    localStorage.setItem(stateKey, `pending:${day}`);
+  } catch { /* Count each homepage entry when browser storage is unavailable. */ }
   void fetch("/api/gm/analytics/home-view", {
     method: "POST",
-    headers: { "content-type": "application/json", "x-home-viewer-key": visitorKey },
+    headers: { "content-type": "application/json" },
     body: "{}",
     credentials: "same-origin",
     keepalive: true,
-  }).catch(() => undefined);
+  }).then(response => {
+    try {
+      if (response.ok) localStorage.setItem(stateKey, day);
+      else if (localStorage.getItem(stateKey) === `pending:${day}`) localStorage.removeItem(stateKey);
+    } catch { /* Analytics must never interrupt normal browsing. */ }
+  }).catch(() => {
+    try { if (localStorage.getItem(stateKey) === `pending:${day}`) localStorage.removeItem(stateKey); } catch { /* Ignore storage errors. */ }
+  });
 }
 
 export function recordWhatsAppChannelClick(): void {

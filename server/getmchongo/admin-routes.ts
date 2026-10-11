@@ -4,7 +4,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import sharp from "sharp";
 import { getDb } from "../db";
-import { announcements, companies, contactMessages, homeViewers, jobs, jobReactions, jobViewers, pendingJobs, scanSchedules, siteMetrics, sources } from "../../drizzle/schema";
+import { announcements, companies, contactMessages, jobs, jobReactions, jobViewers, pendingJobs, scanSchedules, siteMetrics, sources } from "../../drizzle/schema";
 import { ADMIN_EMAIL, isAdmin, login, logout, requireAdmin, requireSameOrigin } from "./auth";
 import { runSource } from "./source-runner";
 import { validateSourceUrl, type SourceType } from "./collector";
@@ -98,11 +98,12 @@ router.get("/analytics/jobs", async (_req, res) => {
     // Keep existing job analytics available until the additive metrics migration is applied.
   }
   try {
-    const [homeSummary] = await db.select({ total: count(), lastViewedAt: max(homeViewers.lastViewedAt) }).from(homeViewers);
-    homepageVisitors = Number(homeSummary?.total ?? 0);
-    lastHomepageVisit = homeSummary?.lastViewedAt ?? null;
+    const [homeMetric] = await db.select({ total: siteMetrics.total, updatedAt: siteMetrics.updatedAt }).from(siteMetrics)
+      .where(eq(siteMetrics.metricKey, "homepage_visitors")).limit(1);
+    homepageVisitors = Number(homeMetric?.total ?? 0);
+    lastHomepageVisit = homeMetric?.updatedAt ?? null;
   } catch {
-    // Keep job and WhatsApp analytics available until the homepage visitor migration is applied.
+    // Keep job and WhatsApp analytics available when site-metric storage is unavailable.
   }
   const published = await db.select({ job: jobs, company: companies }).from(jobs)
     .leftJoin(companies, eq(jobs.companyId, companies.id))
