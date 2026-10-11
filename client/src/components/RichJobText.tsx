@@ -100,7 +100,32 @@ export default function RichJobText({ text, className = "", forceList = false }:
   </div>;
 }
 
-export function RawSocialPostText({ text, className = "" }: { text: string; className?: string }) {
+const socialPostHeadingLabel = /^(?:job\s*title|position|vacancy|location|deadline|closing\s*date|qualifications?|requirements?|responsibilities|duties|how\s*to\s*apply|application(?:\s+procedure)?|mode\s+of\s+application|salary|benefits|experience|contact|about\s+(?:the\s+)?(?:role|job|company))\s*:?$/iu;
+const socialPostFieldHeading = /^(?:job\s*title|position|location|deadline|closing\s*date|qualifications?|requirements?|responsibilities|duties|how\s*to\s*apply|application(?:\s+procedure)?|mode\s+of\s+application|salary|benefits|experience|contact)\s*:/iu;
+const socialPostListPrefix = /^(\d+[.)]|[-*•▪‣])\s+(.*)$/u;
+
+function isSocialPostHeading(line: string) {
+  const value = line.trim();
+  if (!value || value.length > 90 || socialPostListPrefix.test(value)) return false;
+  if (socialPostHeadingLabel.test(value.replace(/\s*:\s*$/u, "")) || socialPostFieldHeading.test(value)) return true;
+  const letters = value.replace(/[^\p{L}]/gu, "");
+  return letters.length >= 4 && letters.length <= 75 && value === value.toLocaleUpperCase() && !/[.!?]$/u.test(value);
+}
+
+export function RawSocialPostText({ text, headline = "", className = "" }: { text: string; headline?: string; className?: string }) {
   const lines = text.replace(/\r\n?/g, "\n").split("\n");
-  return <div className={`raw-social-post-text ${className}`.trim()}>{lines.map((line, index) => <React.Fragment key={`raw-line-${index}`}>{linkify(line, `raw-${index}`)}{index < lines.length - 1 && <br />}</React.Fragment>)}</div>;
+  const firstContentIndex = lines.findIndex(line => line.trim());
+  const headlineKey = headline.trim().replace(/\s+/g, " ").toLocaleLowerCase();
+  const firstLineKey = firstContentIndex >= 0 ? lines[firstContentIndex].trim().replace(/\s+/g, " ").toLocaleLowerCase() : "";
+  const showLead = firstContentIndex >= 0 && firstLineKey !== headlineKey;
+  return <div className={`raw-social-post-text ${className}`.trim()}>{lines.map((line, index) => {
+    const value = line.trim();
+    if (!value) return <div className="social-post-space" aria-hidden="true" key={`raw-space-${index}`} />;
+    if (index === firstContentIndex && !showLead) return null;
+    if (index === firstContentIndex) return <p className="social-post-lead" key={`raw-line-${index}`}>{linkify(value, `raw-${index}`)}</p>;
+    if (isSocialPostHeading(value)) return <h3 className="social-post-section-heading" key={`raw-line-${index}`}>{linkify(value, `raw-${index}`)}</h3>;
+    const listItem = value.match(socialPostListPrefix);
+    if (listItem) return <div className="social-post-list-line" key={`raw-line-${index}`}><span className="social-post-list-marker" aria-hidden="true">{listItem[1]}</span><span>{linkify(listItem[2], `raw-${index}`)}</span></div>;
+    return <p className="social-post-paragraph" key={`raw-line-${index}`}>{linkify(value, `raw-${index}`)}</p>;
+  })}</div>;
 }

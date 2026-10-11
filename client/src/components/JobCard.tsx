@@ -28,7 +28,7 @@ export function JobCard({ job, onChanged }: { job: Job; onChanged: () => void })
     finally { setBusy(null); }
   }
   return (
-    <article className="job-card">
+    <article className={`job-card${job.isSocialPost ? " job-card-social-post" : ""}`}>
       <div className="job-card-topline">
         <CompanyLogo name={job.isSocialPost ? "Social advert" : job.companyName} imageUrl={job.isSocialPost ? null : job.companyLogoUrl || job.imageUrl} />
         <div className="job-card-heading">
