@@ -99,3 +99,8 @@ export default function RichJobText({ text, className = "", forceList = false }:
         : <ul key={`ul-${blockIndex}`}>{block.items.map((item, itemIndex) => <li key={`ul-${blockIndex}-${itemIndex}`}>{linkify(item, `ul-${blockIndex}-${itemIndex}`)}</li>)}</ul>)}
   </div>;
 }
+
+export function RawSocialPostText({ text, className = "" }: { text: string; className?: string }) {
+  const lines = text.replace(/\r\n?/g, "\n").split("\n");
+  return <div className={`raw-social-post-text ${className}`.trim()}>{lines.map((line, index) => <React.Fragment key={`raw-line-${index}`}>{linkify(line, `raw-${index}`)}{index < lines.length - 1 && <br />}</React.Fragment>)}</div>;
+}

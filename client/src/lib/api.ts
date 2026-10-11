@@ -20,6 +20,7 @@ export type Job = {
   category: string | null;
   location: string | null;
   isRemote: boolean;
+  isSocialPost?: boolean;
   deadline: string | null;
   description: string | null;
   responsibilities: string | null;

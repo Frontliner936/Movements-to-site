@@ -7,6 +7,7 @@ import { announcements, companies, contactMessages, jobs, jobReactions, jobViewe
 import { requireSameOrigin } from "./auth";
 import { findDuplicateMatches } from "./duplicates";
 import { getJobShareImageUrl, getPublicSiteOrigin } from "./share-meta";
+import { decodeSocialPostDescription } from "./social-post-storage";
 
 const visitorKey = (req: Request) => {
   const value = String(req.get("x-visitor-key") ?? "");
@@ -54,14 +55,16 @@ async function addReactionSummary(rows: Array<{ job: typeof jobs.$inferSelect; c
   return rows.map(({ job, company }) => {
     const summary = counts.get(job.id) ?? { like: 0, save: 0 };
     const chosen = active.get(job.id) ?? new Set<string>();
+    const socialPost = decodeSocialPostDescription(job.description);
+    const publicJob = { ...job, ...socialPost };
     return {
-      ...job,
+      ...publicJob,
       companyName: job.companyName ?? company?.name ?? null,
       companyDescription: job.companyDescription ?? company?.description ?? null,
       companyLogoUrl: job.companyLogoUrl ?? company?.logoUrl ?? null,
       companyWebsiteUrl: job.companyWebsiteUrl ?? company?.websiteUrl ?? null,
       companyHref: companyHref(company),
-      shareImageUrl: getJobShareImageUrl(job, company, getPublicSiteOrigin()),
+      shareImageUrl: getJobShareImageUrl(publicJob, company, getPublicSiteOrigin()),
       likeCount: summary.like, saveCount: summary.save,
       liked: chosen.has("like"), saved: chosen.has("save"),
     };

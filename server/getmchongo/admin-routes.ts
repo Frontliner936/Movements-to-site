@@ -9,6 +9,7 @@ import { ADMIN_EMAIL, isAdmin, login, logout, requireAdmin, requireSameOrigin } 
 import { runSource } from "./source-runner";
 import { validateSourceUrl, type SourceType } from "./collector";
 import { MAX_JOB_AD_FILE_BYTES, MAX_JOB_AD_TEXT, structureJobAd, type OutputLanguage } from "./job-ad-structurer";
+import { decodeSocialPostDescription, encodeSocialPostDescription } from "./social-post-storage";
 import { saveLocalFile } from "./local-storage";
 
 const router = Router();
@@ -126,6 +127,11 @@ router.get("/analytics/jobs", async (_req, res) => {
 function normalizeJob(body: any, old?: typeof jobs.$inferSelect) {
   const title = textValue(body.title ?? old?.title, 300);
   if (!title) throw new Error("Job title is required.");
+  const oldPost = decodeSocialPostDescription(old?.description ?? null);
+  const isSocialPost = body.isSocialPost === undefined ? oldPost.isSocialPost : body.isSocialPost === true;
+  const rawDescription = body.description === undefined ? oldPost.description : textValue(body.description, 30_000);
+  if (isSocialPost && !rawDescription) throw new Error("Paste the complete social media advert before saving.");
+  const storedDescription = isSocialPost && rawDescription ? encodeSocialPostDescription(rawDescription) : rawDescription;
   const rawStatus = body.status ?? old?.status ?? "draft";
   if (rawStatus !== "draft" && rawStatus !== "published") throw new Error("Job status must be draft or published.");
   const companyIdRaw = body.companyId === undefined ? old?.companyId : Number(body.companyId);
@@ -144,12 +150,16 @@ function normalizeJob(body: any, old?: typeof jobs.$inferSelect) {
     location: body.location === undefined ? old?.location ?? null : textValue(body.location, 240),
     isRemote: body.isRemote === undefined ? old?.isRemote ?? false : body.isRemote === true,
     deadline: body.deadline === undefined ? old?.deadline ?? null : textValue(body.deadline, 240),
-    description: body.description === undefined ? old?.description ?? null : textValue(body.description, 30_000),
+    description: storedDescription,
     responsibilities: body.responsibilities === undefined ? old?.responsibilities ?? null : textValue(body.responsibilities, 12_000),
     qualifications: body.qualifications === undefined ? old?.qualifications ?? null : textValue(body.qualifications, 12_000),
     howToApply: body.howToApply === undefined ? old?.howToApply ?? null : textValue(body.howToApply, 8_000),
     applicationUrl, imageUrl, sourceUrl, status: rawStatus as "draft" | "published", publishedAt,
   };
+}
+
+function presentJob(job: typeof jobs.$inferSelect) {
+  return { ...job, ...decodeSocialPostDescription(job.description) };
 }
 
 router.post("/jobs/structure", async (req, res) => {
@@ -201,7 +211,7 @@ router.post("/jobs/structure", async (req, res) => {
 router.get("/jobs", async (_req, res) => {
   const db = await getDb(); if (!db) return sendDbUnavailable(res);
   const rows = await db.select().from(jobs).orderBy(desc(jobs.createdAt)).limit(1500);
-  return res.json({ jobs: rows });
+  return res.json({ jobs: rows.map(presentJob) });
 });
 router.post("/jobs", async (req, res) => {
   const db = await getDb(); if (!db) return sendDbUnavailable(res);
@@ -214,7 +224,7 @@ router.post("/jobs", async (req, res) => {
     const result = await db.insert(jobs).values(input);
     const id = Number((result as any)?.[0]?.insertId ?? 0);
     const [created] = await db.select().from(jobs).where(eq(jobs.id, id)).limit(1);
-    return res.status(201).json({ job: created });
+    return res.status(201).json({ job: created ? presentJob(created) : null });
   } catch (error) { return res.status(400).json({ error: error instanceof Error ? error.message : "Job could not be saved." }); }
 });
 router.put("/jobs/:id", async (req, res) => {
@@ -230,7 +240,7 @@ router.put("/jobs/:id", async (req, res) => {
     }
     await db.update(jobs).set(input).where(eq(jobs.id, id));
     const [updated] = await db.select().from(jobs).where(eq(jobs.id, id)).limit(1);
-    return res.json({ job: updated });
+    return res.json({ job: updated ? presentJob(updated) : null });
   } catch (error) { return res.status(400).json({ error: error instanceof Error ? error.message : "Job could not be updated." }); }
 });
 router.delete("/jobs/:id", async (req, res) => {

@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { ArrowUpRight, Bookmark, Clock3, Heart, MapPin, Wifi } from "lucide-react";
 import { api, type Job } from "@/lib/api";
 import { JobShareMenu } from "@/components/JobShareMenu";
+import { HideBrokenImage } from "@/components/HideBrokenImage";
 import { formatPostedAgo } from "@/lib/timeAgo";
 
 export function CompanyLogo({ name, imageUrl, size = "normal" }: { name?: string | null; imageUrl?: string | null; size?: "normal" | "large" }) {
@@ -29,11 +30,12 @@ export function JobCard({ job, onChanged }: { job: Job; onChanged: () => void })
   return (
     <article className="job-card">
       <div className="job-card-topline">
-        <CompanyLogo name={job.companyName} imageUrl={job.companyLogoUrl || job.imageUrl} />
+        <CompanyLogo name={job.isSocialPost ? "Social advert" : job.companyName} imageUrl={job.isSocialPost ? null : job.companyLogoUrl || job.imageUrl} />
         <div className="job-card-heading">
           <Link href={`/jobs/${job.id}`} className="job-card-title">{job.title}<ArrowUpRight size={16} aria-hidden="true" /></Link>
           <div className="job-card-heading-meta">
             {job.companyName && (job.companyHref ? <Link className="job-company-link" href={job.companyHref}>{job.companyName}</Link> : <p className="job-company-name">{job.companyName}</p>)}
+            {job.isSocialPost && <span className="social-post-badge">Social media advert</span>}
             {job.category && <span className="job-category">{job.category}</span>}
             {job.isRemote && <span className="remote-job-badge"><Wifi size={12} />Remote</span>}
           </div>
@@ -42,6 +44,7 @@ export function JobCard({ job, onChanged }: { job: Job; onChanged: () => void })
           <JobShareMenu job={job} variant="icon" onStatus={setNotice} />
         </div>
       </div>
+      {job.isSocialPost && job.imageUrl && <HideBrokenImage src={job.imageUrl} alt="Image attached to this social media advert" className="social-post-card-image" loading="lazy" />}
       <p className="job-description-preview">{job.description || "Open the listing to view the information shared by the source."}</p>
       <div className="job-card-footer">
         {postedAt && postedLabel && <time className="posted-time" dateTime={postedAt}><Clock3 size={13} />{postedLabel}</time>}
