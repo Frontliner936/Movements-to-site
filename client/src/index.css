@@ -1133,9 +1133,24 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 
 
 /* Distinct color treatment for the persistent site header. */
-.site-header { background: #755971; border-bottom: 2px solid rgba(242, 201, 109, .88); box-shadow: 0 5px 18px rgba(17, 39, 47, .12); }
-.site-header.home-page-header { background: #755971; }
+.site-header { background: #d2ddc8; border-bottom: 1px solid rgba(24, 49, 46, .16); box-shadow: 0 4px 14px rgba(17, 39, 47, .08); transition: background .22s ease, border-color .22s ease, box-shadow .22s ease; }
+.site-header.home-page-header { background: linear-gradient(110deg, #bad9c5 0%, #d4dda8 52%, #e6c88f 100%); border-bottom-color: rgba(24, 49, 46, .18); }
 .site-header .brand { color: #fffdf5; }
 .site-header .brand-mark { color: #5b8b6c; }
 .site-header .header-admin-link { color: #fffdf5; }
 .site-header .header-admin-link:hover { color: #f2c96d; }
+
+
+/* The header deepens into a translucent forest-green glass bar on scroll. */
+.site-header:not(.is-scrolled) .brand { color: var(--ink); }
+.site-header:not(.is-scrolled) .brand-mark { color: var(--green); }
+.site-header:not(.is-scrolled) .header-admin-link { color: var(--ink); }
+.site-header:not(.is-scrolled) .header-admin-link:hover { color: var(--green); }
+.site-header.is-scrolled { background: rgba(18, 75, 56, .84); border-bottom-color: rgba(242, 201, 109, .68); box-shadow: 0 7px 22px rgba(13, 40, 31, .18); -webkit-backdrop-filter: blur(14px) saturate(1.08); backdrop-filter: blur(14px) saturate(1.08); }
+.site-header.home-page-header.is-scrolled { background: rgba(18, 75, 56, .84); }
+.site-header.is-scrolled .brand, .site-header.is-scrolled .header-admin-link { color: #fffdf5; }
+.site-header.is-scrolled .brand-mark { color: #75a687; }
+.site-header.is-scrolled .header-admin-link:hover { color: #f2c96d; }
+.site-header.home-page-header.is-scrolled .main-nav a, .site-header.home-page-header.is-scrolled .header-actions > a { background: rgba(255, 255, 255, .13); border-color: rgba(255, 255, 255, .42); color: #fffdf5; backdrop-filter: blur(6px); }
+.site-header.home-page-header.is-scrolled .main-nav a:hover, .site-header.home-page-header.is-scrolled .header-actions > a:hover { background: rgba(255, 255, 255, .24); border-color: #f2c96d; }
+@media (prefers-reduced-motion: reduce) { .site-header { transition: none; } }

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch, useLocation } from "wouter";
@@ -39,6 +40,17 @@ function Router() {
 
 function FloatingHomeButton() {
   const [location] = useLocation();
+  useEffect(() => {
+    const updateHeaderScrollState = () => {
+      const isScrolled = window.scrollY > 12;
+      document.querySelectorAll<HTMLElement>(".site-header").forEach(header => {
+        header.classList.toggle("is-scrolled", isScrolled);
+      });
+    };
+    updateHeaderScrollState();
+    window.addEventListener("scroll", updateHeaderScrollState, { passive: true });
+    return () => window.removeEventListener("scroll", updateHeaderScrollState);
+  }, [location]);
   if (location === "/") return null;
 
   return <a className="floating-home-button" href="/" aria-label="Return to the homepage" title="Back to home">
