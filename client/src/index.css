@@ -1340,3 +1340,12 @@ button, a, input, select, textarea { max-width:100%; }
   .site-footer .footer-year { white-space:normal; line-height:1.5; }
 }
 @media (prefers-reduced-motion:reduce) { .footer-useful-link, .site-footer .footer-links a, .footer-cv-services-link { transition:none; } }
+
+
+/* A compact availability badge beside the remote-jobs homepage action. */
+.remote-jobs-nav-group { display:inline-flex; align-items:center; gap:5px; flex:0 0 auto; }
+.remote-jobs-nav-count { min-width:22px; height:22px; display:inline-flex; align-items:center; justify-content:center; padding:0 5px; border:1px solid rgba(242,201,109,.72); border-radius:999px; background:#173a32; color:#fffdf5; box-shadow:0 2px 7px rgba(20,49,39,.2); font-size:9px; font-weight:800; line-height:1; font-variant-numeric:tabular-nums; animation:remote-jobs-count-pop .42s cubic-bezier(.2,.85,.35,1.25) both; }
+@keyframes remote-jobs-count-pop { 0% { opacity:0; transform:scale(.45) translateY(3px); } 72% { opacity:1; transform:scale(1.12) translateY(0); } 100% { opacity:1; transform:scale(1); } }
+@media (max-width:680px) { .home-page-header .header-actions { flex-wrap:wrap; } }
+@media (max-width:350px) { .remote-jobs-nav-group { gap:4px; } .remote-jobs-nav-count { min-width:19px; height:19px; padding:0 4px; font-size:8px; } }
+@media (prefers-reduced-motion:reduce) { .remote-jobs-nav-count { animation:none; } }
