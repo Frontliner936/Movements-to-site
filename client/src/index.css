@@ -1184,3 +1184,26 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .home-page-header .home-pill-navbar .header-actions { width:auto; flex-wrap:wrap; justify-content:center; margin:0; gap:4px; }
   .home-page-header .home-pill-navbar .main-nav a, .home-page-header .home-pill-navbar .header-actions > a { min-height:32px; padding:0 9px; font-size:9px; }
 }
+
+
+/* Clear, rounded search bar with a stronger edge and soft lift from the page. */
+.opportunities-section .search-panel { border:1px solid #c7d9cb; border-radius:999px; background:rgba(255,254,250,.98); box-shadow:0 12px 32px rgba(18,75,56,.11),0 2px 8px rgba(24,49,46,.05); padding:8px 9px 8px 15px; overflow:hidden; }
+.opportunities-section .search-panel .search-input-wrap { border-radius:999px; }
+.opportunities-section .search-panel .search-input-wrap:focus-within { background:#f0f6f0; }
+.opportunities-section .search-panel .search-input-wrap input { font-size:14px; }
+.opportunities-section .search-panel .search-input-wrap input::placeholder { color:#52675b; opacity:1; }
+.opportunities-section .search-panel .filter-select-wrap { border-left-color:#dce6dd; }
+.opportunities-section .search-panel .search-button { min-height:48px; border-radius:999px; padding:0 23px; box-shadow:0 3px 8px rgba(18,75,56,.16); }
+
+/* On scroll, preserve the glassy header and let its navbar pill turn translucent too. */
+.home-page-header.is-scrolled .home-pill-navbar { background:rgba(255,255,255,.11); border-color:rgba(255,255,255,.34); box-shadow:0 7px 22px rgba(5,25,17,.12),inset 0 1px 0 rgba(255,255,255,.12); -webkit-backdrop-filter:blur(14px) saturate(1.08); backdrop-filter:blur(14px) saturate(1.08); }
+.home-page-header.is-scrolled .home-pill-navbar .main-nav a, .home-page-header.is-scrolled .home-pill-navbar .header-actions > a { background:rgba(255,255,255,.10); border-color:rgba(255,255,255,.24); color:#fffdf5; }
+.home-page-header.is-scrolled .home-pill-navbar .main-nav a:hover, .home-page-header.is-scrolled .home-pill-navbar .main-nav a:focus-visible, .home-page-header.is-scrolled .home-pill-navbar .header-actions > a:hover, .home-page-header.is-scrolled .home-pill-navbar .header-actions > a:focus-visible { background:rgba(255,255,255,.22); border-color:rgba(255,255,255,.52); color:#fffdf5; }
+.home-page-header.is-scrolled .home-pill-navbar .header-actions > .remote-jobs-nav-link { background:rgba(242,201,109,.20); border-color:rgba(242,201,109,.58); color:#fff6dc; }
+.home-page-header.is-scrolled .home-pill-navbar .header-actions > .header-submit-link, .home-page-header.is-scrolled .home-pill-navbar .header-actions > .header-submit-link:hover { background:rgba(255,255,255,.18); border-color:rgba(255,255,255,.50); color:#fffdf5; }
+@media (max-width:900px) { .opportunities-section .search-panel { border-radius:28px; } }
+@media (max-width:620px) {
+  .opportunities-section .search-panel { border-radius:22px; padding:9px; }
+  .opportunities-section .search-panel .filter-select-wrap { border-left:0; border-top:1px solid #e4eae3; }
+  .opportunities-section .search-panel .search-button { width:100%; }
+}
