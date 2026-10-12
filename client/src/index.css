@@ -1207,3 +1207,15 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .opportunities-section .search-panel .filter-select-wrap { border-left:0; border-top:1px solid #e4eae3; }
   .opportunities-section .search-panel .search-button { width:100%; }
 }
+
+
+/* Deep-green glass treatment for the opportunities search pill. */
+.opportunities-section .search-panel { border-color:rgba(255,255,255,.32); background:rgba(18,75,56,.84); box-shadow:0 12px 32px rgba(13,40,31,.20),inset 0 1px 0 rgba(255,255,255,.12); -webkit-backdrop-filter:blur(14px) saturate(1.08); backdrop-filter:blur(14px) saturate(1.08); }
+.opportunities-section .search-panel .search-input-wrap, .opportunities-section .search-panel .filter-select-wrap { color:#f5fbf6; }
+.opportunities-section .search-panel .search-input-wrap input, .opportunities-section .search-panel .filter-select-wrap select { color:#fffdf5; }
+.opportunities-section .search-panel .search-input-wrap input::placeholder { color:rgba(255,253,245,.78); }
+.opportunities-section .search-panel .filter-select-wrap { border-left-color:rgba(255,255,255,.22); }
+.opportunities-section .search-panel .search-input-wrap:focus-within { background:rgba(255,255,255,.12); }
+.opportunities-section .search-panel .search-button { background:#f2c96d; border-color:#f2c96d; color:#18312e; box-shadow:0 3px 10px rgba(4,28,20,.22); }
+.opportunities-section .search-panel .search-button:hover { background:#ffda83; border-color:#ffda83; color:#18312e; }
+@media (max-width:620px) { .opportunities-section .search-panel .filter-select-wrap { border-top-color:rgba(255,255,255,.22); } }
