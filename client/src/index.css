@@ -1154,3 +1154,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .site-header.home-page-header.is-scrolled .main-nav a, .site-header.home-page-header.is-scrolled .header-actions > a { background: rgba(255, 255, 255, .13); border-color: rgba(255, 255, 255, .42); color: #fffdf5; backdrop-filter: blur(6px); }
 .site-header.home-page-header.is-scrolled .main-nav a:hover, .site-header.home-page-header.is-scrolled .header-actions > a:hover { background: rgba(255, 255, 255, .24); border-color: #f2c96d; }
 @media (prefers-reduced-motion: reduce) { .site-header { transition: none; } }
+
+
+/* Keep the forest-green glass visible from the very top, not only after scrolling. */
+.site-header, .site-header.home-page-header { background: rgba(18, 75, 56, .84); border-bottom-color: rgba(242, 201, 109, .68); box-shadow: 0 7px 22px rgba(13, 40, 31, .18); -webkit-backdrop-filter: blur(14px) saturate(1.08); backdrop-filter: blur(14px) saturate(1.08); }
+.site-header:not(.is-scrolled) .brand, .site-header:not(.is-scrolled) .header-admin-link { color: #fffdf5; }
+.site-header:not(.is-scrolled) .brand-mark { color: #75a687; }
+.site-header:not(.is-scrolled) .header-admin-link:hover { color: #f2c96d; }
+.site-header.home-page-header .main-nav a, .site-header.home-page-header .header-actions > a { background: rgba(255, 255, 255, .13); border-color: rgba(255, 255, 255, .42); color: #fffdf5; backdrop-filter: blur(6px); }
+.site-header.home-page-header .main-nav a:hover, .site-header.home-page-header .header-actions > a:hover { background: rgba(255, 255, 255, .24); border-color: #f2c96d; }
