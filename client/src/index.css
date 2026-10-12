@@ -1163,3 +1163,24 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .site-header:not(.is-scrolled) .header-admin-link:hover { color: #f2c96d; }
 .site-header.home-page-header .main-nav a, .site-header.home-page-header .header-actions > a { background: rgba(255, 255, 255, .13); border-color: rgba(255, 255, 255, .42); color: #fffdf5; backdrop-filter: blur(6px); }
 .site-header.home-page-header .main-nav a:hover, .site-header.home-page-header .header-actions > a:hover { background: rgba(255, 255, 255, .24); border-color: #f2c96d; }
+
+
+/* Unified, high-contrast pill navbar for the homepage over the glass header. */
+.home-page-header .home-pill-navbar { display:flex; align-items:center; gap:8px; margin-left:auto; padding:6px; border:1px solid rgba(255,255,255,.76); border-radius:999px; background:rgba(255,253,247,.96); box-shadow:0 8px 26px rgba(13,40,31,.16), inset 0 1px 0 rgba(255,255,255,.8); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); }
+.home-page-header .home-pill-navbar .main-nav { height:auto; gap:5px; margin:0; }
+.home-page-header .home-pill-navbar .header-actions { align-items:center; gap:5px; margin:0; }
+.home-page-header .home-pill-navbar .main-nav a, .home-page-header .home-pill-navbar .header-actions > a { min-height:38px; padding:0 14px; border:1px solid transparent; border-radius:999px; background:transparent; color:#194c3a; font-size:12px; font-weight:700; transition:background .18s ease,color .18s ease,border-color .18s ease,transform .18s ease; }
+.home-page-header .home-pill-navbar .main-nav a:hover, .home-page-header .home-pill-navbar .main-nav a:focus-visible, .home-page-header .home-pill-navbar .header-actions > a:hover, .home-page-header .home-pill-navbar .header-actions > a:focus-visible { background:#e9f3ed; border-color:#d4e5d8; color:#0c4b3a; transform:translateY(-1px); }
+.home-page-header .home-pill-navbar .header-actions > .remote-jobs-nav-link { background:#fff4d7; border-color:#f0d58e; color:#654814; }
+.home-page-header .home-pill-navbar .header-actions > .header-submit-link { background:#12664f; border-color:#12664f; color:#fffefa; }
+.home-page-header .home-pill-navbar .header-actions > .header-submit-link:hover { background:#0c4b3a; border-color:#0c4b3a; color:#fffefa; }
+@media (max-width:920px) {
+  .home-page-header .home-pill-navbar { gap:4px; padding:5px; }
+  .home-page-header .home-pill-navbar .main-nav a, .home-page-header .home-pill-navbar .header-actions > a { min-height:34px; padding:0 10px; font-size:10px; }
+}
+@media (max-width:680px) {
+  .home-page-header .home-pill-navbar { width:100%; max-width:100%; flex-wrap:wrap; justify-content:center; gap:4px; padding:5px; }
+  .home-page-header .home-pill-navbar .main-nav { margin:0; }
+  .home-page-header .home-pill-navbar .header-actions { width:auto; flex-wrap:wrap; justify-content:center; margin:0; gap:4px; }
+  .home-page-header .home-pill-navbar .main-nav a, .home-page-header .home-pill-navbar .header-actions > a { min-height:32px; padding:0 9px; font-size:9px; }
+}

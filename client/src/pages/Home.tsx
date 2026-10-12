@@ -62,7 +62,7 @@ export default function Home() {
   return (
     <div className="site-shell">
       <header className="site-header home-page-header">
-        <div className="header-inner"><Brand /><nav className="main-nav" aria-label="Main navigation"><a className="nav-current" href="#opportunities">Opportunities</a></nav><div className="header-actions"><a className="remote-jobs-nav-link" href="/remote-jobs">View Remote Jobs <ArrowRight size={14} /></a><a className="header-submit-link" href="/submit">Post a job <ArrowRight size={14} /></a><a className="header-contact-link" href="/about-us">About us</a></div></div>
+        <div className="header-inner"><Brand /><div className="home-pill-navbar"><nav className="main-nav" aria-label="Main navigation"><a className="nav-current" href="#opportunities">Opportunities</a></nav><div className="header-actions"><a className="remote-jobs-nav-link" href="/remote-jobs">View Remote Jobs <ArrowRight size={14} /></a><a className="header-submit-link" href="/submit">Post a job <ArrowRight size={14} /></a><a className="header-contact-link" href="/about-us">About us</a></div></div></div>
       </header>
 
       <main>
