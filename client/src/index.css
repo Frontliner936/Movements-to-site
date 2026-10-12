@@ -1349,3 +1349,11 @@ button, a, input, select, textarea { max-width:100%; }
 @media (max-width:680px) { .home-page-header .header-actions { flex-wrap:wrap; } }
 @media (max-width:350px) { .remote-jobs-nav-group { gap:4px; } .remote-jobs-nav-count { min-width:19px; height:19px; padding:0 4px; font-size:8px; } }
 @media (prefers-reduced-motion:reduce) { .remote-jobs-nav-count { animation:none; } }
+
+
+/* Match the remote-jobs action to the neighboring rectangular navigation buttons. */
+.home-page-header .remote-jobs-nav-group > .remote-jobs-nav-link { min-height:36px; display:inline-flex; align-items:center; justify-content:center; gap:6px; padding:0 11px; border:1px solid #b7851e; border-radius:4px; font-size:11px; font-weight:700; text-decoration:none; white-space:nowrap; }
+.home-page-header .remote-jobs-nav-group > .remote-jobs-nav-link:hover, .home-page-header .remote-jobs-nav-group > .remote-jobs-nav-link:focus-visible { background:linear-gradient(135deg,#e2b749,#f6d987) !important; border-color:#946919 !important; color:#211906 !important; }
+@media (max-width:920px) { .home-page-header .remote-jobs-nav-group > .remote-jobs-nav-link { min-height:33px; padding:0 8px; font-size:10px; } }
+@media (max-width:680px) { .home-page-header .remote-jobs-nav-group > .remote-jobs-nav-link { min-height:31px; padding:0 8px; font-size:9px; } }
+@media (max-width:350px) { .home-page-header .remote-jobs-nav-group > .remote-jobs-nav-link { padding:0 7px; font-size:8px; } }
