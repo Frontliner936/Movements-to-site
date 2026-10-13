@@ -167,24 +167,25 @@ export default function Home() {
           ) : null}
         </section>
 
-        <section className="opportunity-photo-strip" aria-label="Career and workplace photography">
+        <section className="opportunity-photo-strip" aria-labelledby="photo-strip-title">
           <div className="photo-strip-intro">
             <span className="eyebrow muted-eyebrow">OPPORTUNITY IN MOTION</span>
-            <h2>Work worth<br /><em>moving toward.</em></h2>
-            <p>From first applications to new teams, every opportunity starts with a person ready for the next step.</p>
+            <h2 id="photo-strip-title">Work worth<br /><em>moving toward.</em></h2>
+            <p>Stories of ambition, teamwork and new beginnings from Tanzania and across East Africa.</p>
           </div>
-          <figure className="opportunity-photo opportunity-photo-tall">
-            <img src="/images/tanzania-career-team.webp" alt="Tanzanian colleagues sharing ideas in a modern workplace." loading="lazy" />
-            <figcaption>Find your people.</figcaption>
-          </figure>
-          <figure className="opportunity-photo opportunity-photo-wide">
-            <img src="/images/tanzania-career-hero.webp" alt="Black Tanzanian professionals collaborating around a laptop." loading="lazy" />
-            <figcaption>Build your next chapter.</figcaption>
-          </figure>
-          <figure className="opportunity-photo opportunity-photo-small">
-            <img src="/images/tanzania-career-colleagues.webp" alt="East African professionals sharing ideas in a Dar es Salaam office." loading="lazy" />
-            <figcaption>Make the move.</figcaption>
-          </figure>
+          <div className="photo-marquee" aria-label="A continuously moving gallery of East African careers and workplaces">
+            <div className="photo-marquee-track">
+              {[0, 1].map(copy => (
+                <div className="photo-marquee-group" key={copy} aria-hidden={copy === 1}>
+                  <figure className="opportunity-photo"><img src="/images/tanzania-career-team.webp" alt={copy === 0 ? "Tanzanian colleagues sharing ideas in a modern workplace." : ""} loading="lazy" /><figcaption>Find your people.</figcaption></figure>
+                  <figure className="opportunity-photo"><img src="/images/tanzania-career-hero.webp" alt={copy === 0 ? "Tanzanian professionals collaborating around a laptop." : ""} loading="lazy" /><figcaption>Build your next chapter.</figcaption></figure>
+                  <figure className="opportunity-photo"><img src="/images/tanzania-career-colleagues.webp" alt={copy === 0 ? "East African professionals sharing ideas in a Dar es Salaam office." : ""} loading="lazy" /><figcaption>Make the move.</figcaption></figure>
+                  <figure className="opportunity-photo"><img src="/images/tanzania-career-applicant.webp" alt={copy === 0 ? "A Tanzanian job seeker preparing an application." : ""} loading="lazy" /><figcaption>Your next step starts here.</figcaption></figure>
+                  <figure className="opportunity-photo"><img src="/images/tanzania-hero-detail.webp" alt={copy === 0 ? "A Tanzanian woman professional working at her desk." : ""} loading="lazy" /><figcaption>Move with purpose.</figcaption></figure>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
 
         <section className="how-section" id="how-it-works"><div className="how-number">02 / THE MCHONGO WAY</div><div className="how-copy"><h2>Real opportunities.<br /><em>Original application links.</em></h2><p>Get Mchongo brings opportunities together in one clear place. When a role catches your eye, you go straight to the original application — no extra hoops.</p><a href="#opportunities" className="text-link">Browse the board <ArrowRight size={15} /></a></div><figure className="how-photo-frame"><img src="/images/tanzania-career-applicant.webp" alt="A Tanzanian job seeker reviewing her CV beside a laptop." /><figcaption className="how-photo-overlay"><span>ONE CLEAR NEXT STEP</span><div className="how-photo-icons"><span><Search size={13} /></span><i /><span><span className="how-save-mark">▱</span></span><i /><span><ArrowRight size={14} /></span></div></figcaption></figure></section>
