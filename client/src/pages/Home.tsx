@@ -9,6 +9,13 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { announcementKinds, api, recordHomeView, recordWhatsAppChannelClick, type Announcement, type Job } from "@/lib/api";
 
 const INITIAL_JOB_COUNT = 9;
+const heroPhotos = [
+  { src: "/images/tanzania-career-hero.webp", alt: "Tanzanian professionals collaborating around a laptop in a bright Dar es Salaam office." },
+  { src: "/images/tanzania-career-team.webp", alt: "Tanzanian colleagues sharing ideas in a modern workplace." },
+  { src: "/images/tanzania-career-colleagues.webp", alt: "East African professionals sharing ideas in a Dar es Salaam office." },
+  { src: "/images/tanzania-career-applicant.webp", alt: "A Tanzanian job seeker preparing an application." },
+  { src: "/images/tanzania-hero-detail.webp", alt: "A Tanzanian woman professional working at her desk in Dar es Salaam." },
+];
 
 export default function Home() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -22,8 +29,15 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [remoteJobsCount, setRemoteJobsCount] = useState<number | null>(null);
+  const [heroPhotoIndex, setHeroPhotoIndex] = useState(0);
 
   useEffect(() => { recordHomeView(); }, []);
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = window.setInterval(() => setHeroPhotoIndex(index => (index + 1) % heroPhotos.length), 5500);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     let alive = true;
@@ -89,7 +103,9 @@ export default function Home() {
             <p className="hero-footnote"><span className="small-sun">✳</span> Clear opportunities. No noise.</p>
           </div>
           <figure className="hero-art hero-photo-card">
-            <img src="/images/tanzania-career-hero.webp" alt="Tanzanian professionals collaborating around a laptop in a bright Dar es Salaam office." />
+            <div className="hero-photo-slides" aria-label="Rotating photos of Tanzanian and East African professionals">
+              {heroPhotos.map((photo, index) => <img key={photo.src} className={index === heroPhotoIndex ? "hero-photo-slide-active" : ""} src={photo.src} alt={index === heroPhotoIndex ? photo.alt : ""} aria-hidden={index !== heroPhotoIndex} />)}
+            </div>
             <div className="hero-photo-shade" aria-hidden="true" />
             <div className="hero-photo-secondary">
               <img src="/images/tanzania-hero-detail.webp" alt="Tanzanian woman professional working at her desk in Dar es Salaam." loading="eager" />

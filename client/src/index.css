@@ -435,7 +435,10 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .hero-photo-card { display: block; background: #c8d7c9; border-radius: 5px 100px 5px 5px; box-shadow: 0 22px 56px rgba(29,67,51,.14); }
 .hero-photo-card::before { content: ""; position: absolute; width: 174px; height: 174px; top: 20px; left: auto; right: 17px; border: 1px solid rgba(255,253,245,.43); border-radius: 50%; z-index: 1; pointer-events: none; }
 .hero-photo-card::after { content: ""; position: absolute; inset: auto 0 0; width: auto; height: 48%; right: auto; bottom: 0; border: 0; border-radius: 0; background: linear-gradient(0deg,rgba(13,43,34,.66),rgba(13,43,34,0)); z-index: 1; pointer-events: none; }
-.hero-photo-card > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 60% 50%; }
+.hero-photo-slides { position: absolute; inset: 0; z-index: 0; }
+.hero-photo-slides img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 60% 50%; opacity: 0; transition: opacity 1s ease-in-out; }
+.hero-photo-slides img.hero-photo-slide-active { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .hero-photo-slides img { transition: none; } }
 .hero-photo-shade { position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(120deg,rgba(12,53,39,.16),transparent 49%); }
 .hero-photo-orbit { position: absolute; top: 45px; right: 39px; z-index: 2; width: 131px; aspect-ratio: 1; border: 1px solid rgba(255,252,237,.55); border-radius: 50%; pointer-events: none; }
 .hero-photo-sun { position: absolute; top: 72px; right: 88px; z-index: 2; width: 34px; height: 34px; background: #f2c96d; border-radius: 50%; box-shadow: 0 0 0 10px rgba(242,201,109,.22); pointer-events: none; }
