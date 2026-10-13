@@ -4,7 +4,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import sharp from "sharp";
 import { getDb } from "../db";
-import { announcements, companies, contactMessages, jobs, jobReactions, jobViewers, pendingJobs, scanSchedules, siteMetrics, sources } from "../../drizzle/schema";
+import { announcements, companies, contactMessages, geoVisitorTotals, jobs, jobReactions, jobViewers, pendingJobs, scanSchedules, siteMetrics, sources } from "../../drizzle/schema";
 import { ADMIN_EMAIL, isAdmin, login, logout, requireAdmin, requireSameOrigin } from "./auth";
 import { runSource } from "./source-runner";
 import { validateSourceUrl, type SourceType } from "./collector";
@@ -91,6 +91,9 @@ router.get("/analytics/jobs", async (_req, res) => {
   let whatsappChannelClicks: number | null = null;
   let homepageVisitors: number | null = null;
   let lastHomepageVisit: Date | null = null;
+  let locationTrackingAvailable = false;
+  let locationCountries: Array<{ countryCode: string; country: string; visitors: number }> = [];
+  let locationRegions: Array<{ countryCode: string; country: string; regionCode: string; region: string; visitors: number }> = [];
   try {
     const [whatsappMetric] = await db.select({ total: siteMetrics.total }).from(siteMetrics)
       .where(eq(siteMetrics.metricKey, "whatsapp_channel_clicks")).limit(1);
@@ -105,6 +108,22 @@ router.get("/analytics/jobs", async (_req, res) => {
     lastHomepageVisit = homeMetric?.updatedAt ?? null;
   } catch {
     // Keep job and WhatsApp analytics available when site-metric storage is unavailable.
+  }
+  try {
+    const totals = await db.select({ countryCode: geoVisitorTotals.countryCode, country: geoVisitorTotals.country, regionCode: geoVisitorTotals.regionCode, region: geoVisitorTotals.region, total: geoVisitorTotals.total })
+      .from(geoVisitorTotals).limit(5000);
+    const countries = new Map<string, { countryCode: string; country: string; visitors: number }>();
+    for (const item of totals) {
+      const entry = countries.get(item.countryCode) ?? { countryCode: item.countryCode, country: item.country, visitors: 0 };
+      entry.visitors += Number(item.total);
+      countries.set(item.countryCode, entry);
+      if (item.region) locationRegions.push({ countryCode: item.countryCode, country: item.country, regionCode: item.regionCode, region: item.region, visitors: Number(item.total) });
+    }
+    locationCountries = [...countries.values()].sort((a, b) => b.visitors - a.visitors || a.country.localeCompare(b.country));
+    locationRegions.sort((a, b) => b.visitors - a.visitors || a.country.localeCompare(b.country) || a.region.localeCompare(b.region));
+    locationTrackingAvailable = true;
+  } catch {
+    // Keep the current report usable until the additive location-aggregate migration is applied.
   }
   const published = await db.select({ job: jobs, company: companies }).from(jobs)
     .leftJoin(companies, eq(jobs.companyId, companies.id))
@@ -121,7 +140,7 @@ router.get("/analytics/jobs", async (_req, res) => {
       uniqueVisitors: Number(stats?.uniqueVisitors ?? 0), lastViewedAt: stats?.lastViewedAt ?? null,
     };
   });
-  return res.json({ jobs: rows, whatsappChannelClicks, homepageVisitors, lastHomepageVisit });
+  return res.json({ jobs: rows, whatsappChannelClicks, homepageVisitors, lastHomepageVisit, locationTrackingAvailable, locationCountries, locationRegions });
 });
 
 function normalizeJob(body: any, old?: typeof jobs.$inferSelect) {

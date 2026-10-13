@@ -13,6 +13,8 @@ type JobAnalytics = {
   uniqueVisitors: number;
   lastViewedAt: string | null;
 };
+type CountryAnalytics = { countryCode: string; country: string; visitors: number };
+type RegionAnalytics = { countryCode: string; country: string; regionCode: string; region: string; visitors: number };
 
 const numberFormat = new Intl.NumberFormat();
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
@@ -22,6 +24,9 @@ export default function AdminAnalytics() {
   const [whatsappChannelClicks, setWhatsappChannelClicks] = useState<number | null>(null);
   const [homepageVisitors, setHomepageVisitors] = useState<number | null>(null);
   const [lastHomepageVisit, setLastHomepageVisit] = useState<string | null>(null);
+  const [locationCountries, setLocationCountries] = useState<CountryAnalytics[]>([]);
+  const [locationRegions, setLocationRegions] = useState<RegionAnalytics[]>([]);
+  const [locationTrackingAvailable, setLocationTrackingAvailable] = useState(false);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
@@ -30,11 +35,14 @@ export default function AdminAnalytics() {
     setRefreshing(true);
     setError("");
     try {
-      const result = await api<{ jobs: JobAnalytics[]; whatsappChannelClicks?: number | null; homepageVisitors?: number | null; lastHomepageVisit?: string | null }>("/api/gm/admin/analytics/jobs");
+      const result = await api<{ jobs: JobAnalytics[]; whatsappChannelClicks?: number | null; homepageVisitors?: number | null; lastHomepageVisit?: string | null; locationCountries?: CountryAnalytics[]; locationRegions?: RegionAnalytics[]; locationTrackingAvailable?: boolean }>("/api/gm/admin/analytics/jobs");
       setJobs(result.jobs);
       setWhatsappChannelClicks(result.whatsappChannelClicks ?? null);
       setHomepageVisitors(result.homepageVisitors ?? null);
       setLastHomepageVisit(result.lastHomepageVisit ?? null);
+      setLocationCountries(result.locationCountries ?? []);
+      setLocationRegions(result.locationRegions ?? []);
+      setLocationTrackingAvailable(result.locationTrackingAvailable ?? false);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not load visitor analytics.");
     } finally {
@@ -60,6 +68,13 @@ export default function AdminAnalytics() {
       <div className="overview-stat"><span className="stat-icon"><Eye size={18} /></span><span className="stat-label">Visitor entries across listings</span><strong>{numberFormat.format(visitorsAcrossListings)}</strong><small>A browser can appear once in more than one job row</small></div>
       <div className="overview-stat"><span className="stat-icon"><FaWhatsapp size={18} /></span><span className="stat-label">WhatsApp channel clicks</span><strong>{whatsappChannelClicks === null ? "—" : numberFormat.format(whatsappChannelClicks)}</strong><small>{whatsappChannelClicks === null ? "Apply the click-metrics migration to enable counting" : "Total clicks on the homepage channel link"}</small></div>
     </div>
+    <section className="admin-panel location-analytics-panel">
+      <div className="panel-heading"><div><span className="eyebrow muted-eyebrow">VISITOR GEOGRAPHY</span><h2>Where visitors are estimated to be</h2></div><span className="analytics-definition">Approximate location from IP address</span></div>
+      {!locationTrackingAvailable ? <p className="location-analytics-empty">Location totals will appear after the location analytics database migration is applied.</p> : !locationCountries.length ? <p className="location-analytics-empty">No location totals yet. Counts start as new homepage visits are recorded.</p> : <div className="location-analytics-grid">
+        <div><h3>By country</h3><div className="location-analytics-list">{locationCountries.map(item => <div className="location-analytics-row" key={item.countryCode}><span><strong>{item.country}</strong><small>{item.countryCode}</small></span><b>{numberFormat.format(item.visitors)}</b></div>)}</div></div>
+        <div><h3>By region</h3><div className="location-analytics-list">{locationRegions.length ? locationRegions.map(item => <div className="location-analytics-row" key={`${item.countryCode}-${item.regionCode || item.region}`}><span><strong>{item.region}</strong><small>{item.country}</small></span><b>{numberFormat.format(item.visitors)}</b></div>) : <p className="location-analytics-empty">No region-level results are available yet.</p>}</div></div>
+      </div>}
+    </section>
     <section className="admin-panel analytics-panel">
       <div className="panel-heading"><div><span className="eyebrow muted-eyebrow">PUBLISHED JOBS</span><h2>Visitors by opportunity</h2></div><span className="analytics-definition">Unique browsers, counted once per job</span></div>
       {loading ? <div className="admin-loading-inline">Loading visitor analytics…</div> : !ranked.length ? <div className="admin-empty"><span className="admin-empty-symbol"><BarChart3 size={18} /></span><h2>No published jobs to report yet</h2><p>Analytics rows appear after a job is published.</p></div> : <div className="analytics-table-scroll"><table className="analytics-table">
@@ -74,6 +89,6 @@ export default function AdminAnalytics() {
         </tr>)}</tbody>
       </table></div>}
     </section>
-    <p className="analytics-privacy-note">Homepage totals count one visit per browser per day; job totals count a browser once per job. These are approximate browser counts, not identified people. Clearing browser storage or using another browser/device may count again. No homepage browser key, IP address or user-agent string is stored.</p>
+    <p className="analytics-privacy-note">Homepage totals count one visit per browser per day; job totals count a browser once per job. Country and region are estimated from the visitor IP by IPWhois; that provider receives the IP address. This site stores only country/region aggregate totals for this report, not IP addresses or location-linked visitor IDs. Results may be approximate or unavailable when the provider limit is reached. Clearing browser storage or switching devices/browsers may cause repeat counts.</p>
   </section>;
 }

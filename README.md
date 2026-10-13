@@ -18,7 +18,7 @@ Get Mchongo is a React / Express / Drizzle job and opportunity site with a MySQL
   python3 server/getmchongo/install-translation-models.py
   ```
 
-- Run `pnpm db:migrate` only if initializing a new database; **do not initialize a new database when you need the current site's existing records**.
+- Run `pnpm db:migrate` to apply pending schema migrations to the configured database. Keep the existing `DATABASE_URL` when preserving the current site's records; do not point it at a newly initialized database.
 - Run `pnpm dev`.
 - Run `pnpm check`, `pnpm test`, and `pnpm build` for validation.
 
@@ -28,8 +28,9 @@ Get Mchongo is a React / Express / Drizzle job and opportunity site with a MySQL
 2. **Keep the existing MySQL database and its `DATABASE_URL` unchanged** so published jobs, announcements, company records, users, and admin content remain connected. If using a Railway MySQL service, set the web service's `DATABASE_URL` to a reference to that database's connection variable.
 3. In the web service's **Settings → Volumes**, create/attach a persistent Volume and set its mount path to `/data`. Railway supplies `RAILWAY_VOLUME_MOUNT_PATH` automatically; the app writes uploaded files under `<mount path>/uploads`. Alternatively set `UPLOAD_DIR=/data/uploads` explicitly. Do not point uploads at the container's ordinary `/app` filesystem.
 4. In the web service's **Variables** tab, keep `ADMIN_PASSWORD` (a strong private password for `/admin/login`), the existing `DATABASE_URL`, and optionally `PUBLIC_SITE_ORIGIN` (your public HTTPS domain for stable job-share previews). **No OpenAI key, OCR key, or translation API key is required.** The new app no longer reads `OPENAI_API_KEY`, `OPENAI_MODEL`, or `OPENAI_API_BASE`; those old variables may be removed from Railway if you added them previously.
-5. Deploy the updated Docker image, then check `https://<your-domain>/api/health`, log in to the admin dashboard, and test an image, a text PDF, a scanned PDF, and an English↔Kiswahili import. Review all extracted and translated fields before saving or publishing.
-6. Scheduled source collection runs within the app process using the existing admin schedule (East Africa Time). Leave one web-service replica running so a schedule slot is not processed by multiple app replicas. No Railway Cron service or Manus Heartbeat credentials are needed.
+5. Before using new analytics features, run `pnpm db:migrate` in the Railway service shell with its existing `DATABASE_URL`. This applies pending additive migrations to the current database; it does not initialize or replace the database.
+6. Deploy the updated Docker image, then check `https://<your-domain>/api/health`, log in to the admin dashboard, and test an image, a text PDF, a scanned PDF, and an English↔Kiswahili import. Review all extracted and translated fields before saving or publishing.
+7. Scheduled source collection runs within the app process using the existing admin schedule (East Africa Time). Leave one web-service replica running so a schedule slot is not processed by multiple app replicas. No Railway Cron service or Manus Heartbeat credentials are needed.
 
 ## Job-ad import behavior
 

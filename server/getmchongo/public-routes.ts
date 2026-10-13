@@ -1,9 +1,10 @@
 import { createHash, randomUUID } from "node:crypto";
+import { isIP } from "node:net";
 import { and, count, desc, eq, inArray, like, or, sql } from "drizzle-orm";
 import { Router } from "express";
 import type { Request } from "express";
 import { getDb } from "../db";
-import { announcements, companies, contactMessages, jobs, jobReactions, jobViewers, pendingJobs, siteMetrics } from "../../drizzle/schema";
+import { announcements, companies, contactMessages, geoVisitorTotals, jobs, jobReactions, jobViewers, pendingJobs, siteMetrics } from "../../drizzle/schema";
 import { requireSameOrigin } from "./auth";
 import { findDuplicateMatches } from "./duplicates";
 import { getJobShareImageUrl, getPublicSiteOrigin } from "./share-meta";
@@ -13,6 +14,29 @@ const visitorKey = (req: Request) => {
   const value = String(req.get("x-visitor-key") ?? "");
   return /^[a-z0-9-]{16,64}$/i.test(value) ? value : null;
 };
+async function lookupVisitorRegion(ip: string) {
+  const normalizedIp = ip.startsWith("::ffff:") ? ip.slice(7) : ip;
+  if (!isIP(normalizedIp)) return null;
+  try {
+    const response = await fetch(`https://ipwho.is/${encodeURIComponent(normalizedIp)}?fields=success,country,country_code,region,region_code`, {
+      signal: AbortSignal.timeout(2500),
+      headers: { accept: "application/json" },
+    });
+    if (!response.ok) return null;
+    const result = await response.json() as { success?: boolean; country?: string; country_code?: string; region?: string; region_code?: string };
+    const country = typeof result.country === "string" ? result.country.trim().slice(0, 100) : "";
+    const countryCode = typeof result.country_code === "string" ? result.country_code.trim().toUpperCase().slice(0, 2) : "";
+    if (!result.success || !country || !/^[A-Z]{2}$/.test(countryCode)) return null;
+    return {
+      country,
+      countryCode,
+      region: typeof result.region === "string" ? result.region.trim().slice(0, 120) : "",
+      regionCode: typeof result.region_code === "string" ? result.region_code.trim().slice(0, 32) : "",
+    };
+  } catch {
+    return null;
+  }
+}
 const companyHref = (company: typeof companies.$inferSelect | null) => company ? `/companies/${company.id}` : null;
 const submittedText = (value: unknown, maximum: number) => typeof value === "string" && value.trim() ? value.trim().slice(0, maximum) : null;
 function submittedUrl(value: unknown, maximum = 2048) {
@@ -208,6 +232,15 @@ export function createPublicRouter() {
     try {
       await db.insert(siteMetrics).values({ metricKey: "homepage_visitors", total: 1 })
         .onDuplicateKeyUpdate({ set: { total: sql`${siteMetrics.total} + 1` } });
+      try {
+        const location = await lookupVisitorRegion(req.ip ?? "");
+        if (location) {
+          await db.insert(geoVisitorTotals).values({ ...location, total: 1 })
+            .onDuplicateKeyUpdate({ set: { country: location.country, region: location.region, total: sql`${geoVisitorTotals.total} + 1` } });
+        }
+      } catch {
+        // Location lookup is optional; a provider or migration issue must not interrupt analytics.
+      }
       return res.status(204).end();
     } catch {
       return res.status(503).json({ error: "Homepage analytics are temporarily unavailable." });

@@ -154,3 +154,14 @@ export const siteMetrics = mysqlTable("gm_site_metrics", {
   total: int("total").default(0).notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
+
+/** Coarse visitor geography aggregates; never stores IP addresses or browser identifiers. */
+export const geoVisitorTotals = mysqlTable("gm_geo_visitor_totals", {
+  id: int("id").autoincrement().primaryKey(),
+  countryCode: varchar("country_code", { length: 2 }).notNull(),
+  country: varchar("country", { length: 100 }).notNull(),
+  regionCode: varchar("region_code", { length: 32 }).notNull().default(""),
+  region: varchar("region", { length: 120 }).notNull().default(""),
+  total: int("total").default(0).notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, table => [uniqueIndex("gm_geo_visitor_region_unique").on(table.countryCode, table.regionCode)]);

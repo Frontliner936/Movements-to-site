@@ -9,6 +9,7 @@ import { startLocalScanScheduler } from "../getmchongo/local-scheduler";
 
 async function startServer() {
   const app = express();
+  app.set("trust proxy", 1);
   const server = createServer(app);
   // Source documents and uploads are bounded server-side; image uploads have a 5 MB cap.
   app.use(express.json({ limit: "7mb" }));
