@@ -1,4 +1,4 @@
-CREATE TABLE `gm_geo_visitor_totals` (
+CREATE TABLE IF NOT EXISTS `gm_geo_visitor_totals` (
 	`id` int AUTO_INCREMENT NOT NULL,
 	`country_code` varchar(2) NOT NULL,
 	`country` varchar(100) NOT NULL,

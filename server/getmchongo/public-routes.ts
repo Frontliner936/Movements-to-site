@@ -3,7 +3,7 @@ import { isIP } from "node:net";
 import { and, count, desc, eq, inArray, like, or, sql } from "drizzle-orm";
 import { Router } from "express";
 import type { Request } from "express";
-import { getDb } from "../db";
+import { ensureGeoVisitorTotalsTable, getDb } from "../db";
 import { announcements, companies, contactMessages, geoVisitorTotals, jobs, jobReactions, jobViewers, pendingJobs, siteMetrics } from "../../drizzle/schema";
 import { requireSameOrigin } from "./auth";
 import { findDuplicateMatches } from "./duplicates";
@@ -229,12 +229,13 @@ export function createPublicRouter() {
     if (!requireSameOrigin(req, res)) return;
     const db = await getDb();
     if (!db) return res.status(503).json({ error: "Homepage analytics are temporarily unavailable." });
+    const geoTableReady = await ensureGeoVisitorTotalsTable();
     try {
       await db.insert(siteMetrics).values({ metricKey: "homepage_visitors", total: 1 })
         .onDuplicateKeyUpdate({ set: { total: sql`${siteMetrics.total} + 1` } });
       try {
-        const location = await lookupVisitorRegion(req.ip ?? "");
-        if (location) {
+        const location = geoTableReady ? await lookupVisitorRegion(req.ip ?? "") : null;
+        if (geoTableReady && location) {
           await db.insert(geoVisitorTotals).values({ ...location, total: 1 })
             .onDuplicateKeyUpdate({ set: { country: location.country, region: location.region, total: sql`${geoVisitorTotals.total} + 1` } });
         }

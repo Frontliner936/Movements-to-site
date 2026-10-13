@@ -3,7 +3,7 @@ import { and, asc, count, desc, eq, inArray, max } from "drizzle-orm";
 import { Router } from "express";
 import type { Request, Response } from "express";
 import sharp from "sharp";
-import { getDb } from "../db";
+import { ensureGeoVisitorTotalsTable, getDb } from "../db";
 import { announcements, companies, contactMessages, geoVisitorTotals, jobs, jobReactions, jobViewers, pendingJobs, scanSchedules, siteMetrics, sources } from "../../drizzle/schema";
 import { ADMIN_EMAIL, isAdmin, login, logout, requireAdmin, requireSameOrigin } from "./auth";
 import { runSource } from "./source-runner";
@@ -110,6 +110,7 @@ router.get("/analytics/jobs", async (_req, res) => {
     // Keep job and WhatsApp analytics available when site-metric storage is unavailable.
   }
   try {
+    await ensureGeoVisitorTotalsTable();
     const totals = await db.select({ countryCode: geoVisitorTotals.countryCode, country: geoVisitorTotals.country, regionCode: geoVisitorTotals.regionCode, region: geoVisitorTotals.region, total: geoVisitorTotals.total })
       .from(geoVisitorTotals).limit(5000);
     const countries = new Map<string, { countryCode: string; country: string; visitors: number }>();

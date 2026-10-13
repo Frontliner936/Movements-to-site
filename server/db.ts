@@ -1,9 +1,11 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import { InsertUser, users } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let geoTableReady = false;
+let geoTableInit: Promise<void> | null = null;
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
@@ -16,6 +18,37 @@ export async function getDb() {
     }
   }
   return _db;
+}
+
+/** Creates the additive visitor-location aggregate table on demand. */
+export async function ensureGeoVisitorTotalsTable(): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  if (geoTableReady) return true;
+  if (!geoTableInit) {
+    geoTableInit = (async () => {
+      try {
+        await db.execute(sql`CREATE TABLE IF NOT EXISTS
+          gm_geo_visitor_totals (
+            id int AUTO_INCREMENT NOT NULL,
+            country_code varchar(2) NOT NULL,
+            country varchar(100) NOT NULL,
+            region_code varchar(32) NOT NULL DEFAULT '',
+            region varchar(120) NOT NULL DEFAULT '',
+            total int NOT NULL DEFAULT 0,
+            updated_at timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+            CONSTRAINT gm_geo_visitor_totals_id PRIMARY KEY (id),
+            CONSTRAINT gm_geo_visitor_region_unique UNIQUE (country_code, region_code)
+          )`);
+        geoTableReady = true;
+      } catch (error) {
+        geoTableInit = null;
+        console.warn("[Database] Could not initialize visitor-location totals table:", error);
+      }
+    })();
+  }
+  await geoTableInit;
+  return geoTableReady;
 }
 
 export async function upsertUser(user: InsertUser): Promise<void> {
