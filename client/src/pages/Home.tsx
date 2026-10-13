@@ -10,10 +10,10 @@ import { announcementKinds, api, recordHomeView, recordWhatsAppChannelClick, typ
 
 const INITIAL_JOB_COUNT = 9;
 const heroPhotos = [
-  { src: "/images/tanzania-career-hero.webp", alt: "Tanzanian professionals collaborating around a laptop in a bright Dar es Salaam office." },
+  { src: "/images/tanzania-career-applicant.webp", alt: "A Tanzanian job seeker preparing an application." },
   { src: "/images/tanzania-career-team.webp", alt: "Tanzanian colleagues sharing ideas in a modern workplace." },
   { src: "/images/tanzania-career-colleagues.webp", alt: "East African professionals sharing ideas in a Dar es Salaam office." },
-  { src: "/images/tanzania-career-applicant.webp", alt: "A Tanzanian job seeker preparing an application." },
+  { src: "/images/tanzania-career-hero.webp", alt: "Tanzanian professionals collaborating around a laptop in a bright Dar es Salaam office." },
   { src: "/images/tanzania-hero-detail.webp", alt: "A Tanzanian woman professional working at her desk in Dar es Salaam." },
 ];
 
@@ -104,7 +104,7 @@ export default function Home() {
           </div>
           <figure className="hero-art hero-photo-card">
             <div className={`hero-photo-slides${heroPhotoIndex === heroPhotos.length ? " hero-photo-slides-resetting" : ""}`} aria-label="Rotating photos of Tanzanian and East African professionals" style={{ transform: `translateX(-${heroPhotoIndex * (100 / (heroPhotos.length + 1))}%)` }} onTransitionEnd={() => { if (heroPhotoIndex === heroPhotos.length) setHeroPhotoIndex(0); }}>
-              {[...heroPhotos, heroPhotos[0]].map((photo, index) => <img key={`${photo.src}-${index}`} src={photo.src} alt={index === heroPhotoIndex ? photo.alt : ""} aria-hidden={index !== heroPhotoIndex} />)}
+              {[...heroPhotos, heroPhotos[0]].map((photo, index) => <div className={`hero-photo-slide${index === heroPhotoIndex ? " hero-photo-slide-current" : ""}`} key={`${photo.src}-${index}`}><img src={photo.src} alt={index === heroPhotoIndex ? photo.alt : ""} aria-hidden={index !== heroPhotoIndex} /></div>)}
             </div>
             <div className="hero-photo-shade" aria-hidden="true" />
             <div className="hero-photo-secondary">
