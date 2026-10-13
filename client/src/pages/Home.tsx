@@ -35,7 +35,7 @@ export default function Home() {
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const timer = window.setInterval(() => setHeroPhotoIndex(index => (index + 1) % heroPhotos.length), 5500);
+    const timer = window.setInterval(() => setHeroPhotoIndex(index => index === heroPhotos.length ? 0 : index + 1), 5500);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -103,8 +103,8 @@ export default function Home() {
             <p className="hero-footnote"><span className="small-sun">✳</span> Clear opportunities. No noise.</p>
           </div>
           <figure className="hero-art hero-photo-card">
-            <div className="hero-photo-slides" aria-label="Rotating photos of Tanzanian and East African professionals">
-              {heroPhotos.map((photo, index) => <img key={photo.src} className={index === heroPhotoIndex ? "hero-photo-slide-active" : ""} src={photo.src} alt={index === heroPhotoIndex ? photo.alt : ""} aria-hidden={index !== heroPhotoIndex} />)}
+            <div className={`hero-photo-slides${heroPhotoIndex === heroPhotos.length ? " hero-photo-slides-resetting" : ""}`} aria-label="Rotating photos of Tanzanian and East African professionals" style={{ transform: `translateX(-${heroPhotoIndex * (100 / (heroPhotos.length + 1))}%)` }} onTransitionEnd={() => { if (heroPhotoIndex === heroPhotos.length) setHeroPhotoIndex(0); }}>
+              {[...heroPhotos, heroPhotos[0]].map((photo, index) => <img key={`${photo.src}-${index}`} src={photo.src} alt={index === heroPhotoIndex ? photo.alt : ""} aria-hidden={index !== heroPhotoIndex} />)}
             </div>
             <div className="hero-photo-shade" aria-hidden="true" />
             <div className="hero-photo-secondary">
