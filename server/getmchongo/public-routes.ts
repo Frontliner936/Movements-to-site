@@ -234,7 +234,7 @@ export function createPublicRouter() {
       await db.insert(siteMetrics).values({ metricKey: "homepage_visitors", total: 1 })
         .onDuplicateKeyUpdate({ set: { total: sql`${siteMetrics.total} + 1` } });
       try {
-        const location = geoTableReady ? await lookupVisitorRegion(req.ip ?? "") : null;
+        const location = geoTableReady ? await lookupVisitorRegion(req.get("x-real-ip") ?? req.ip ?? "") : null;
         if (geoTableReady && location) {
           await db.insert(geoVisitorTotals).values({ ...location, total: 1 })
             .onDuplicateKeyUpdate({ set: { country: location.country, region: location.region, total: sql`${geoVisitorTotals.total} + 1` } });
