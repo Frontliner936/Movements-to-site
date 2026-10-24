@@ -41,9 +41,27 @@ describe("Get Mchongo source collection", () => {
   });
 
   it("uses the explicit deadline in a tracked advert, not its posted date", () => {
-    const html = `<main><h1>Programme Officer</h1><p>Date posted: 24 October 2026</p><p>Application deadline: 30 November 2026</p></main>`;
+    const html = `<script type="application/ld+json">${JSON.stringify({ "@type": "JobPosting", title: "Programme Officer", validThrough: "2029-10-23T23:59:59+03:00" })}</script><main><h1>Programme Officer</h1><p>Date posted: 24 October 2026</p><p>Application deadline: 30 November 2026</p></main>`;
     const candidate = extractHtmlPage(html, "https://example.org/jobs/programme-officer", {});
     expect(candidate?.deadline).toBe("30 November 2026");
+  });
+
+  it("uses different explicitly stated RSS closing dates instead of a shared validThrough date", () => {
+    const feed = `<rss><channel>
+      <item><title>Finance Officer</title><link>https://example.org/jobs/finance</link><description><![CDATA[Application deadline: 30 June 2026]]></description><validThrough>2029-10-23T23:59:59+03:00</validThrough></item>
+      <item><title>Programme Officer</title><link>https://example.org/jobs/programme</link><description><![CDATA[Application deadline: 15 August 2026]]></description><validThrough>2029-10-23T23:59:59+03:00</validThrough></item>
+    </channel></rss>`;
+    const candidates = parseRss(feed, "https://example.org/feed.xml", {});
+    expect(candidates.map(item => item.deadline)).toEqual(["30 June 2026", "15 August 2026"]);
+  });
+
+  it("prefers a JSON advert’s closing-date text to a generic validThrough value", () => {
+    const candidates = parseJson(JSON.stringify({ jobs: [{
+      title: "Research Officer",
+      description: "Closing date: 30 June 2026",
+      validThrough: "2029-10-23T23:59:59+03:00",
+    }] }), "https://api.example.org/jobs", {});
+    expect(candidates[0].deadline).toBe("30 June 2026");
   });
 
   it("separates duties and requirements even when the source puts them inside a Description block", () => {

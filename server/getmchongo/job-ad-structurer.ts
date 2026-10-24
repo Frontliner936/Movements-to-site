@@ -119,8 +119,9 @@ const explicitDateRegex = new RegExp(`\\b(?:\\d{1,2}(?:st|nd|rd|th)?\\s+(?:${mon
 const deadlineCueRegex = /\b(?:application.{0,24}deadline|closing date|deadline|application.{0,30}clos(?:e|es|ed|ing)|last date|apply by|apply before|submit.{0,30}by|received by|tarehe ya mwisho|mwisho wa kutuma maombi|maombi.{0,30}(?:hadi|mwisho))\b/i;
 
 function inferExplicitDeadline(line: string): string | null {
-  if (!deadlineCueRegex.test(line)) return null;
-  return line.match(explicitDateRegex)?.[0]?.replace(/[,\s]+$/, "") ?? null;
+  const cue = deadlineCueRegex.exec(line);
+  if (!cue) return null;
+  return line.slice(cue.index + cue[0].length).match(explicitDateRegex)?.[0]?.replace(/[ ,]+$/, "") ?? null;
 }
 
 const qualificationCueRegex = /\b(?:minimum (?:education|qualification|requirement)|qualifications?|requirements?|education|degree|diploma|certificate|bachelor|master|phd|years?.{0,30}experience|experience in|proficien(?:t|cy)|skills?|must have|should have|candidate must|applicants? (?:must|should|need)|licen[cs]e|registration|sifa|vigezo|elimu|shahada|stashahada|cheti|uzoefu|ujuzi|mwenye)\b/i;

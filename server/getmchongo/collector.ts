@@ -199,7 +199,7 @@ export function parseRss(body: string, base: string, settings: SourceSettings): 
     const page = absolutize(link, base);
     return buildCandidate({
       title: firstString(item.title) ?? "", companyName: firstString(item.company, item.companyName),
-      category: firstString(item.category), location: firstString(item.location), deadline: firstString(item.deadline, item.validThrough),
+      category: firstString(item.category), location: firstString(item.location), deadline: firstString(adFields.deadline, item.deadline, item.validThrough),
       description: adFields.description, responsibilities: adFields.responsibilities ?? item.responsibilities,
       qualifications: adFields.qualifications ?? item.qualifications ?? item.requirements,
       howToApply: adFields.howToApply ?? item.howToApply ?? item.how_to_apply, applicationUrl: page,
@@ -231,7 +231,7 @@ export function parseJson(body: string, base: string, settings: SourceSettings):
       companyName: firstString(path(item, "companyName", ["company.name", "company", "employer.name", "organization.name"])),
       category: firstString(path(item, "category", ["category", "type"])),
       location: firstString(path(item, "location", ["location", "jobLocation.name", "city"])),
-      deadline: firstString(path(item, "deadline", ["deadline", "validThrough", "applicationDeadline"])),
+      deadline: firstString(adFields.deadline, path(item, "deadline", ["deadline", "validThrough", "applicationDeadline"])),
       description: adFields.description,
       responsibilities: adFields.responsibilities ?? rawResponsibilities,
       qualifications: adFields.qualifications ?? rawQualifications,
@@ -305,7 +305,8 @@ export function extractHtmlPage(html: string, url: string, settings: SourceSetti
   const company = firstString(posting?.hiringOrganization?.name, $("[itemprop='hiringOrganization'] [itemprop='name']").attr("content"), $(".company-name,.employer-name,[itemprop='name']").first().text());
   const rawLocation = posting?.jobLocation;
   const location = rawLocation ? objectOrArray(rawLocation).map(place => nestedName(place?.address ?? place)).filter(Boolean).join(", ") : firstString($("[itemprop='jobLocation']").text(), $(".job-location,.location").first().text());
-  const deadline = firstString(posting?.validThrough, $("[itemprop='validThrough']").attr("content"), $(".application-deadline,.deadline").first().text(), extractAdvertDeadline(mainText ?? $("body").text()));
+  const advertText = htmlToAdvertText(advertMarkup);
+  const deadline = firstString(extractAdvertDeadline(advertText), advertFields.deadline, $(".application-deadline,.deadline").first().text(), extractAdvertDeadline(mainText ?? $("body").text()), posting?.validThrough, $("[itemprop='validThrough']").attr("content"));
   const responsibilities = advertFields.responsibilities ?? posting?.responsibilities ?? sectionAfterHeading($, /responsibilit|what you.?ll do|duties|majukumu/i);
   const qualifications = advertFields.qualifications ?? posting?.qualifications ?? posting?.educationRequirements ?? posting?.experienceRequirements ?? sectionAfterHeading($, /qualification|requirement|what you.?ll need|eligibility/i);
   const howToApply = advertFields.howToApply ?? posting?.howToApply ?? sectionAfterHeading($, /how to apply|application process|apply now/i);

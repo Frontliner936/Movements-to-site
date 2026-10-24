@@ -2,7 +2,7 @@ import { desc, eq } from "drizzle-orm";
 import { getDb } from "../db";
 import { jobs, pendingJobs, sources } from "../../drizzle/schema";
 import { collectFromSource, type SourceSettings, type SourceType } from "./collector";
-import { candidateFingerprint, findDuplicateMatches } from "./duplicates";
+import { candidateFingerprint, canonicalUrl, findDuplicateMatches } from "./duplicates";
 
 function settingsOf(raw: string | null): SourceSettings {
   if (!raw) return {};
@@ -22,8 +22,8 @@ export async function runSource(sourceId: number) {
   try {
     const candidates = await collectFromSource(source.type as SourceType, source.url, settingsOf(source.settings));
     const [existingJobs, existingPending] = await Promise.all([
-      db.select({ id: jobs.id, title: jobs.title, companyName: jobs.companyName, applicationUrl: jobs.applicationUrl, description: jobs.description }).from(jobs).orderBy(desc(jobs.createdAt)),
-      db.select({ id: pendingJobs.id, title: pendingJobs.title, companyName: pendingJobs.companyName, applicationUrl: pendingJobs.applicationUrl, description: pendingJobs.description, status: pendingJobs.status }).from(pendingJobs).where(eq(pendingJobs.status, "pending")).orderBy(desc(pendingJobs.createdAt)),
+      db.select({ id: jobs.id, sourceId: jobs.sourceId, sourceUrl: jobs.sourceUrl, deadline: jobs.deadline, title: jobs.title, companyName: jobs.companyName, applicationUrl: jobs.applicationUrl, description: jobs.description }).from(jobs).orderBy(desc(jobs.createdAt)),
+      db.select({ id: pendingJobs.id, sourceId: pendingJobs.sourceId, sourceFingerprint: pendingJobs.sourceFingerprint, deadline: pendingJobs.deadline, title: pendingJobs.title, companyName: pendingJobs.companyName, applicationUrl: pendingJobs.applicationUrl, description: pendingJobs.description, status: pendingJobs.status }).from(pendingJobs).where(eq(pendingJobs.status, "pending")).orderBy(desc(pendingJobs.createdAt)),
     ]);
     const records = [
       ...existingJobs.map(item => ({ ...item, recordType: "job" as const, recordId: item.id })),
@@ -47,14 +47,29 @@ export async function runSource(sourceId: number) {
         imageUrl: candidate.imageUrl?.slice(0, 2048) ?? null, rawContext: candidate.rawContext,
         duplicateMatches: JSON.stringify(duplicateMatches), status: "pending" as const,
       };
+      const itemUrl = canonicalUrl(candidate.sourceUrl) || canonicalUrl(candidate.applicationUrl);
+      const priorPublished = itemUrl && existingJobs.find(item => item.sourceId === source.id
+        && (canonicalUrl(item.sourceUrl) || canonicalUrl(item.applicationUrl)) === itemUrl);
+      if (priorPublished && values.deadline && priorPublished.deadline !== values.deadline) {
+        await db.update(jobs).set({ deadline: values.deadline }).where(eq(jobs.id, priorPublished.id));
+        priorPublished.deadline = values.deadline;
+      }
       try {
         const result = await db.insert(pendingJobs).values(values);
         const insertedId = Number((result as any)?.[0]?.insertId ?? 0);
         added++;
         if (duplicateMatches.length) duplicatesFlagged++;
-        records.push({ id: insertedId, recordId: insertedId, title: values.title, companyName: values.companyName, applicationUrl: values.applicationUrl, description: values.description, status: "pending", recordType: "pending" });
+        records.push({ id: insertedId, recordId: insertedId, sourceId: source.id, sourceFingerprint: fingerprint, deadline: values.deadline, title: values.title, companyName: values.companyName, applicationUrl: values.applicationUrl, description: values.description, status: "pending", recordType: "pending" });
       } catch (error: any) {
-        if (error?.code === "ER_DUP_ENTRY" || error?.errno === 1062) { alreadySeen++; continue; }
+        if (error?.code === "ER_DUP_ENTRY" || error?.errno === 1062) {
+          const priorPending = existingPending.find(item => item.sourceFingerprint === fingerprint && item.sourceId === source.id);
+          if (priorPending && values.deadline && priorPending.deadline !== values.deadline) {
+            await db.update(pendingJobs).set({ deadline: values.deadline }).where(eq(pendingJobs.id, priorPending.id));
+            priorPending.deadline = values.deadline;
+          }
+          alreadySeen++;
+          continue;
+        }
         throw error;
       }
     }

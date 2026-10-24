@@ -96,6 +96,14 @@ describe("job-ad extraction normalization", () => {
     expect(result.fields.qualifications.split("\n")).toEqual(["• Bachelor's degree in public health", "• At least three years of relevant experience"]);
   });
 
+  it("uses the date after the deadline cue when a posted date appears earlier on the same line", async () => {
+    const result = await structureJobAd({
+      outputLanguage: "source",
+      sourceText: "Date posted: 23 October 2029; Application deadline: 30 June 2026",
+    });
+    expect(result.fields.deadline).toBe("30 June 2026");
+  });
+
   it("splits compact pasted text containing multiple inline field labels", async () => {
     const result = await structureJobAd({
       outputLanguage: "source",
