@@ -33,6 +33,7 @@ export async function runSource(sourceId: number) {
     let duplicatesFlagged = 0;
     let alreadySeen = 0;
     let skipped = 0;
+    let deadlinesUpdated = 0;
     for (const candidate of candidates) {
       if (!candidate.title.trim()) { skipped++; continue; }
       const fingerprint = candidateFingerprint(source.id, candidate);
@@ -53,6 +54,7 @@ export async function runSource(sourceId: number) {
       if (priorPublished && values.deadline && priorPublished.deadline !== values.deadline) {
         await db.update(jobs).set({ deadline: values.deadline }).where(eq(jobs.id, priorPublished.id));
         priorPublished.deadline = values.deadline;
+        deadlinesUpdated++;
       }
       try {
         const result = await db.insert(pendingJobs).values(values);
@@ -66,6 +68,7 @@ export async function runSource(sourceId: number) {
           if (priorPending && values.deadline && priorPending.deadline !== values.deadline) {
             await db.update(pendingJobs).set({ deadline: values.deadline }).where(eq(pendingJobs.id, priorPending.id));
             priorPending.deadline = values.deadline;
+            deadlinesUpdated++;
           }
           alreadySeen++;
           continue;
@@ -74,7 +77,7 @@ export async function runSource(sourceId: number) {
       }
     }
     await db.update(sources).set({ lastRunAt: new Date(), lastRunError: null, lastRunCount: added, totalJobsFound: source.totalJobsFound + added }).where(eq(sources.id, source.id));
-    return { sourceId: source.id, sourceName: source.name, candidatesFound: candidates.length, newPending: added, duplicatesFlagged, alreadySeen, skipped, error: null as string | null };
+    return { sourceId: source.id, sourceName: source.name, candidatesFound: candidates.length, newPending: added, duplicatesFlagged, alreadySeen, deadlinesUpdated, skipped, error: null as string | null };
   } catch (error) {
     const message = safeError(error);
     await db.update(sources).set({ lastRunAt: new Date(), lastRunError: message, lastRunCount: 0 }).where(eq(sources.id, source.id));
