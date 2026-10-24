@@ -27,8 +27,8 @@ describe("Get Mchongo source collection", () => {
       responsibilities: ["Coordinate field visits", "Prepare weekly reports"],
       qualifications: ["Diploma in community development", "Two years of relevant experience"],
     }] }), "https://api.example.org/jobs", {});
-    expect(candidates[0].responsibilities).toBe("Coordinate field visits\nPrepare weekly reports");
-    expect(candidates[0].qualifications).toBe("Diploma in community development\nTwo years of relevant experience");
+    expect(candidates[0].responsibilities).toBe("• Coordinate field visits\n• Prepare weekly reports");
+    expect(candidates[0].qualifications).toBe("• Diploma in community development\n• Two years of relevant experience");
   });
 
   it("extracts Schema.org JobPosting fields without fabricating missing values", () => {
@@ -36,7 +36,7 @@ describe("Get Mchongo source collection", () => {
       "@context": "https://schema.org", "@type": "JobPosting", title: "Finance Associate", description: "<p>Support financial operations for the programme.</p>", responsibilities: "Prepare monthly reconciliations.", qualifications: "A relevant accounting qualification.", validThrough: "2026-12-01", hiringOrganization: { name: "Lake Zone Initiative", logo: "https://example.org/logo.png" }, jobLocation: { address: { addressLocality: "Mwanza", addressRegion: "Mwanza Region" } }, url: "https://example.org/jobs/finance-associate",
     })}</script></head><body><main><h1>Finance Associate</h1></main></body></html>`;
     const candidate = extractHtmlPage(html, "https://example.org/jobs/finance-associate", {});
-    expect(candidate).toMatchObject({ title: "Finance Associate", companyName: "Lake Zone Initiative", location: "Mwanza, Mwanza Region", deadline: "2026-12-01", responsibilities: "Prepare monthly reconciliations.", qualifications: "A relevant accounting qualification.", applicationUrl: "https://example.org/jobs/finance-associate", imageUrl: "https://example.org/logo.png" });
+    expect(candidate).toMatchObject({ title: "Finance Associate", companyName: "Lake Zone Initiative", location: "Mwanza, Mwanza Region", deadline: "1 December 2026", responsibilities: "• Prepare monthly reconciliations.", qualifications: "• A relevant accounting qualification.", applicationUrl: "https://example.org/jobs/finance-associate", imageUrl: "https://example.org/logo.png" });
     expect(candidate?.howToApply).toBeNull();
   });
 
@@ -44,6 +44,40 @@ describe("Get Mchongo source collection", () => {
     const html = `<main><h1>Programme Officer</h1><p>Date posted: 24 October 2026</p><p>Application deadline: 30 November 2026</p></main>`;
     const candidate = extractHtmlPage(html, "https://example.org/jobs/programme-officer", {});
     expect(candidate?.deadline).toBe("30 November 2026");
+  });
+
+  it("separates duties and requirements even when the source puts them inside a Description block", () => {
+    const html = `<main><h1>Finance Officer</h1><h2>Description</h2><p>Support sound financial management for the programme.</p><p>Responsibilities: Prepare budgets and reconcile accounts.</p><p>Qualifications: Applicants must have a finance degree and three years of experience.</p></main>`;
+    const candidate = extractHtmlPage(html, "https://example.org/jobs/finance-officer", {});
+    expect(candidate?.description).toBe("Support sound financial management for the programme.");
+    expect(candidate?.responsibilities).toContain("Prepare budgets");
+    expect(candidate?.qualifications).toContain("finance degree");
+    expect(candidate?.description).not.toContain("Prepare budgets");
+    expect(candidate?.description).not.toContain("finance degree");
+  });
+
+  it("splits full-advert text from RSS and normalizes ISO source deadlines to readable dates", () => {
+    const feed = `<rss><channel><item><title>Programme Officer</title><link>https://example.org/jobs/po</link><description><![CDATA[<p>Support regional programme delivery.</p><h2>Responsibilities</h2><ul><li>Coordinate field teams.</li><li>Prepare monthly reports.</li></ul><h2>Qualifications</h2><ul><li>Applicants must have a degree and five years of experience.</li></ul>]]></description><validThrough>2029-10-23T23:59:59+03:00</validThrough></item></channel></rss>`;
+    const candidate = parseRss(feed, "https://example.org/feed.xml", {})[0];
+    expect(candidate.description).toBe("Support regional programme delivery.");
+    expect(candidate.responsibilities).toContain("Coordinate field teams");
+    expect(candidate.responsibilities).toContain("Prepare monthly reports");
+    expect(candidate.qualifications).toContain("degree");
+    expect(candidate.description).not.toContain("Coordinate field teams");
+    expect(candidate.deadline).toBe("23 October 2029");
+  });
+
+  it("splits JSON-feed description and responsibility fields without repeating section details", () => {
+    const candidates = parseJson(JSON.stringify({ jobs: [{
+      title: "Community Manager",
+      description: "Support community programmes and partner engagement. Responsibilities: Coordinate outreach events. Qualifications: Applicants must have a relevant degree and three years of experience.",
+      responsibilities: ["Coordinate outreach events", "Applicants must have a relevant degree and three years of experience"],
+    }] }), "https://api.example.org/jobs", {});
+    expect(candidates[0].description).toBe("Support community programmes and partner engagement.");
+    expect(candidates[0].responsibilities).toContain("Coordinate outreach events");
+    expect(candidates[0].responsibilities).not.toContain("Applicants must");
+    expect(candidates[0].qualifications).toContain("relevant degree");
+    expect(candidates[0].description).not.toContain("Coordinate outreach events");
   });
 
   it("keeps HTML list items separate when extracting sections from tracked career pages", () => {

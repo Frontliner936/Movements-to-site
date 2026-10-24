@@ -250,7 +250,7 @@ function parseAdText(sourceText: string, outputLanguage: OutputLanguage = "sourc
       unassigned.push(line);
       continue;
     }
-    if (activeSection === "responsibilities" && classifyUnlabelledLine(line) === "qualifications") {
+    if ((activeSection === "responsibilities" || activeSection === "description") && classifyUnlabelledLine(line) === "qualifications") {
       sectionLines.qualifications.push(line);
     } else if (activeSection === "qualifications" && classifyUnlabelledLine(line) === "responsibilities") {
       sectionLines.responsibilities.push(line);

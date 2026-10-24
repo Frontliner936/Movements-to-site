@@ -11,6 +11,7 @@ import { HideBrokenImage } from "@/components/HideBrokenImage";
 import { api, recordJobView, type Job } from "@/lib/api";
 import { applyJobPageMetadata } from "@/lib/pageMetadata";
 import { formatPostedAgo } from "@/lib/timeAgo";
+import { jobDeadlineLabel } from "@/lib/jobFormatting";
 
 export default function JobDetail() {
   const [, params] = useRoute("/jobs/:id");
@@ -56,7 +57,7 @@ export default function JobDetail() {
         <section className="detail-heading">
           <div className="detail-company-line"><CompanyLogo size="large" name={job.isSocialPost ? "Social advert" : job.companyName} imageUrl={job.isSocialPost ? job.companyLogoUrl : job.companyLogoUrl || job.imageUrl} imageAlt={job.isSocialPost ? "Company profile photo" : undefined} /><div>{job.companyName && (job.companyHref ? <Link href={job.companyHref} className="detail-company-link">{job.companyName} <ArrowUpRight size={13} /></Link> : <span className="detail-company-name">{job.companyName}</span>)}{job.isSocialPost && <span className="social-post-badge">Social media advert</span>}{job.category && <span className="job-category">{job.category}</span>}{job.isRemote && <span className="remote-job-badge"><Wifi size={12} />Remote</span>}</div></div>
           <h1>{job.title}</h1>
-          <div className="detail-meta">{postedAt && postedLabel && <span className="posted-time"><Clock3 size={15} />{postedLabel}</span>}{job.location && <span><MapPin size={16} />{job.location}</span>}{job.deadline && <span><CalendarDays size={15} />Deadline: {job.deadline}</span>}</div>
+          <div className="detail-meta">{postedAt && postedLabel && <span className="posted-time"><Clock3 size={15} />{postedLabel}</span>}{job.location && <span><MapPin size={16} />{job.location}</span>}{job.deadline && <span><CalendarDays size={15} />{jobDeadlineLabel(job.deadline)}</span>}</div>
           <div className="detail-heading-actions"><button type="button" className={`secondary-button ${job.liked ? "is-liked" : ""}`} aria-label={`${job.liked ? "Unlike" : "Like"} this opportunity; ${job.likeCount} likes`} onClick={() => void toggle("like")} disabled={busy}><Heart size={16} fill={job.liked ? "currentColor" : "none"} /> {job.liked ? "Liked" : "Like"} <span>{job.likeCount}</span></button><button type="button" className={`secondary-button ${job.saved ? "is-saved" : ""}`} aria-label={`${job.saved ? "Remove saved" : "Save"} opportunity; ${job.saveCount} saves`} onClick={() => void toggle("save")} disabled={busy}><Bookmark size={15} fill={job.saved ? "currentColor" : "none"} /> {job.saved ? "Saved" : "Save"} <span>{job.saveCount}</span></button><JobShareMenu job={job} variant="button" onStatus={setNotice} /><JobQuickShareButtons job={job} variant="button" /></div>
         </section>
         <p className="job-view-privacy-note">Listing counts use a random browser ID per job. For aggregate country/region statistics, this site sends the visitor IP to <a href="https://ipwhois.io/terms" target="_blank" rel="noopener noreferrer">IPWhois</a> for an approximate lookup; this site stores only aggregate location totals, not IP addresses or location-linked visitor profiles.</p>

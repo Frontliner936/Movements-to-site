@@ -157,11 +157,33 @@ function buildCandidate(values: CandidateInput, sourceUrl: string | null, fallba
     title: (cleanText(values.title, 300) ?? "").slice(0, 300),
     companyName: cleanText(values.companyName ?? fallbackCompany, 240),
     category: cleanText(values.category, 120), location: cleanText(values.location, 240),
-    deadline: cleanText(values.deadline, 240), description: cleanText(values.description, 20_000),
+    deadline: formatAdvertDeadline(values.deadline), description: cleanText(values.description, 1_200),
     responsibilities: cleanListText(values.responsibilities, 12_000), qualifications: cleanListText(values.qualifications, 12_000),
     howToApply: cleanListText(values.howToApply, 8_000), applicationUrl: values.applicationUrl ?? null,
     imageUrl: values.imageUrl ?? null, sourceUrl, rawContext: cleanText(rawContext, 30_000),
   };
+}
+
+function formatAdvertDeadline(value: unknown): string | null {
+  const raw = cleanText(value, 240);
+  const match = raw?.match(/^(\d{4})-(\d{2})-(\d{2})(?:T.*)?$/);
+  if (!raw || !match) return raw;
+  const [, yearText, monthText, dayText] = match;
+  const year = Number(yearText), month = Number(monthText), day = Number(dayText);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (date.getUTCFullYear() !== year || date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) return raw;
+  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(date);
+}
+
+function structureSourceFields(description: string | null, responsibilities: unknown, qualifications: unknown, howToApply: unknown) {
+  const chunks = [description];
+  const duties = cleanListText(responsibilities, 12_000);
+  const requirements = cleanListText(qualifications, 12_000);
+  const application = cleanListText(howToApply, 8_000);
+  if (duties) chunks.push(`<h2>Responsibilities</h2>${duties}`);
+  if (requirements) chunks.push(`<h2>Qualifications</h2>${requirements}`);
+  if (application) chunks.push(`<h2>How to apply</h2>${application}`);
+  return structureTrackedAdvertText(htmlToAdvertText(chunks.filter(Boolean).join("\n")));
 }
 
 const xmlParser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "@_", textNodeName: "#text", parseTagValue: false, processEntities: false });
@@ -173,12 +195,14 @@ export function parseRss(body: string, base: string, settings: SourceSettings): 
     const guid = firstString(item.guid);
     const link = explicitLink ?? (guid && /^https?:\/\//i.test(guid) ? guid : null);
     const description = firstString(item["content:encoded"], item.content, item.description, item.summary);
+    const adFields = structureSourceFields(description, item.responsibilities, item.qualifications ?? item.requirements, item.howToApply ?? item.how_to_apply);
     const page = absolutize(link, base);
     return buildCandidate({
       title: firstString(item.title) ?? "", companyName: firstString(item.company, item.companyName),
       category: firstString(item.category), location: firstString(item.location), deadline: firstString(item.deadline, item.validThrough),
-      description, responsibilities: item.responsibilities, qualifications: item.qualifications ?? item.requirements,
-      howToApply: item.howToApply ?? item.how_to_apply, applicationUrl: page,
+      description: adFields.description, responsibilities: adFields.responsibilities ?? item.responsibilities,
+      qualifications: adFields.qualifications ?? item.qualifications ?? item.requirements,
+      howToApply: adFields.howToApply ?? item.howToApply ?? item.how_to_apply, applicationUrl: page,
       imageUrl: absolutize(firstString(item.image, item.logo), base),
     }, page ?? base, settings.companyName, description);
   }).filter(item => item.title);
@@ -198,16 +222,20 @@ export function parseJson(body: string, base: string, settings: SourceSettings):
   return asArray(entries).slice(0, 50).map(item => {
     const itemUrl = absolutize(firstString(path(item, "sourceUrl", ["url", "link", "jobUrl", "applyUrl"])), base);
     const description = firstString(path(item, "description", ["description", "summary", "content"]));
+    const rawResponsibilities = path(item, "responsibilities", ["responsibilities", "duties"]);
+    const rawQualifications = path(item, "qualifications", ["qualifications", "requirements", "education"]);
+    const rawHowToApply = path(item, "howToApply", ["howToApply", "applicationInstructions"]);
+    const adFields = structureSourceFields(description, rawResponsibilities, rawQualifications, rawHowToApply);
     return buildCandidate({
       title: firstString(path(item, "title", ["title", "name", "jobTitle"])) ?? "",
       companyName: firstString(path(item, "companyName", ["company.name", "company", "employer.name", "organization.name"])),
       category: firstString(path(item, "category", ["category", "type"])),
       location: firstString(path(item, "location", ["location", "jobLocation.name", "city"])),
       deadline: firstString(path(item, "deadline", ["deadline", "validThrough", "applicationDeadline"])),
-      description,
-      responsibilities: path(item, "responsibilities", ["responsibilities", "duties"]),
-      qualifications: path(item, "qualifications", ["qualifications", "requirements", "education"]),
-      howToApply: path(item, "howToApply", ["howToApply", "applicationInstructions"]),
+      description: adFields.description,
+      responsibilities: adFields.responsibilities ?? rawResponsibilities,
+      qualifications: adFields.qualifications ?? rawQualifications,
+      howToApply: adFields.howToApply ?? rawHowToApply,
       applicationUrl: itemUrl,
       imageUrl: absolutize(firstString(path(item, "imageUrl", ["logo", "image", "company.logo"])), base),
     }, itemUrl ?? base, settings.companyName, JSON.stringify(item).slice(0, 30_000));
@@ -258,7 +286,7 @@ function sectionAfterHeading($: cheerio.CheerioAPI, matcher: RegExp) {
 function htmlToAdvertText(html: string): string {
   const $ = cheerio.load(html, {}, false);
   $("br").replaceWith("\n");
-  $("p,div,section,article,li,h1,h2,h3,h4,h5,h6").each((_, node) => { $(node).prepend("\n").append("\n"); });
+  $("p,div,section,article,li,h1,h2,h3,h4,h5,h6,strong,b").each((_, node) => { $(node).prepend("\n").append("\n"); });
   return $.root().text().replace(/\u00a0/g, " ").split(/\n+/).map(line => line.replace(/\s+/g, " ").trim()).filter(Boolean).join("\n");
 }
 const deadlineDatePattern = String.raw`(?:\d{1,2}(?:st|nd|rd|th)?\s+(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s*,?\s+\d{4}|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?\s*,?\s+\d{4}|\d{1,2}[./-]\d{1,2}[./-]\d{2,4}|\d{4}-\d{2}-\d{2})`;
@@ -273,14 +301,14 @@ export function extractHtmlPage(html: string, url: string, settings: SourceSetti
   const mainText = cleanText($("main").first().text() || $("article").first().text() || $(".job-description,.job-detail,.content").first().text(), 20_000);
   const rawDescription = firstString(posting?.description, $("[itemprop='description']").first().text(), $("meta[name='description']").attr("content"), mainText);
   const advertMarkup = firstString(typeof posting?.description === "string" ? posting.description : null, $("[itemprop='description']").first().html(), $(".job-description,.job-detail,.content").first().html(), $("main").first().html(), $("article").first().html(), rawDescription) ?? "";
-  const advertFields = structureTrackedAdvertText(htmlToAdvertText(advertMarkup));
+  const advertFields = structureSourceFields(advertMarkup, posting?.responsibilities, posting?.qualifications ?? posting?.educationRequirements ?? posting?.experienceRequirements, posting?.howToApply);
   const company = firstString(posting?.hiringOrganization?.name, $("[itemprop='hiringOrganization'] [itemprop='name']").attr("content"), $(".company-name,.employer-name,[itemprop='name']").first().text());
   const rawLocation = posting?.jobLocation;
   const location = rawLocation ? objectOrArray(rawLocation).map(place => nestedName(place?.address ?? place)).filter(Boolean).join(", ") : firstString($("[itemprop='jobLocation']").text(), $(".job-location,.location").first().text());
   const deadline = firstString(posting?.validThrough, $("[itemprop='validThrough']").attr("content"), $(".application-deadline,.deadline").first().text(), extractAdvertDeadline(mainText ?? $("body").text()));
-  const responsibilities = posting?.responsibilities ?? advertFields.responsibilities ?? sectionAfterHeading($, /responsibilit|what you.?ll do|duties|majukumu/i);
-  const qualifications = posting?.qualifications ?? posting?.educationRequirements ?? posting?.experienceRequirements ?? advertFields.qualifications ?? sectionAfterHeading($, /qualification|requirement|what you.?ll need|eligibility/i);
-  const howToApply = posting?.howToApply ?? sectionAfterHeading($, /how to apply|application process|apply now/i) ?? advertFields.howToApply;
+  const responsibilities = advertFields.responsibilities ?? posting?.responsibilities ?? sectionAfterHeading($, /responsibilit|what you.?ll do|duties|majukumu/i);
+  const qualifications = advertFields.qualifications ?? posting?.qualifications ?? posting?.educationRequirements ?? posting?.experienceRequirements ?? sectionAfterHeading($, /qualification|requirement|what you.?ll need|eligibility/i);
+  const howToApply = advertFields.howToApply ?? posting?.howToApply ?? sectionAfterHeading($, /how to apply|application process|apply now/i);
   const applyHref = $("a").toArray().map(el => ({ text: $(el).text(), href: $(el).attr("href") })).find(item => item.href && /apply|application|submit/i.test(item.text));
   const applicationUrl = absolutize(firstString(posting?.url, applyHref?.href), url);
   const orgLogo = firstString(posting?.hiringOrganization?.logo?.url, posting?.hiringOrganization?.logo, $("meta[property='og:image']").attr("content"));

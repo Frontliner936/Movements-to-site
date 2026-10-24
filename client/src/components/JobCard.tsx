@@ -5,6 +5,7 @@ import { api, type Job } from "@/lib/api";
 import { JobShareMenu } from "@/components/JobShareMenu";
 import { HideBrokenImage } from "@/components/HideBrokenImage";
 import { formatPostedAgo } from "@/lib/timeAgo";
+import { jobDeadlineLabel } from "@/lib/jobFormatting";
 
 export function CompanyLogo({ name, imageUrl, imageAlt, size = "normal" }: { name?: string | null; imageUrl?: string | null; imageAlt?: string; size?: "normal" | "large" }) {
   const [failed, setFailed] = useState(false);
@@ -53,7 +54,7 @@ export function JobCard({ job, onChanged }: { job: Job; onChanged: () => void })
           <button className={`icon-button ${job.liked ? "is-liked" : ""}`} type="button" aria-label={job.liked ? "Unlike job" : "Like job"} aria-pressed={job.liked} disabled={!!busy} onClick={() => void toggle("like")}><Heart size={17} fill={job.liked ? "currentColor" : "none"} /></button>
           <button className={`icon-button ${job.saved ? "is-saved" : ""}`} type="button" aria-label={job.saved ? "Remove saved job" : "Save job"} aria-pressed={job.saved} disabled={!!busy} onClick={() => void toggle("save")}><Bookmark size={17} fill={job.saved ? "currentColor" : "none"} /></button>
         </div>
-        {job.deadline && <span className="deadline-chip">Closes {job.deadline}</span>}
+        {job.deadline && <span className="deadline-chip">{jobDeadlineLabel(job.deadline)}</span>}
         <Link href={`/jobs/${job.id}`} className="view-more-button">View more <ArrowUpRight size={14} /></Link>
       </div>
       <span className="sr-only" aria-live="polite">{notice}</span>
