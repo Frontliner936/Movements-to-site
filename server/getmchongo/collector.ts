@@ -2,6 +2,7 @@ import { lookup } from "node:dns/promises";
 import ipaddr from "ipaddr.js";
 import * as cheerio from "cheerio";
 import { XMLParser } from "fast-xml-parser";
+import { structureTrackedAdvertText } from "./job-ad-structurer";
 
 export type SourceType = "rss" | "json" | "career" | "scraper";
 export type SourceSettings = {
@@ -254,6 +255,12 @@ function sectionAfterHeading($: cheerio.CheerioAPI, matcher: RegExp) {
   });
   return output;
 }
+function htmlToAdvertText(html: string): string {
+  const $ = cheerio.load(html, {}, false);
+  $("br").replaceWith("\n");
+  $("p,div,section,article,li,h1,h2,h3,h4,h5,h6").each((_, node) => { $(node).prepend("\n").append("\n"); });
+  return $.root().text().replace(/\u00a0/g, " ").split(/\n+/).map(line => line.replace(/\s+/g, " ").trim()).filter(Boolean).join("\n");
+}
 const deadlineDatePattern = String.raw`(?:\d{1,2}(?:st|nd|rd|th)?\s+(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s*,?\s+\d{4}|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?\s*,?\s+\d{4}|\d{1,2}[./-]\d{1,2}[./-]\d{2,4}|\d{4}-\d{2}-\d{2})`;
 function extractAdvertDeadline(text: string): string | null {
   const deadlineLine = new RegExp(String.raw`\b(?:application\s+(?:deadline|closing\s+date)|closing\s+date|deadline|last\s+date(?:\s+to\s+apply)?|apply\s+by|apply\s+before|tarehe\s+ya\s+mwisho)\b[^.\n]{0,100}?(${deadlineDatePattern})`, "i");
@@ -265,13 +272,15 @@ export function extractHtmlPage(html: string, url: string, settings: SourceSetti
   const heading = cleanText($("main h1").first().text() || $("h1").first().text() || $("meta[property='og:title']").attr("content") || $("title").first().text() || fallbackTitle, 300);
   const mainText = cleanText($("main").first().text() || $("article").first().text() || $(".job-description,.job-detail,.content").first().text(), 20_000);
   const rawDescription = firstString(posting?.description, $("[itemprop='description']").first().text(), $("meta[name='description']").attr("content"), mainText);
+  const advertMarkup = firstString(typeof posting?.description === "string" ? posting.description : null, $("[itemprop='description']").first().html(), $(".job-description,.job-detail,.content").first().html(), $("main").first().html(), $("article").first().html(), rawDescription) ?? "";
+  const advertFields = structureTrackedAdvertText(htmlToAdvertText(advertMarkup));
   const company = firstString(posting?.hiringOrganization?.name, $("[itemprop='hiringOrganization'] [itemprop='name']").attr("content"), $(".company-name,.employer-name,[itemprop='name']").first().text());
   const rawLocation = posting?.jobLocation;
   const location = rawLocation ? objectOrArray(rawLocation).map(place => nestedName(place?.address ?? place)).filter(Boolean).join(", ") : firstString($("[itemprop='jobLocation']").text(), $(".job-location,.location").first().text());
   const deadline = firstString(posting?.validThrough, $("[itemprop='validThrough']").attr("content"), $(".application-deadline,.deadline").first().text(), extractAdvertDeadline(mainText ?? $("body").text()));
-  const responsibilities = posting?.responsibilities ?? sectionAfterHeading($, /responsibilit|what you.?ll do|duties|majukumu/i);
-  const qualifications = posting?.qualifications ?? posting?.educationRequirements ?? posting?.experienceRequirements ?? sectionAfterHeading($, /qualification|requirement|what you.?ll need|eligibility/i);
-  const howToApply = posting?.howToApply ?? sectionAfterHeading($, /how to apply|application process|apply now/i);
+  const responsibilities = posting?.responsibilities ?? advertFields.responsibilities ?? sectionAfterHeading($, /responsibilit|what you.?ll do|duties|majukumu/i);
+  const qualifications = posting?.qualifications ?? posting?.educationRequirements ?? posting?.experienceRequirements ?? advertFields.qualifications ?? sectionAfterHeading($, /qualification|requirement|what you.?ll need|eligibility/i);
+  const howToApply = posting?.howToApply ?? sectionAfterHeading($, /how to apply|application process|apply now/i) ?? advertFields.howToApply;
   const applyHref = $("a").toArray().map(el => ({ text: $(el).text(), href: $(el).attr("href") })).find(item => item.href && /apply|application|submit/i.test(item.text));
   const applicationUrl = absolutize(firstString(posting?.url, applyHref?.href), url);
   const orgLogo = firstString(posting?.hiringOrganization?.logo?.url, posting?.hiringOrganization?.logo, $("meta[property='og:image']").attr("content"));
@@ -282,7 +291,7 @@ export function extractHtmlPage(html: string, url: string, settings: SourceSetti
     title: firstString(posting?.title, heading, fallbackTitle) ?? "",
     companyName: firstString(posting?.hiringOrganization?.name, company), category: firstString(posting?.industry, posting?.occupationalCategory),
     location: firstString(typeof location === "string" ? location : null, posting?.jobLocationType),
-    deadline: firstString(deadline), description: firstString(rawDescription), responsibilities: firstString(responsibilities),
+    deadline: firstString(deadline, advertFields.deadline), description: firstString(advertFields.description), responsibilities: firstString(responsibilities),
     qualifications: firstString(qualifications), howToApply: firstString(howToApply), applicationUrl, imageUrl,
   }, url, settings.companyName, mainText ?? rawDescription);
 }

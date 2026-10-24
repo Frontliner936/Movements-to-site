@@ -51,8 +51,20 @@ describe("Get Mchongo source collection", () => {
       <h2>Responsibilities</h2><ul><li>Coordinate community health visits</li><li>Prepare monthly activity reports</li></ul>
       <h2>Qualifications</h2><ol><li>Diploma in public health</li><li>Two years of experience</li></ol></main>`;
     const candidate = extractHtmlPage(html, "https://example.org/jobs/health-officer", {});
-    expect(candidate?.responsibilities).toBe("Coordinate community health visits\nPrepare monthly activity reports");
-    expect(candidate?.qualifications).toBe("Diploma in public health\nTwo years of experience");
+    expect(candidate?.responsibilities).toBe("• Coordinate community health visits\n• Prepare monthly activity reports");
+    expect(candidate?.qualifications).toBe("• Diploma in public health\n• Two years of experience");
+  });
+
+  it("keeps tracked advert descriptions concise and separates requirements misplaced under responsibilities", () => {
+    const html = `<main><h1>Programme Officer</h1><p>Support community programmes and coordinate partner activities across the region.</p><h2>Responsibilities</h2><ul><li>Coordinate field visits and prepare monthly reports.</li><li>Applicants must hold a degree and have at least five years of relevant experience.</li></ul><h2>Qualifications</h2><ul><li>Master's degree in public administration.</li></ul></main>`;
+    const candidate = extractHtmlPage(html, "https://example.org/jobs/programme-officer", {});
+    expect(candidate?.description).toContain("Support community programmes");
+    expect(candidate?.description).not.toContain("Coordinate field visits");
+    expect(candidate?.description).not.toContain("Master's degree");
+    expect(candidate?.responsibilities).toContain("Coordinate field visits");
+    expect(candidate?.responsibilities).not.toContain("Applicants must hold");
+    expect(candidate?.qualifications).toContain("Applicants must hold");
+    expect(candidate?.qualifications).toContain("Master's degree");
   });
 
   it("keeps the source page but leaves an absent application link blank", () => {

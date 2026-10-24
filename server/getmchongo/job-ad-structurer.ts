@@ -250,7 +250,11 @@ function parseAdText(sourceText: string, outputLanguage: OutputLanguage = "sourc
       unassigned.push(line);
       continue;
     }
-    if (activeSection) sectionLines[activeSection].push(line);
+    if (activeSection === "responsibilities" && classifyUnlabelledLine(line) === "qualifications") {
+      sectionLines.qualifications.push(line);
+    } else if (activeSection === "qualifications" && classifyUnlabelledLine(line) === "responsibilities") {
+      sectionLines.responsibilities.push(line);
+    } else if (activeSection) sectionLines[activeSection].push(line);
     else unassigned.push(line);
   }
 
@@ -294,7 +298,6 @@ function parseAdText(sourceText: string, outputLanguage: OutputLanguage = "sourc
   fields.responsibilities = bulletize(normalizeSectionLines(sectionLines.responsibilities));
   fields.qualifications = bulletize(normalizeSectionLines(sectionLines.qualifications));
   fields.howToApply = normalizeSectionLines(sectionLines.howToApply);
-
   if (!fields.howToApply) {
     const contactLines = remaining.filter(line => /\b(?:apply|application|submit|send your|email|e-mail|phone|call|maombi|omba|tuma|wasiliana)\b/i.test(line) || /[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}/.test(line) || /\+?\d[\d().\s/-]{5,}\d/.test(line));
     if (contactLines.length) fields.howToApply = contactLines.join("\n");
@@ -312,6 +315,38 @@ function parseAdText(sourceText: string, outputLanguage: OutputLanguage = "sourc
   if (!fields.qualifications) notes.push(sw ? "Sifa au vigezo havikutambuliwa kwa uhakika; hakiki tangazo na uviongeze mwenyewe." : "Qualifications or requirements were not identified confidently; review the ad and add them manually.");
   if (!fields.description && !fields.responsibilities && !fields.qualifications) notes.push(sw ? "Maandishi yasiyo na kichwa kinachotambulika yaliachwa nje badala ya kubahatisha sehemu yake." : "Unlabelled OCR text was left out rather than guessed into a job section.");
   return { fields, notes };
+}
+
+export function structureTrackedAdvertText(sourceText: string): Pick<JobAdFields, "description" | "responsibilities" | "qualifications" | "howToApply" | "deadline"> {
+  const { fields } = parseAdText(sourceText.slice(0, MAX_JOB_AD_TEXT));
+  let description = fields.description;
+  const summaryLines: string[] = [];
+  if (!description) {
+    const lines = sourceText.replace(/\r\n?/g, "\n").split("\n").flatMap(line => splitInlineAdLabels(line).split("\n"));
+    for (const rawLine of lines) {
+      const line = rawLine.trim();
+      if (!line) continue;
+      const heading = parseSectionHeading(line);
+      if (heading && heading.key !== "description" && heading.key !== "companyDescription") break;
+      if (parseMetadata(line) || metadataHeadingKey(line) || /^(?:date\s+posted|posted\s+on|published\s+on)\b/i.test(line)) continue;
+      if (isUnrecognizedSectionHeading(line) || genericTitleHeadings.has(normalizeLabel(line))) break;
+      if (line === fields.title) continue;
+      summaryLines.push(stripLeadingListMarkers(line));
+      if (summaryLines.length === 3) break;
+    }
+    description = summaryLines.join("\n");
+  }
+  description = description.split(/\r?\n/).flatMap(line => line.split(/(?<=[.!?])\s+/)).filter(Boolean).slice(0, 3).join(" ").slice(0, 1_200);
+  const summaryKeys = new Set(description.split(/\r?\n/).flatMap(line => line.split(/(?<=[.!?])\s+/)).map(line => normalizeLabel(stripLeadingListMarkers(line))));
+  const removeSummaryDuplicates = (value: string) => value.split(/\r?\n/).map(stripLeadingListMarkers)
+    .filter(line => line && !summaryKeys.has(normalizeLabel(line))).map(line => `• ${line}`).join("\n");
+  return {
+    description,
+    responsibilities: removeSummaryDuplicates(fields.responsibilities),
+    qualifications: removeSummaryDuplicates(fields.qualifications),
+    howToApply: fields.howToApply,
+    deadline: fields.deadline,
+  };
 }
 
 const englishWords = new Set(["the", "and", "or", "to", "for", "with", "of", "in", "on", "by", "experience", "apply", "qualifications", "responsibilities", "job", "position", "will", "should", "who", "have", "required", "minimum", "degree", "certificate", "must", "from", "your", "are", "be", "is", "at", "as", "manager", "officer", "assistant", "analyst", "engineer", "accountant", "director", "marketing", "finance", "sales", "coordinator", "supervisor", "specialist", "technician", "administrator", "executive", "teacher", "nurse"]);
