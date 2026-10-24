@@ -40,6 +40,12 @@ describe("Get Mchongo source collection", () => {
     expect(candidate?.howToApply).toBeNull();
   });
 
+  it("uses the explicit deadline in a tracked advert, not its posted date", () => {
+    const html = `<main><h1>Programme Officer</h1><p>Date posted: 24 October 2026</p><p>Application deadline: 30 November 2026</p></main>`;
+    const candidate = extractHtmlPage(html, "https://example.org/jobs/programme-officer", {});
+    expect(candidate?.deadline).toBe("30 November 2026");
+  });
+
   it("keeps HTML list items separate when extracting sections from tracked career pages", () => {
     const html = `<main><h1>Community Health Officer</h1>
       <h2>Responsibilities</h2><ul><li>Coordinate community health visits</li><li>Prepare monthly activity reports</li></ul>

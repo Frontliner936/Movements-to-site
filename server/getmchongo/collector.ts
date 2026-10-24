@@ -254,6 +254,11 @@ function sectionAfterHeading($: cheerio.CheerioAPI, matcher: RegExp) {
   });
   return output;
 }
+const deadlineDatePattern = String.raw`(?:\d{1,2}(?:st|nd|rd|th)?\s+(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s*,?\s+\d{4}|(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+\d{1,2}(?:st|nd|rd|th)?\s*,?\s+\d{4}|\d{1,2}[./-]\d{1,2}[./-]\d{2,4}|\d{4}-\d{2}-\d{2})`;
+function extractAdvertDeadline(text: string): string | null {
+  const deadlineLine = new RegExp(String.raw`\b(?:application\s+(?:deadline|closing\s+date)|closing\s+date|deadline|last\s+date(?:\s+to\s+apply)?|apply\s+by|apply\s+before|tarehe\s+ya\s+mwisho)\b[^.\n]{0,100}?(${deadlineDatePattern})`, "i");
+  return text.match(deadlineLine)?.[1]?.trim() ?? null;
+}
 export function extractHtmlPage(html: string, url: string, settings: SourceSettings, fallbackTitle?: string): CollectedCandidate | null {
   const $ = cheerio.load(html);
   const posting = parseJsonLd($)[0];
@@ -263,7 +268,7 @@ export function extractHtmlPage(html: string, url: string, settings: SourceSetti
   const company = firstString(posting?.hiringOrganization?.name, $("[itemprop='hiringOrganization'] [itemprop='name']").attr("content"), $(".company-name,.employer-name,[itemprop='name']").first().text());
   const rawLocation = posting?.jobLocation;
   const location = rawLocation ? objectOrArray(rawLocation).map(place => nestedName(place?.address ?? place)).filter(Boolean).join(", ") : firstString($("[itemprop='jobLocation']").text(), $(".job-location,.location").first().text());
-  const deadline = firstString(posting?.validThrough, $("[itemprop='validThrough']").attr("content"), $(".application-deadline,.deadline").first().text());
+  const deadline = firstString(posting?.validThrough, $("[itemprop='validThrough']").attr("content"), $(".application-deadline,.deadline").first().text(), extractAdvertDeadline(mainText ?? $("body").text()));
   const responsibilities = posting?.responsibilities ?? sectionAfterHeading($, /responsibilit|what you.?ll do|duties|majukumu/i);
   const qualifications = posting?.qualifications ?? posting?.educationRequirements ?? posting?.experienceRequirements ?? sectionAfterHeading($, /qualification|requirement|what you.?ll need|eligibility/i);
   const howToApply = posting?.howToApply ?? sectionAfterHeading($, /how to apply|application process|apply now/i);
