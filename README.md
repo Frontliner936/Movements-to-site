@@ -52,6 +52,14 @@ Get Mchongo is a React / Express / Drizzle job and opportunity site with a MySQL
 
 A GitHub repository does not contain uploaded media or the contents of a remote storage bucket. Newly uploaded files will persist on the Railway Volume, but old database rows that point to files existing only in the former Manus storage will need those original files copied into the new Volume before they can render. Put each legacy object at the same relative key beneath `<volume mount>/uploads` (for example `get-mchongo/uploads/<filename>`), and keep its stored URL path unchanged. If the old storage is no longer accessible and no exported copy exists, those remote-only binaries cannot be recovered from this source repository alone. The MySQL records themselves remain untouched when you keep the existing database.
 
+## Visitor member accounts
+
+- Visitor accounts use the existing MySQL connection in `DATABASE_URL`; this repository does not read `SUPABASE_DATABASE_URL` and does not switch the live site to Supabase.
+- Before enabling member signup, set a separate `MEMBER_SESSION_SECRET` in the Railway web service to a unique random value of at least 32 characters. Generate one locally with `openssl rand -base64 48`; paste the output directly into Railway Variables and do not commit or share it.
+- Apply the additive `drizzle/0009_member_accounts.sql` migration to the same existing MySQL database before deploying the feature. It creates only `gm_member_accounts` and `gm_member_favorites` and does not replace existing job or administrator tables.
+- Member passwords are stored as salted scrypt hashes. The admin Members view shows display name, email, account status, signup date and last sign-in only; it does not return credential hashes or CV text.
+- Job alerts appear inside the member dashboard for matching published jobs from the recent period. No transactional email provider is configured, so this feature does not send alert emails. CV matching analyzes submitted text ephemerally, keeps no copy and returns a transparent keyword/structure estimate rather than a hiring guarantee.
+
 ## Configuration reference
 
 See `.env.example`. `MANUS_API_URL`, `MANUS_API_KEY`, Manus OAuth settings, OpenAI credentials, and translation-provider credentials are not required for this app's public/admin flows, uploads, job-ad import, or source schedules.

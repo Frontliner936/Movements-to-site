@@ -64,6 +64,13 @@
       "when": 1791885221653,
       "tag": "0008_geo_visitor_totals",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1792930502227,
+      "tag": "0009_member_accounts",
+      "breakpoints": true
     }
   ]
 }

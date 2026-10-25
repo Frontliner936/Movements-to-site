@@ -28,10 +28,17 @@ export default function Home() {
   const [view, setView] = useState<"all" | "saved">("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [memberSignedIn, setMemberSignedIn] = useState(false);
   const [remoteJobsCount, setRemoteJobsCount] = useState<number | null>(null);
   const [heroPhotoIndex, setHeroPhotoIndex] = useState(0);
 
   useEffect(() => { recordHomeView(); }, []);
+
+  useEffect(() => {
+    let alive = true;
+    api<{ authenticated: boolean }>("/api/gm/member/session").then(result => { if (alive) setMemberSignedIn(result.authenticated); }).catch(() => { if (alive) setMemberSignedIn(false); });
+    return () => { alive = false; };
+  }, []);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -85,7 +92,7 @@ export default function Home() {
   return (
     <div className="site-shell">
       <header className="site-header home-page-header">
-        <div className="header-inner"><Brand /><div className="home-pill-navbar"><nav className="main-nav" aria-label="Main navigation"><a className="nav-current" href="#opportunities">Opportunities</a></nav><div className="header-actions"><div className="remote-jobs-nav-group"><a className="remote-jobs-nav-link" href="/remote-jobs">View Remote Jobs <ArrowRight size={14} /></a>{remoteJobsCount !== null && <span className="remote-jobs-nav-count" role="status" aria-label={`${remoteJobsCount} remote ${remoteJobsCount === 1 ? "job" : "jobs"} available`} title={`${remoteJobsCount} remote ${remoteJobsCount === 1 ? "job" : "jobs"} available`}>{remoteJobsCount}</span>}</div><a className="header-submit-link" href="/submit">Post a job <ArrowRight size={14} /></a><a className="header-contact-link" href="/about-us">About us</a></div></div></div>
+        <div className="header-inner"><Brand /><div className="home-pill-navbar"><nav className="main-nav" aria-label="Main navigation"><a className="nav-current" href="#opportunities">Opportunities</a></nav><div className="header-actions"><div className="remote-jobs-nav-group"><a className="remote-jobs-nav-link" href="/remote-jobs">View Remote Jobs <ArrowRight size={14} /></a>{remoteJobsCount !== null && <span className="remote-jobs-nav-count" role="status" aria-label={`${remoteJobsCount} remote ${remoteJobsCount === 1 ? "job" : "jobs"} available`} title={`${remoteJobsCount} remote ${remoteJobsCount === 1 ? "job" : "jobs"} available`}>{remoteJobsCount}</span>}</div><a className="header-submit-link" href="/submit">Post a job <ArrowRight size={14} /></a><a className="header-contact-link" href="/about-us">About us</a><a className="member-nav-login" href={memberSignedIn ? "/dashboard" : "/login"}>{memberSignedIn ? "My dashboard" : "Sign in"}</a>{!memberSignedIn && <a className="member-nav-signup" href="/signup">Join</a>}</div></div></div>
       </header>
 
       <main>

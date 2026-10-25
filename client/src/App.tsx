@@ -17,6 +17,8 @@ import RemoteJobs from "./pages/RemoteJobs";
 import AboutUs from "./pages/AboutUs";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import MemberAuth from "./pages/MemberAuth";
+import MemberDashboard from "./pages/MemberDashboard";
 import NotFound from "./pages/NotFound";
 
 function Router() {
@@ -33,6 +35,9 @@ function Router() {
     <Route path="/about-us" component={AboutUs} />
     <Route path="/admin/login" component={AdminLogin} />
     <Route path="/admin" component={AdminDashboard} />
+    <Route path="/signup" component={MemberAuth} />
+    <Route path="/login" component={MemberAuth} />
+    <Route path="/dashboard" component={MemberDashboard} />
     <Route path="/404" component={NotFound} />
     <Route component={NotFound} />
   </Switch>;
