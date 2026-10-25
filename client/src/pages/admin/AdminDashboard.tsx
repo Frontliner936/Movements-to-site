@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowUpRight, BarChart3, BriefcaseBusiness, Building2, Clock3, LogOut, Megaphone, MessageCircle, PanelTop, Rss, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, BarChart3, BriefcaseBusiness, Building2, Clock3, LogOut, Megaphone, MessageCircle, PanelTop, Rss, ShieldCheck, Users } from "lucide-react";
 import { Brand } from "@/components/Brand";
 import { api } from "@/lib/api";
 import AdminJobs from "./AdminJobs";
@@ -10,13 +10,14 @@ import AdminReview from "./AdminReview";
 import AdminAnalytics from "./AdminAnalytics";
 import AdminMessages from "./AdminMessages";
 import AdminAnnouncements from "./AdminAnnouncements";
+import AdminMembers from "./AdminMembers";
 
-type Tab = "overview" | "review" | "messages" | "announcements" | "jobs" | "companies" | "sources" | "analytics";
+type Tab = "overview" | "review" | "messages" | "announcements" | "jobs" | "companies" | "sources" | "analytics" | "members";
 type Overview = { jobs: Record<string, number>; companies: number; sources: number; activeSources: number; pending: number; unreadMessages: number; recentRuns: Array<{ id: number; name: string; lastRunAt: string | null; lastRunError: string | null; lastRunCount: number; isActive: boolean }>; schedule: { enabled: boolean; cronExpression: string; lastRunAt: string | null } };
 const tabs: Array<{ id: Tab; label: string; icon: typeof PanelTop }> = [
   { id: "overview", label: "Overview", icon: PanelTop }, { id: "review", label: "Review queue", icon: Clock3 }, { id: "messages", label: "Messages", icon: MessageCircle },
   { id: "announcements", label: "Announcements", icon: Megaphone }, { id: "jobs", label: "Jobs", icon: BriefcaseBusiness }, { id: "companies", label: "Companies", icon: Building2 }, { id: "sources", label: "Tracked sources", icon: Rss },
-  { id: "analytics", label: "Analytics", icon: BarChart3 },
+  { id: "analytics", label: "Analytics", icon: BarChart3 }, { id: "members", label: "Members", icon: Users },
 ];
 
 export default function AdminDashboard() {
@@ -65,6 +66,7 @@ export default function AdminDashboard() {
         {tab === "sources" && <AdminSources onChanged={loadOverview} />}
         {tab === "analytics" && <AdminAnalytics />}
         {tab === "messages" && <AdminMessages onChanged={loadOverview} />}
+        {tab === "members" && <AdminMembers />}
       </main>
     </div>
   </div>;

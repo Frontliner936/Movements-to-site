@@ -165,3 +165,26 @@ export const geoVisitorTotals = mysqlTable("gm_geo_visitor_totals", {
   total: int("total").default(0).notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 }, table => [uniqueIndex("gm_geo_visitor_region_unique").on(table.countryCode, table.regionCode)]);
+
+/** Optional public job-seeker accounts; separate from starter OAuth users and admin credentials. */
+export const memberAccounts = mysqlTable("gm_member_accounts", {
+  id: int("id").autoincrement().primaryKey(),
+  displayName: varchar("display_name", { length: 100 }).notNull(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  passwordHash: varchar("password_hash", { length: 128 }).notNull(),
+  passwordSalt: varchar("password_salt", { length: 64 }).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  alertCategories: text("alert_categories"),
+  alertLocations: text("alert_locations"),
+  alertsEnabled: boolean("alerts_enabled").default(false).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastSignedIn: timestamp("last_signed_in"),
+});
+
+/** Favorites owned by a member account; does not replace anonymous like/save reactions. */
+export const memberFavorites = mysqlTable("gm_member_favorites", {
+  id: int("id").autoincrement().primaryKey(),
+  memberId: int("member_id").notNull().references(() => memberAccounts.id, { onDelete: "cascade" }),
+  jobId: int("job_id").notNull().references(() => jobs.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, table => [uniqueIndex("gm_member_favorite_unique").on(table.memberId, table.jobId)]);

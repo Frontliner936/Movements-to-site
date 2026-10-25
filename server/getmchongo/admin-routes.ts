@@ -4,7 +4,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import sharp from "sharp";
 import { ensureGeoVisitorTotalsTable, getDb } from "../db";
-import { announcements, companies, contactMessages, geoVisitorTotals, jobs, jobReactions, jobViewers, pendingJobs, scanSchedules, siteMetrics, sources } from "../../drizzle/schema";
+import { announcements, companies, contactMessages, geoVisitorTotals, jobs, jobReactions, jobViewers, memberAccounts, pendingJobs, scanSchedules, siteMetrics, sources } from "../../drizzle/schema";
 import { ADMIN_EMAIL, isAdmin, login, logout, requireAdmin, requireSameOrigin } from "./auth";
 import { runSource } from "./source-runner";
 import { validateSourceUrl, type SourceType } from "./collector";
@@ -52,6 +52,7 @@ router.post("/login", async (req, res) => {
 });
 router.post("/logout", requireAdmin, async (req, res) => logout(req, res));
 router.use(requireAdmin);
+router.use((_req, res, next) => { res.setHeader("Cache-Control", "no-store"); next(); });
 
 router.get("/overview", async (_req, res) => {
   const db = await getDb(); if (!db) return sendDbUnavailable(res);
@@ -519,6 +520,13 @@ router.post("/upload", async (req, res) => {
   } catch {
     return res.status(503).json({ error: "File storage is not available. Mount a persistent Railway Volume and set UPLOAD_DIR to a writable folder on it." });
   }
+});
+
+router.get("/members", async (_req, res) => {
+  const db = await getDb(); if (!db) return sendDbUnavailable(res);
+  const members = await db.select({ id: memberAccounts.id, displayName: memberAccounts.displayName, email: memberAccounts.email, isActive: memberAccounts.isActive, createdAt: memberAccounts.createdAt, lastSignedIn: memberAccounts.lastSignedIn })
+    .from(memberAccounts).orderBy(desc(memberAccounts.createdAt)).limit(500);
+  return res.json({ members });
 });
 
 export function createAdminRouter() { return router; }

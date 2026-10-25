@@ -4,8 +4,9 @@ import { and, count, desc, eq, inArray, like, or, sql } from "drizzle-orm";
 import { Router } from "express";
 import type { Request } from "express";
 import { ensureGeoVisitorTotalsTable, getDb } from "../db";
-import { announcements, companies, contactMessages, geoVisitorTotals, jobs, jobReactions, jobViewers, pendingJobs, siteMetrics } from "../../drizzle/schema";
+import { announcements, companies, contactMessages, geoVisitorTotals, jobs, jobReactions, jobViewers, memberFavorites, pendingJobs, siteMetrics } from "../../drizzle/schema";
 import { requireSameOrigin } from "./auth";
+import { getActiveMemberId } from "./member-auth";
 import { findDuplicateMatches } from "./duplicates";
 import { getJobShareImageUrl, getPublicSiteOrigin } from "./share-meta";
 import { decodeSocialPostDescription } from "./social-post-storage";
@@ -54,11 +55,12 @@ function submittedImage(value: unknown) {
   return submittedUrl(candidate);
 }
 
-async function addReactionSummary(rows: Array<{ job: typeof jobs.$inferSelect; company: typeof companies.$inferSelect | null }>, viewer: string | null) {
+async function addReactionSummary(rows: Array<{ job: typeof jobs.$inferSelect; company: typeof companies.$inferSelect | null }>, viewer: string | null, memberId: number | null) {
   const db = await getDb();
   const ids = rows.map(row => row.job.id);
   const counts = new Map<number, { like: number; save: number }>();
   const active = new Map<number, Set<string>>();
+  const accountSaved = new Set<number>();
   if (db && ids.length) {
     const totals = await db.select({ jobId: jobReactions.jobId, kind: jobReactions.kind, amount: count() })
       .from(jobReactions).where(inArray(jobReactions.jobId, ids)).groupBy(jobReactions.jobId, jobReactions.kind);
@@ -75,6 +77,11 @@ async function addReactionSummary(rows: Array<{ job: typeof jobs.$inferSelect; c
         entry.add(item.kind); active.set(item.jobId, entry);
       }
     }
+    if (memberId) {
+      const saved = await db.select({ jobId: memberFavorites.jobId }).from(memberFavorites)
+        .where(and(eq(memberFavorites.memberId, memberId), inArray(memberFavorites.jobId, ids)));
+      for (const item of saved) accountSaved.add(item.jobId);
+    }
   }
   return rows.map(({ job, company }) => {
     const summary = counts.get(job.id) ?? { like: 0, save: 0 };
@@ -90,7 +97,7 @@ async function addReactionSummary(rows: Array<{ job: typeof jobs.$inferSelect; c
       companyHref: companyHref(company),
       shareImageUrl: getJobShareImageUrl(publicJob, company, getPublicSiteOrigin()),
       likeCount: summary.like, saveCount: summary.save,
-      liked: chosen.has("like"), saved: chosen.has("save"),
+      liked: chosen.has("like"), saved: accountSaved.has(job.id) || chosen.has("save"),
     };
   });
 }
@@ -122,7 +129,7 @@ export function createPublicRouter() {
     const rows = await db.select({ job: jobs, company: companies }).from(jobs)
       .leftJoin(companies, eq(jobs.companyId, companies.id))
       .where(and(...predicates)).orderBy(desc(jobs.publishedAt), desc(jobs.createdAt)).limit(200);
-    const mapped = await addReactionSummary(rows, visitorKey(req));
+    const mapped = await addReactionSummary(rows, visitorKey(req), await getActiveMemberId(req));
     const taxonomy = await db.select({ category: jobs.category, location: jobs.location }).from(jobs).where(eq(jobs.status, "published"));
     const categories = [...new Set(taxonomy.map(item => item.category).filter((item): item is string => !!item))].sort();
     const locations = [...new Set(taxonomy.map(item => item.location).filter((item): item is string => !!item))].sort();
@@ -138,7 +145,7 @@ export function createPublicRouter() {
       .leftJoin(companies, eq(jobs.companyId, companies.id))
       .where(and(eq(jobs.id, id), eq(jobs.status, "published"))).limit(1);
     if (!rows.length) return res.status(404).json({ error: "Listing not found." });
-    const mapped = await addReactionSummary(rows, visitorKey(req));
+    const mapped = await addReactionSummary(rows, visitorKey(req), await getActiveMemberId(req));
     return res.json({ job: mapped[0] });
   });
 
@@ -271,7 +278,7 @@ export function createPublicRouter() {
     const rows = await db.select({ job: jobs, company: companies }).from(jobs)
       .leftJoin(companies, eq(jobs.companyId, companies.id))
       .where(and(eq(jobs.status, "published"), eq(jobs.companyId, id))).orderBy(desc(jobs.publishedAt));
-    const mapped = await addReactionSummary(rows, visitorKey(req));
+    const mapped = await addReactionSummary(rows, visitorKey(req), await getActiveMemberId(req));
     return res.json({ company, jobs: mapped });
   });
 
@@ -280,16 +287,26 @@ export function createPublicRouter() {
     const kind = req.params.kind;
     const visitor = visitorKey(req);
     if (!Number.isSafeInteger(id) || id < 1 || !["like", "save"].includes(kind) || !visitor) return res.status(400).json({ error: "A valid job and visitor key are required." });
+    const memberId = kind === "save" ? await getActiveMemberId(req) : null;
+    if (memberId && !requireSameOrigin(req, res)) return;
     const db = await getDb();
     if (!db) return res.status(503).json({ error: "Reactions are temporarily unavailable." });
     const [job] = await db.select({ id: jobs.id }).from(jobs).where(and(eq(jobs.id, id), eq(jobs.status, "published"))).limit(1);
     if (!job) return res.status(404).json({ error: "Listing not found." });
     const match = and(eq(jobReactions.jobId, id), eq(jobReactions.visitorKey, visitor), eq(jobReactions.kind, kind as "like" | "save"));
     const [existing] = await db.select({ id: jobReactions.id }).from(jobReactions).where(match).limit(1);
-    if (existing) await db.delete(jobReactions).where(eq(jobReactions.id, existing.id));
-    else await db.insert(jobReactions).values({ jobId: id, visitorKey: visitor, kind: kind as "like" | "save" });
+    const [accountSave] = memberId ? await db.select({ id: memberFavorites.id }).from(memberFavorites)
+      .where(and(eq(memberFavorites.memberId, memberId), eq(memberFavorites.jobId, id))).limit(1) : [];
+    const currentlyActive = memberId && kind === "save" ? !!accountSave : !!existing;
+    if (currentlyActive) {
+      if (existing) await db.delete(jobReactions).where(eq(jobReactions.id, existing.id));
+      if (accountSave) await db.delete(memberFavorites).where(eq(memberFavorites.id, accountSave.id));
+    } else {
+      if (!existing) await db.insert(jobReactions).values({ jobId: id, visitorKey: visitor, kind: kind as "like" | "save" });
+      if (memberId && kind === "save" && !accountSave) await db.insert(memberFavorites).values({ memberId, jobId: id });
+    }
     const [summary] = await db.select({ amount: count() }).from(jobReactions).where(and(eq(jobReactions.jobId, id), eq(jobReactions.kind, kind as "like" | "save")));
-    return res.json({ active: !existing, count: Number(summary?.amount ?? 0) });
+    return res.json({ active: !currentlyActive, count: Number(summary?.amount ?? 0) });
   });
   return router;
 }
