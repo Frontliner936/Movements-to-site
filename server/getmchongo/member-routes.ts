@@ -37,6 +37,12 @@ function normalizeEmail(value: unknown) {
   const email = value.trim().toLowerCase();
   return email.length <= 320 && EMAIL_RE.test(email) ? email : null;
 }
+export function isValidMemberPassword(password: string) {
+  return password.length >= 6 && password.length <= 128
+    && /[A-Z]/.test(password)
+    && /[a-z]/.test(password)
+    && /[^A-Za-z0-9\s]/.test(password);
+}
 function loginKey(req: Request, email: string) {
   const ipHash = createHash("sha256").update(String(req.ip ?? "unknown")).digest("hex").slice(0, 20);
   return `${ipHash}:${email}`;
@@ -81,8 +87,8 @@ router.post("/signup", async (req, res) => {
   const password = typeof req.body?.password === "string" ? req.body.password : "";
   const key = loginKey(req, email ?? "invalid");
   if (!allowAttempt(key)) return res.status(429).json({ error: "Too many attempts. Please wait 15 minutes and try again." });
-  if (!email || displayName.length < 2 || displayName.length > 100 || password.length < 12 || password.length > 128) {
-    return res.status(400).json({ error: "Enter a valid email, a name of 2–100 characters, and a password of 12–128 characters." });
+  if (!email || displayName.length < 2 || displayName.length > 100 || !isValidMemberPassword(password)) {
+    return res.status(400).json({ error: "Enter a valid email, a name of 2–100 characters, and a password of 6–128 characters with uppercase, lowercase and a symbol. Numbers are optional." });
   }
   const db = await getDb();
   if (!db) return res.status(503).json({ error: "Member accounts are temporarily unavailable." });
