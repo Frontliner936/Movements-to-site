@@ -58,6 +58,7 @@ A GitHub repository does not contain uploaded media or the contents of a remote 
 - Before enabling member signup, set a separate `MEMBER_SESSION_SECRET` in the Railway web service to a unique random value of at least 32 characters. Generate one locally with `openssl rand -base64 48`; paste the output directly into Railway Variables and do not commit or share it.
 - Apply the additive `drizzle/0009_member_accounts.sql` migration to the same existing MySQL database before deploying the feature. It creates only `gm_member_accounts` and `gm_member_favorites` and does not replace existing job or administrator tables.
 - Member passwords are stored as salted scrypt hashes. The admin Members view shows display name, email, account status, signup date and last sign-in only; it does not return credential hashes or CV text.
+- New account passwords must be 6–128 characters and include at least one uppercase letter, one lowercase letter and one symbol; a number is optional.
 - Job alerts appear inside the member dashboard for matching published jobs from the recent period. No transactional email provider is configured, so this feature does not send alert emails. CV matching analyzes submitted text ephemerally, keeps no copy and returns a transparent keyword/structure estimate rather than a hiring guarantee.
 
 ## Configuration reference

@@ -86,7 +86,7 @@
 - Use an attractive, non-intrusive capsule/pill shape and provide a direct return to the homepage.
 
 ## [ ] Visitor signup and private job-seeker dashboard
-- Visitors can optionally register with a display name, email address and password, then sign in and sign out; keep member authentication separate from administrator login, store only salted password hashes, use protected HTTP-only sessions, and rate-limit repeated failed authentication attempts.
+- Visitors can optionally register with a display name, email address and password, then sign in and sign out; signup passwords must be 6–128 characters and include at least one uppercase letter, one lowercase letter and one symbol (numbers are optional); keep member authentication separate from administrator login, store only salted password hashes, use protected HTTP-only sessions, and rate-limit repeated failed authentication attempts.
 - Signed-in visitors can manage their own favorite/saved jobs and private job-alert preferences for categories and locations; enforce account ownership on every member API operation.
 - Show matching newly published jobs in the member's dashboard when they meet the visitor's selected alert preferences. Do not claim email alerts until a transactional email provider is configured. Anonymous visitors must still browse and apply without an account.
 - Allow a member to submit CV text for an ATS-style percentage/match estimate against a selected published job. Explain that it is only an estimate, not a guarantee of hiring, interview or ATS selection; process the CV text in memory and do not persist the CV.
@@ -99,7 +99,7 @@
 - Update the displayed totals after a visitor likes or saves/unsaves that opportunity; use the existing per-visitor reaction tracking.
 
 ## [ ] Visitor signup, member dashboard, saved jobs, alerts, and CV match check
-- Visitors can create an account with a display name, email address, and password, then sign in and sign out. Store salted, one-way password hashes only; keep member login and sessions separate from the protected administrator login. Rate-limit repeated failed authentication attempts and use a secure, HTTP-only session cookie.
+- Visitors can create an account with a display name, email address, and password, then sign in and sign out. Signup passwords must be 6–128 characters and include at least one uppercase letter, one lowercase letter and one symbol; numbers are optional. Store salted, one-way password hashes only; keep member login and sessions separate from the protected administrator login. Rate-limit repeated failed authentication attempts and use a secure, HTTP-only session cookie.
 - A signed-in visitor can open a private dashboard, manage their account-owned saved/favorite jobs and choose job categories and locations for alerts. Keep preferences private to that member and enforce ownership on every account API request.
 - When a newly published job matches a member's selected alert preferences, show the matching opportunity in that member's dashboard. Do not claim email notifications unless a transactional email provider is configured.
 - A member can submit CV text for an ATS-style percentage/match estimate against a selected published job. Explain that the score is an estimate, not a hiring or interview guarantee; process submitted CV content ephemerally and do not persist the CV text or file.
