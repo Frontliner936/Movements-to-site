@@ -40,6 +40,7 @@ export default function MemberDashboard() {
   const [alertsEnabled, setAlertsEnabled] = useState(false);
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [profileFields, setProfileFields] = useState<ProfileFields>(emptyProfile);
+  const [profileUnavailable, setProfileUnavailable] = useState(false);
   const [profileCvFile, setProfileCvFile] = useState<File | null>(null);
   const [removeStoredCv, setRemoveStoredCv] = useState(false);
   const [matchCvFile, setMatchCvFile] = useState<File | null>(null);
@@ -54,15 +55,23 @@ export default function MemberDashboard() {
 
   const refresh = useCallback(async () => {
     try {
-      const [dashboard, listing, profileResult] = await Promise.all([
+      const [dashboard, listing] = await Promise.all([
         api<DashboardData>("/api/gm/member/dashboard"),
         api<{ jobs: Job[]; categories: string[]; locations: string[] }>("/api/gm/jobs"),
-        api<{ profile: MemberProfile }>("/api/gm/member/profile"),
       ]);
       setData(dashboard); setJobs(listing.jobs); setCategories(listing.categories); setLocations(listing.locations);
       setChosenCategories(dashboard.member.alertCategories); setChosenLocations(dashboard.member.alertLocations); setAlertsEnabled(dashboard.member.alertsEnabled);
-      setProfile(profileResult.profile);
-      setProfileFields({ fullName: profileResult.profile.fullName || dashboard.member.displayName, phoneNumber: profileResult.profile.phoneNumber, location: profileResult.profile.location, profession: profileResult.profile.profession, directoryOptIn: profileResult.profile.directoryOptIn });
+      try {
+        const profileResult = await api<{ profile: MemberProfile }>("/api/gm/member/profile");
+        setProfile(profileResult.profile);
+        setProfileFields({ fullName: profileResult.profile.fullName || dashboard.member.displayName, phoneNumber: profileResult.profile.phoneNumber, location: profileResult.profile.location, profession: profileResult.profile.profession, directoryOptIn: profileResult.profile.directoryOptIn });
+        setProfileUnavailable(false);
+      } catch {
+        // An unapplied optional profile-table migration must not block saved jobs, alerts, or CV matching.
+        setProfile(null);
+        setProfileFields({ ...emptyProfile, fullName: dashboard.member.displayName });
+        setProfileUnavailable(true);
+      }
     } catch (error) {
       if (error instanceof Error && /sign in|401/i.test(error.message)) setLocation("/login");
       else { setMessage(error instanceof Error ? error.message : "Your dashboard could not be loaded."); setMessageError(true); }
@@ -98,6 +107,7 @@ export default function MemberDashboard() {
   async function saveProfile(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setMessage(""); setMessageError(false); setBusy(true);
     try {
+      if (profileUnavailable) throw new Error("Profile saving is temporarily unavailable. Please ask the site administrator to apply the member-profile database update. Saved jobs, alerts and CV matching are still available.");
       if (profileCvFile) validateCvFile(profileCvFile);
       const payload: Record<string, unknown> = { ...profileFields, removeCv: removeStoredCv && !profileCvFile };
       if (profileCvFile) {
@@ -147,6 +157,7 @@ export default function MemberDashboard() {
         </section>
 
         <section className="member-panel member-profile-panel"><div className="member-section-heading"><span className="member-section-icon"><UserRound size={18} /></span><div><span className="eyebrow muted-eyebrow">YOUR PROFESSIONAL PROFILE</span><h2>Profile &amp; CV</h2></div></div><p className="member-panel-intro">Keep your professional details up to date. Your information is private by default; you decide whether to share it with the Get Mchongo administrator.</p>
+          {profileUnavailable && <p role="status" className="admin-alert error-alert">Profile saving and stored-CV features are temporarily unavailable. The site administrator may need to apply the member-profile database update. Saved jobs, alerts and one-time CV matching are still available.</p>}
           <form className="admin-form member-profile-form" onSubmit={saveProfile}>
             <label>Full name<input value={profileFields.fullName} onChange={event => setProfileFields(current => ({ ...current, fullName: event.target.value }))} maxLength={150} required={profileFields.directoryOptIn} placeholder="Your full name" /></label>
             <label>Phone number<input type="tel" value={profileFields.phoneNumber} onChange={event => setProfileFields(current => ({ ...current, phoneNumber: event.target.value }))} maxLength={40} required={profileFields.directoryOptIn} placeholder="e.g. +255 7XX XXX XXX" /></label>
