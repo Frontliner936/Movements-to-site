@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowRight, Bookmark, BriefcaseBusiness, FileText, LogOut, RefreshCw, ShieldCheck, Sparkles, Trash2, UserRound } from "lucide-react";
+import { ArrowRight, Award, Bookmark, BriefcaseBusiness, FileCheck2, FileText, LogOut, Mail, MapPin, Phone, RefreshCw, ShieldCheck, Sparkles, Trash2, UserRound } from "lucide-react";
 import { Brand } from "@/components/Brand";
 import { api, jsonBody, type Job } from "@/lib/api";
 
@@ -140,10 +140,28 @@ export default function MemberDashboard() {
   if (!data) return <div className="member-page"><header className="site-header"><div className="header-inner"><Brand /></div></header><main className="member-error"><h1>We couldn't open your dashboard.</h1><p>{message || "Please sign in and try again."}</p><Link className="primary-button" href="/login">Sign in <ArrowRight size={15} /></Link></main></div>;
 
   const favoriteIds = new Set(data.favorites.map(job => job.id));
+  const profileName = profile?.fullName || data.member.displayName;
+  const profileInitials = profileName.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]?.toUpperCase()).join("");
+  const profileHasDetails = Boolean(profile?.profession || profile?.location || profile?.phoneNumber || profile?.cvFileName);
   return <div className="member-page">
     <header className="member-topbar"><Brand /><div><span className="member-signed-in"><ShieldCheck size={14} />Private member area</span><strong>{data.member.displayName}</strong><button type="button" className="member-signout" onClick={() => void signOut()}><LogOut size={14} />Sign out</button></div></header>
     <main className="member-content">
-      <section className="member-welcome"><span className="eyebrow"><span className="eyebrow-dot" />YOUR NEXT MOVE</span><h1>Good to see you, {data.member.displayName.split(" ")[0]}.</h1><p>Your saved opportunities, job matches and CV check—all in one private place.</p><Link href="/#opportunities" className="secondary-button">Explore opportunities <ArrowRight size={15} /></Link></section>
+      <section className="member-welcome"><span className="eyebrow"><span className="eyebrow-dot" />YOUR CAREER SPACE</span><h1>Your next move, clearly in view.</h1><p>Keep your profile sharp, shortlist opportunities and track roles that fit where you want to go.</p><Link href="/#opportunities" className="secondary-button">Explore opportunities <ArrowRight size={15} /></Link></section>
+      <section className="member-profile-hero" aria-label="Your professional profile summary">
+        <div className="member-profile-visual" aria-hidden="true"><span className="member-profile-orbit member-profile-orbit-one" /><span className="member-profile-orbit member-profile-orbit-two" /><span className="member-profile-initials">{profileInitials || "GM"}</span><span className="member-profile-star">✦</span></div>
+        <div className="member-profile-summary">
+          <div className="member-profile-kicker"><span className="eyebrow muted-eyebrow">YOUR PROFESSIONAL PROFILE</span><span className={profileHasDetails ? "member-profile-status is-ready" : "member-profile-status"}>{profileHasDetails ? "PROFILE SAVED" : "GET STARTED"}</span></div>
+          <h2>{profile?.profession || "Make your experience stand out"}</h2>
+          <p className="member-profile-person-name">{profileName}</p>
+          <div className="member-profile-facts">
+            <span><MapPin size={15} /><span><small>REGION</small><strong>{profile?.location || "Add your region"}</strong></span></span>
+            <span><Phone size={15} /><span><small>PHONE</small><strong>{profile?.phoneNumber || "Add your phone number"}</strong></span></span>
+            <span><Mail size={15} /><span><small>EMAIL</small><strong>{data.member.email}</strong></span></span>
+            <span><FileCheck2 size={15} /><span><small>CV STATUS</small><strong>{profile?.cvFileName ? "CV saved to your profile" : "No profile CV saved"}</strong></span></span>
+          </div>
+        </div>
+        <a className="member-profile-edit" href="#member-profile-editor"><Award size={16} />{profileHasDetails ? "Update profile" : "Add your details"}<ArrowRight size={14} /></a>
+      </section>
       {message && <p role="status" className={`admin-alert ${messageError ? "error-alert" : "success-alert"}`}>{message}</p>}
       <div className="member-dashboard-grid">
         <section className="member-panel member-favorites"><div className="member-section-heading"><span className="member-section-icon"><Bookmark size={18} /></span><div><span className="eyebrow muted-eyebrow">YOUR SHORTLIST</span><h2>Saved opportunities</h2></div><span className="member-count">{data.favorites.length}</span></div>
@@ -156,13 +174,13 @@ export default function MemberDashboard() {
           <form className="member-preferences" onSubmit={savePreferences}><h3>Choose what to track</h3><fieldset><legend>Categories</legend><div className="member-chip-list">{categories.slice(0, 24).map(item => <button type="button" key={item} className={chosenCategories.includes(item) ? "member-chip selected" : "member-chip"} aria-pressed={chosenCategories.includes(item)} onClick={() => toggleChoice(item, chosenCategories, setChosenCategories)}>{item}</button>)}</div>{!categories.length && <small>No categories available yet.</small>}</fieldset><fieldset><legend>Locations</legend><div className="member-chip-list">{locations.slice(0, 24).map(item => <button type="button" key={item} className={chosenLocations.includes(item) ? "member-chip selected" : "member-chip"} aria-pressed={chosenLocations.includes(item)} onClick={() => toggleChoice(item, chosenLocations, setChosenLocations)}>{item}</button>)}</div>{!locations.length && <small>No locations available yet.</small>}</fieldset><label className="member-toggle"><input type="checkbox" checked={alertsEnabled} onChange={event => setAlertsEnabled(event.target.checked)} />Show matching jobs in my dashboard</label><button type="submit" className="secondary-button" disabled={busy}>{busy ? "Saving…" : "Save preferences"}</button><small className="member-privacy-note">These alerts appear here when you return. Email alerts are not enabled.</small></form>
         </section>
 
-        <section className="member-panel member-profile-panel"><div className="member-section-heading"><span className="member-section-icon"><UserRound size={18} /></span><div><span className="eyebrow muted-eyebrow">YOUR PROFESSIONAL PROFILE</span><h2>Profile &amp; CV</h2></div></div><p className="member-panel-intro">Keep your professional details up to date. Your information is private by default; you decide whether to share it with the Get Mchongo administrator.</p>
+        <section id="member-profile-editor" className="member-panel member-profile-panel"><div className="member-section-heading"><span className="member-section-icon"><UserRound size={18} /></span><div><span className="eyebrow muted-eyebrow">YOUR PROFESSIONAL PROFILE</span><h2>Shape your profile</h2></div></div><p className="member-panel-intro">Add your profession or qualifications, contact details and CV. Your information is private by default; you decide whether to share it with the Get Mchongo administrator.</p>
           {profileUnavailable && <p role="status" className="admin-alert error-alert">Profile saving and stored-CV features are temporarily unavailable. The site administrator may need to apply the member-profile database update. Saved jobs, alerts and one-time CV matching are still available.</p>}
           <form className="admin-form member-profile-form" onSubmit={saveProfile}>
             <label>Full name<input value={profileFields.fullName} onChange={event => setProfileFields(current => ({ ...current, fullName: event.target.value }))} maxLength={150} required={profileFields.directoryOptIn} placeholder="Your full name" /></label>
             <label>Phone number<input type="tel" value={profileFields.phoneNumber} onChange={event => setProfileFields(current => ({ ...current, phoneNumber: event.target.value }))} maxLength={40} required={profileFields.directoryOptIn} placeholder="e.g. +255 7XX XXX XXX" /></label>
             <label>Location<input value={profileFields.location} onChange={event => setProfileFields(current => ({ ...current, location: event.target.value }))} maxLength={160} required={profileFields.directoryOptIn} placeholder="City or region" /></label>
-            <label>Profession / field<input value={profileFields.profession} onChange={event => setProfileFields(current => ({ ...current, profession: event.target.value }))} maxLength={160} required={profileFields.directoryOptIn} placeholder="e.g. Accountant, Nurse, Software Developer" /></label>
+            <label>Profession / qualifications<input value={profileFields.profession} onChange={event => setProfileFields(current => ({ ...current, profession: event.target.value }))} maxLength={160} required={profileFields.directoryOptIn} placeholder="e.g. Accountant, Nursing Officer, BSc in IT" /></label>
             <label className="member-file-field"><span>Upload or replace your profile CV</span><input ref={profileCvInput} type="file" accept={CV_ACCEPT} onChange={event => { const file = event.target.files?.[0] ?? null; setProfileCvFile(file); if (file) setRemoveStoredCv(false); }} /><small>PDF, DOC, DOCX, TXT or RTF · maximum 5 MB</small></label>
             {profile?.cvFileName && <div className="member-existing-cv"><FileText size={15} /><span>{removeStoredCv ? "CV will be removed when you save" : profileCvFile ? `Replacing ${profile.cvFileName}` : profile.cvFileName}</span>{!removeStoredCv && !profileCvFile && <button type="button" className="member-remove-cv" onClick={() => setRemoveStoredCv(true)}><Trash2 size={13} />Remove CV</button>}</div>}
             <label className="member-consent-control"><input type="checkbox" checked={profileFields.directoryOptIn} onChange={event => setProfileFields(current => ({ ...current, directoryOptIn: event.target.checked }))} /><span><strong>Share my profile with Get Mchongo</strong><small>I agree that the Get Mchongo administrator may view my name, phone number, profession, location and uploaded CV to identify me for relevant work opportunities. Recruiters and the public will not have access. I can withdraw consent at any time.</small></span></label>
