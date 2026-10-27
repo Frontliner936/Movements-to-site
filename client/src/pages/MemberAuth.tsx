@@ -53,7 +53,7 @@ export default function MemberAuth() {
           {error && <p role="alert" className="form-error">{error}</p>}
           <button className="primary-button login-submit" type="submit" disabled={busy}>{busy ? "Please wait…" : signup ? "Create account" : "Sign in"}<ArrowRight size={16} /></button>
         </form>
-        <p className="login-secure-note"><LockKeyhole size={13} />Your CV text is checked for this request only and is not saved.</p>
+        <p className="login-secure-note"><LockKeyhole size={13} />CV match-check uploads are processed for that request only and are not saved.</p>
         <Link className="login-public-link" href={signup ? "/login" : "/signup"}>{signup ? "Already have an account? Sign in" : "New to Get Mchongo? Create an account"}</Link>
       </section>
     </main>

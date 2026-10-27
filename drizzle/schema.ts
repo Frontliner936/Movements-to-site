@@ -1,4 +1,6 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, uniqueIndex } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, uniqueIndex, customType } from "drizzle-orm/mysql-core";
+
+const mediumBlob = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "mediumblob" });
 
 /** Base Manus account table, retained for the starter OAuth flow. */
 export const users = mysqlTable("users", {
@@ -179,6 +181,20 @@ export const memberAccounts = mysqlTable("gm_member_accounts", {
   alertsEnabled: boolean("alerts_enabled").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   lastSignedIn: timestamp("last_signed_in"),
+});
+
+/** Member-owned professional information. Admin visibility requires explicit directory consent. */
+export const memberProfiles = mysqlTable("gm_member_profiles", {
+  memberId: int("member_id").primaryKey().references(() => memberAccounts.id, { onDelete: "cascade" }),
+  fullName: varchar("full_name", { length: 150 }).notNull().default(""),
+  phoneNumber: varchar("phone_number", { length: 40 }).notNull().default(""),
+  location: varchar("location", { length: 160 }).notNull().default(""),
+  profession: varchar("profession", { length: 160 }).notNull().default(""),
+  directoryOptIn: boolean("directory_opt_in").default(false).notNull(),
+  cvFileName: varchar("cv_file_name", { length: 255 }),
+  cvMimeType: varchar("cv_mime_type", { length: 100 }),
+  cvData: mediumBlob("cv_data"),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
 
 /** Favorites owned by a member account; does not replace anonymous like/save reactions. */

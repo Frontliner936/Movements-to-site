@@ -1,12 +1,33 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowRight, Bookmark, BriefcaseBusiness, LogOut, RefreshCw, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
+import { ArrowRight, Bookmark, BriefcaseBusiness, FileText, LogOut, RefreshCw, ShieldCheck, Sparkles, Trash2, UserRound } from "lucide-react";
 import { Brand } from "@/components/Brand";
 import { api, jsonBody, type Job } from "@/lib/api";
 
 type Member = { id: number; displayName: string; email: string; createdAt: string; lastSignedIn: string | null; alertsEnabled: boolean; alertCategories: string[]; alertLocations: string[] };
+type MemberProfile = { fullName: string; phoneNumber: string; location: string; profession: string; directoryOptIn: boolean; cvFileName: string | null; updatedAt: string | null };
+type ProfileFields = Omit<MemberProfile, "cvFileName" | "updatedAt">;
 type Result = { score: number; matchedKeywords: string[]; missingKeywords: string[]; sectionsFound: number; sectionCount: number; jobTitle: string; note: string };
 type DashboardData = { member: Member; favorites: Job[]; alerts: Job[] };
+const CV_MAX_BYTES = 5 * 1024 * 1024;
+const CV_ACCEPT = ".pdf,.doc,.docx,.txt,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/rtf";
+const CV_EXTENSIONS = new Set(["pdf", "doc", "docx", "txt", "rtf"]);
+
+async function fileToBase64(file: File) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  let binary = "";
+  for (let offset = 0; offset < bytes.length; offset += 32_768) binary += String.fromCharCode(...bytes.subarray(offset, Math.min(offset + 32_768, bytes.length)));
+  return btoa(binary);
+}
+
+function validateCvFile(file: File) {
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+  if (!CV_EXTENSIONS.has(extension)) throw new Error("Choose a PDF, DOC, DOCX, TXT or RTF file.");
+  if (!file.size) throw new Error("The selected CV file is empty.");
+  if (file.size > CV_MAX_BYTES) throw new Error("CV files must be 5 MB or smaller.");
+}
+
+const emptyProfile: ProfileFields = { fullName: "", phoneNumber: "", location: "", profession: "", directoryOptIn: false };
 
 export default function MemberDashboard() {
   const [, setLocation] = useLocation();
@@ -17,8 +38,14 @@ export default function MemberDashboard() {
   const [chosenCategories, setChosenCategories] = useState<string[]>([]);
   const [chosenLocations, setChosenLocations] = useState<string[]>([]);
   const [alertsEnabled, setAlertsEnabled] = useState(false);
-  const [cvText, setCvText] = useState("");
+  const [profile, setProfile] = useState<MemberProfile | null>(null);
+  const [profileFields, setProfileFields] = useState<ProfileFields>(emptyProfile);
+  const [profileCvFile, setProfileCvFile] = useState<File | null>(null);
+  const [removeStoredCv, setRemoveStoredCv] = useState(false);
+  const [matchCvFile, setMatchCvFile] = useState<File | null>(null);
   const [cvJobId, setCvJobId] = useState("");
+  const matchCvInput = useRef<HTMLInputElement>(null);
+  const profileCvInput = useRef<HTMLInputElement>(null);
   const [result, setResult] = useState<Result | null>(null);
   const [message, setMessage] = useState("");
   const [messageError, setMessageError] = useState(false);
@@ -27,12 +54,15 @@ export default function MemberDashboard() {
 
   const refresh = useCallback(async () => {
     try {
-      const [dashboard, listing] = await Promise.all([
+      const [dashboard, listing, profileResult] = await Promise.all([
         api<DashboardData>("/api/gm/member/dashboard"),
         api<{ jobs: Job[]; categories: string[]; locations: string[] }>("/api/gm/jobs"),
+        api<{ profile: MemberProfile }>("/api/gm/member/profile"),
       ]);
       setData(dashboard); setJobs(listing.jobs); setCategories(listing.categories); setLocations(listing.locations);
       setChosenCategories(dashboard.member.alertCategories); setChosenLocations(dashboard.member.alertLocations); setAlertsEnabled(dashboard.member.alertsEnabled);
+      setProfile(profileResult.profile);
+      setProfileFields({ fullName: profileResult.profile.fullName || dashboard.member.displayName, phoneNumber: profileResult.profile.phoneNumber, location: profileResult.profile.location, profession: profileResult.profile.profession, directoryOptIn: profileResult.profile.directoryOptIn });
     } catch (error) {
       if (error instanceof Error && /sign in|401/i.test(error.message)) setLocation("/login");
       else { setMessage(error instanceof Error ? error.message : "Your dashboard could not be loaded."); setMessageError(true); }
@@ -65,11 +95,33 @@ export default function MemberDashboard() {
     finally { setBusy(false); }
   }
 
+  async function saveProfile(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setMessage(""); setMessageError(false); setBusy(true);
+    try {
+      if (profileCvFile) validateCvFile(profileCvFile);
+      const payload: Record<string, unknown> = { ...profileFields, removeCv: removeStoredCv && !profileCvFile };
+      if (profileCvFile) {
+        payload.cvFileName = profileCvFile.name;
+        payload.cvBase64 = await fileToBase64(profileCvFile);
+      }
+      const saved = await api<{ profile: MemberProfile }>("/api/gm/member/profile", { method: "PUT", body: jsonBody(payload) });
+      setProfile(saved.profile);
+      setProfileFields({ fullName: saved.profile.fullName, phoneNumber: saved.profile.phoneNumber, location: saved.profile.location, profession: saved.profile.profession, directoryOptIn: saved.profile.directoryOptIn });
+      setProfileCvFile(null); setRemoveStoredCv(false);
+      if (profileCvInput.current) profileCvInput.current.value = "";
+      setMessage(saved.profile.directoryOptIn ? "Your profile is saved and shared privately with the Get Mchongo administrator." : "Your profile is saved privately. It is not visible to the administrator unless you opt in.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Your profile could not be saved."); setMessageError(true); }
+    finally { setBusy(false); }
+  }
+
   async function checkCv(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setMessage(""); setMessageError(false); setResult(null); setBusy(true);
     try {
-      const response = await api<Result & { retained: false }>("/api/gm/member/cv-match", { method: "POST", body: jsonBody({ cvText, jobId: Number(cvJobId) }) });
-      setResult(response); setCvText("");
+      if (!matchCvFile) throw new Error("Choose your CV file first.");
+      validateCvFile(matchCvFile);
+      const response = await api<Result & { retained: false }>("/api/gm/member/cv-match", { method: "POST", body: jsonBody({ cvFileName: matchCvFile.name, cvBase64: await fileToBase64(matchCvFile), jobId: Number(cvJobId) }) });
+      setResult(response); setMatchCvFile(null);
+      if (matchCvInput.current) matchCvInput.current.value = "";
     } catch (error) { setMessage(error instanceof Error ? error.message : "Your CV could not be checked."); setMessageError(true); }
     finally { setBusy(false); }
   }
@@ -94,9 +146,26 @@ export default function MemberDashboard() {
           <form className="member-preferences" onSubmit={savePreferences}><h3>Choose what to track</h3><fieldset><legend>Categories</legend><div className="member-chip-list">{categories.slice(0, 24).map(item => <button type="button" key={item} className={chosenCategories.includes(item) ? "member-chip selected" : "member-chip"} aria-pressed={chosenCategories.includes(item)} onClick={() => toggleChoice(item, chosenCategories, setChosenCategories)}>{item}</button>)}</div>{!categories.length && <small>No categories available yet.</small>}</fieldset><fieldset><legend>Locations</legend><div className="member-chip-list">{locations.slice(0, 24).map(item => <button type="button" key={item} className={chosenLocations.includes(item) ? "member-chip selected" : "member-chip"} aria-pressed={chosenLocations.includes(item)} onClick={() => toggleChoice(item, chosenLocations, setChosenLocations)}>{item}</button>)}</div>{!locations.length && <small>No locations available yet.</small>}</fieldset><label className="member-toggle"><input type="checkbox" checked={alertsEnabled} onChange={event => setAlertsEnabled(event.target.checked)} />Show matching jobs in my dashboard</label><button type="submit" className="secondary-button" disabled={busy}>{busy ? "Saving…" : "Save preferences"}</button><small className="member-privacy-note">These alerts appear here when you return. Email alerts are not enabled.</small></form>
         </section>
 
-        <section className="member-panel member-cv-panel"><div className="member-section-heading"><span className="member-section-icon"><RefreshCw size={18} /></span><div><span className="eyebrow muted-eyebrow">ROLE MATCH</span><h2>Check your CV</h2></div></div><p className="member-panel-intro">Compare CV text with a published opportunity. The check looks at shared role keywords and common CV sections.</p><form className="admin-form member-cv-form" onSubmit={checkCv}><label>Choose a job<select value={cvJobId} onChange={event => setCvJobId(event.target.value)} required><option value="">Select a published opportunity</option>{jobs.map(job => <option key={job.id} value={job.id}>{job.title}{job.companyName ? ` — ${job.companyName}` : ""}</option>)}</select></label><label>Paste your CV text<textarea value={cvText} onChange={event => setCvText(event.target.value)} minLength={100} maxLength={30000} rows={8} placeholder="Paste the text from your CV (100–30,000 characters)." required /></label><small className="member-privacy-note">Your CV text is processed only for this request and is not stored. Do not include information you do not want processed.</small><button className="primary-button" type="submit" disabled={busy || cvText.trim().length < 100 || !cvJobId}>{busy ? "Checking…" : "Check my match"}<ArrowRight size={15} /></button></form>{result && <div className="cv-result" role="status"><div className="cv-score"><strong>{result.score}%</strong><span>estimated match</span></div><div><h3>{result.jobTitle}</h3><p>{result.note}</p><p>CV sections detected: {result.sectionsFound}/{result.sectionCount}</p>{result.matchedKeywords.length > 0 && <p><strong>Matched:</strong> {result.matchedKeywords.join(", ")}</p>}{result.missingKeywords.length > 0 && <p><strong>Consider reflecting accurately, if relevant:</strong> {result.missingKeywords.join(", ")}</p>}</div></div>}</section>
+        <section className="member-panel member-profile-panel"><div className="member-section-heading"><span className="member-section-icon"><UserRound size={18} /></span><div><span className="eyebrow muted-eyebrow">YOUR PROFESSIONAL PROFILE</span><h2>Profile &amp; CV</h2></div></div><p className="member-panel-intro">Keep your professional details up to date. Your information is private by default; you decide whether to share it with the Get Mchongo administrator.</p>
+          <form className="admin-form member-profile-form" onSubmit={saveProfile}>
+            <label>Full name<input value={profileFields.fullName} onChange={event => setProfileFields(current => ({ ...current, fullName: event.target.value }))} maxLength={150} required={profileFields.directoryOptIn} placeholder="Your full name" /></label>
+            <label>Phone number<input type="tel" value={profileFields.phoneNumber} onChange={event => setProfileFields(current => ({ ...current, phoneNumber: event.target.value }))} maxLength={40} required={profileFields.directoryOptIn} placeholder="e.g. +255 7XX XXX XXX" /></label>
+            <label>Location<input value={profileFields.location} onChange={event => setProfileFields(current => ({ ...current, location: event.target.value }))} maxLength={160} required={profileFields.directoryOptIn} placeholder="City or region" /></label>
+            <label>Profession / field<input value={profileFields.profession} onChange={event => setProfileFields(current => ({ ...current, profession: event.target.value }))} maxLength={160} required={profileFields.directoryOptIn} placeholder="e.g. Accountant, Nurse, Software Developer" /></label>
+            <label className="member-file-field"><span>Upload or replace your profile CV</span><input ref={profileCvInput} type="file" accept={CV_ACCEPT} onChange={event => { const file = event.target.files?.[0] ?? null; setProfileCvFile(file); if (file) setRemoveStoredCv(false); }} /><small>PDF, DOC, DOCX, TXT or RTF · maximum 5 MB</small></label>
+            {profile?.cvFileName && <div className="member-existing-cv"><FileText size={15} /><span>{removeStoredCv ? "CV will be removed when you save" : profileCvFile ? `Replacing ${profile.cvFileName}` : profile.cvFileName}</span>{!removeStoredCv && !profileCvFile && <button type="button" className="member-remove-cv" onClick={() => setRemoveStoredCv(true)}><Trash2 size={13} />Remove CV</button>}</div>}
+            <label className="member-consent-control"><input type="checkbox" checked={profileFields.directoryOptIn} onChange={event => setProfileFields(current => ({ ...current, directoryOptIn: event.target.checked }))} /><span><strong>Share my profile with Get Mchongo</strong><small>I agree that the Get Mchongo administrator may view my name, phone number, profession, location and uploaded CV to identify me for relevant work opportunities. Recruiters and the public will not have access. I can withdraw consent at any time.</small></span></label>
+            <p className="member-privacy-note">If you leave sharing off, your saved profile and CV remain private to you. Withdrawing consent hides your information from the admin directory immediately.</p>
+            <button type="submit" className="secondary-button" disabled={busy}>{busy ? "Saving…" : "Save profile"}<ArrowRight size={14} /></button>
+          </form>
+        </section>
+
+        <section className="member-panel member-cv-panel"><div className="member-section-heading"><span className="member-section-icon"><RefreshCw size={18} /></span><div><span className="eyebrow muted-eyebrow">ROLE MATCH</span><h2>Check your CV</h2></div></div><p className="member-panel-intro">Compare a CV file with a published opportunity. The check looks at shared role keywords and common CV sections.</p>
+          <form className="admin-form member-cv-form" onSubmit={checkCv}><label>Choose a job<select value={cvJobId} onChange={event => setCvJobId(event.target.value)} required><option value="">Select a published opportunity</option>{jobs.map(job => <option key={job.id} value={job.id}>{job.title}{job.companyName ? ` — ${job.companyName}` : ""}</option>)}</select></label><label className="member-file-field"><span>Upload your CV for this match check</span><input ref={matchCvInput} type="file" accept={CV_ACCEPT} onChange={event => setMatchCvFile(event.target.files?.[0] ?? null)} required /><small>PDF, DOC, DOCX, TXT or RTF · maximum 5 MB</small></label><p className="member-privacy-note">This match-check upload is extracted in memory for this request only. The uploaded file and extracted text are discarded and are not saved to your profile.</p><button className="primary-button" type="submit" disabled={busy || !matchCvFile || !cvJobId}>{busy ? "Checking…" : "Check my match"}<ArrowRight size={15} /></button></form>
+          {result && <div className="cv-result" role="status"><div className="cv-score"><strong>{result.score}%</strong><span>estimated match</span></div><div><h3>{result.jobTitle}</h3><p>{result.note}</p><p>CV sections detected: {result.sectionsFound}/{result.sectionCount}</p>{result.matchedKeywords.length > 0 && <p><strong>Matched:</strong> {result.matchedKeywords.join(", ")}</p>}{result.missingKeywords.length > 0 && <p><strong>Consider reflecting accurately, if relevant:</strong> {result.missingKeywords.join(", ")}</p>}</div></div>}
+        </section>
       </div>
-      <p className="member-footer-note"><ShieldCheck size={15} />Your account dashboard is private. Keep your password to yourself.</p>
+      <p className="member-footer-note"><ShieldCheck size={15} />Your dashboard is private. Profile sharing with the administrator is optional; keep your password to yourself.</p>
     </main>
   </div>;
 }

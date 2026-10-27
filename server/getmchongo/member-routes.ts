@@ -3,9 +3,10 @@ import { and, desc, eq, gte, inArray, like, or } from "drizzle-orm";
 import { Router } from "express";
 import type { Request } from "express";
 import { getDb } from "../db";
-import { jobs, memberAccounts, memberFavorites } from "../../drizzle/schema";
+import { jobs, memberAccounts, memberFavorites, memberProfiles } from "../../drizzle/schema";
 import { clearMemberSession, getMemberId, hashMemberPassword, isMemberAuthConfigured, requireMember, setMemberSession, verifyMemberPassword } from "./member-auth";
 import { requireSameOrigin } from "./auth";
+import { decodeCvBase64, extractCvText, inspectCvUpload, InvalidCvUploadError } from "./member-cv";
 
 const router = Router();
 router.use((_req, res, next) => { res.setHeader("Cache-Control", "no-store"); next(); });
@@ -49,6 +50,9 @@ function loginKey(req: Request, email: string) {
 }
 function safeMember(row: any) {
   return { id: row.id, displayName: row.displayName, email: row.email, isActive: row.isActive, createdAt: row.createdAt, lastSignedIn: row.lastSignedIn, alertsEnabled: row.alertsEnabled, alertCategories: parseList(row.alertCategories), alertLocations: parseList(row.alertLocations) };
+}
+function safeProfile(row: any) {
+  return row ? { fullName: row.fullName, phoneNumber: row.phoneNumber, location: row.location, profession: row.profession, directoryOptIn: row.directoryOptIn, cvFileName: row.cvFileName, updatedAt: row.updatedAt } : { fullName: "", phoneNumber: "", location: "", profession: "", directoryOptIn: false, cvFileName: null, updatedAt: null };
 }
 function terms(value: string) {
   const stop = new Set("the and for with from this that your you are our all not will has have job role work team skills experience knowledge ability required preferred about into within across including using use years education degree successful candidate position responsibilities qualifications requirements description location apply application".split(" "));
@@ -173,6 +177,64 @@ router.put("/preferences", requireMember, async (req, res) => {
   return res.json({ saved: true });
 });
 
+router.get("/profile", requireMember, async (_req, res) => {
+  const db = await getDb();
+  if (!db) return res.status(503).json({ error: "Your profile is temporarily unavailable." });
+  const [profile] = await db.select({ fullName: memberProfiles.fullName, phoneNumber: memberProfiles.phoneNumber, location: memberProfiles.location, profession: memberProfiles.profession, directoryOptIn: memberProfiles.directoryOptIn, cvFileName: memberProfiles.cvFileName, updatedAt: memberProfiles.updatedAt })
+    .from(memberProfiles).where(eq(memberProfiles.memberId, Number(res.locals.memberId))).limit(1);
+  return res.json({ profile: safeProfile(profile) });
+});
+
+router.put("/profile", requireMember, async (req, res) => {
+  if (!requireSameOrigin(req, res)) return;
+  const cleanText = (value: unknown, maximum: number) => typeof value === "string" && value.trim().length <= maximum ? value.trim() : null;
+  const fullName = cleanText(req.body?.fullName, 150);
+  const phoneNumber = cleanText(req.body?.phoneNumber, 40);
+  const location = cleanText(req.body?.location, 160);
+  const profession = cleanText(req.body?.profession, 160);
+  const directoryOptIn = req.body?.directoryOptIn;
+  const removeCv = req.body?.removeCv === true;
+  if (fullName === null || phoneNumber === null || location === null || profession === null || typeof directoryOptIn !== "boolean" || (removeCv && req.body?.cvBase64)) {
+    return res.status(400).json({ error: "Check the profile fields and try again." });
+  }
+  if (directoryOptIn && (fullName.length < 2 || !phoneNumber || !location || !profession)) {
+    return res.status(400).json({ error: "Add your full name, phone number, location and profession before opting into the talent directory." });
+  }
+
+  let uploadedBuffer: Buffer | null = null;
+  let uploadedFile: ReturnType<typeof inspectCvUpload> | null = null;
+  if (req.body?.cvBase64 !== undefined) {
+    try {
+      uploadedBuffer = decodeCvBase64(req.body.cvBase64);
+      if (typeof req.body?.cvFileName !== "string") throw new InvalidCvUploadError("Choose a supported CV file.");
+      uploadedFile = inspectCvUpload(req.body.cvFileName, uploadedBuffer);
+    } catch (error) {
+      uploadedBuffer?.fill(0);
+      return res.status(400).json({ error: error instanceof InvalidCvUploadError ? error.message : "Choose a supported CV file no larger than 5 MB." });
+    }
+  }
+
+  const memberId = Number(res.locals.memberId);
+  const db = await getDb();
+  if (!db) { uploadedBuffer?.fill(0); return res.status(503).json({ error: "Your profile could not be saved right now." }); }
+  try {
+    const [existing] = await db.select({ cvFileName: memberProfiles.cvFileName, cvMimeType: memberProfiles.cvMimeType, cvData: memberProfiles.cvData })
+      .from(memberProfiles).where(eq(memberProfiles.memberId, memberId)).limit(1);
+    const values = {
+      memberId, fullName, phoneNumber, location, profession, directoryOptIn,
+      cvFileName: removeCv ? null : uploadedFile?.fileName ?? existing?.cvFileName ?? null,
+      cvMimeType: removeCv ? null : uploadedFile?.mimeType ?? existing?.cvMimeType ?? null,
+      cvData: removeCv ? null : uploadedBuffer ?? existing?.cvData ?? null,
+    };
+    await db.insert(memberProfiles).values(values).onDuplicateKeyUpdate({ set: values });
+    const [saved] = await db.select({ fullName: memberProfiles.fullName, phoneNumber: memberProfiles.phoneNumber, location: memberProfiles.location, profession: memberProfiles.profession, directoryOptIn: memberProfiles.directoryOptIn, cvFileName: memberProfiles.cvFileName, updatedAt: memberProfiles.updatedAt })
+      .from(memberProfiles).where(eq(memberProfiles.memberId, memberId)).limit(1);
+    return res.json({ profile: safeProfile(saved) });
+  } finally {
+    uploadedBuffer?.fill(0);
+  }
+});
+
 router.post("/favorites/:jobId", requireMember, async (req, res) => {
   if (!requireSameOrigin(req, res)) return;
   const jobId = Number(req.params.jobId);
@@ -193,16 +255,29 @@ router.post("/favorites/:jobId", requireMember, async (req, res) => {
 
 router.post("/cv-match", requireMember, async (req, res) => {
   if (!requireSameOrigin(req, res)) return;
-  const cvText = typeof req.body?.cvText === "string" ? req.body.cvText.trim() : "";
   const jobId = Number(req.body?.jobId);
-  if (cvText.length < 100 || cvText.length > 30_000) return res.status(400).json({ error: "Paste CV text between 100 and 30,000 characters. It will only be analyzed for this request." });
   if (!Number.isSafeInteger(jobId) || jobId < 1) return res.status(400).json({ error: "Choose a published job to compare with your CV." });
-  const db = await getDb();
-  if (!db) return res.status(503).json({ error: "CV matching is temporarily unavailable." });
-  const [job] = await db.select().from(jobs).where(and(eq(jobs.id, jobId), eq(jobs.status, "published"))).limit(1);
-  if (!job) return res.status(404).json({ error: "Published job not found." });
-  const jobText = [job.title, job.category, job.description, job.responsibilities, job.qualifications].filter(Boolean).join(" ");
-  return res.json({ ...scoreCvForJob(cvText, jobText), jobTitle: job.title, retained: false, note: "This is a basic keyword and structure estimate—not a hiring decision or guarantee. Your CV text is not saved." });
+  let uploadedBuffer: Buffer | null = null;
+  let cvText = "";
+  try {
+    uploadedBuffer = decodeCvBase64(req.body?.cvBase64);
+    if (typeof req.body?.cvFileName !== "string") throw new InvalidCvUploadError("Choose a supported CV file.");
+    cvText = await extractCvText(req.body.cvFileName, uploadedBuffer);
+  } catch (error) {
+    uploadedBuffer?.fill(0);
+    return res.status(400).json({ error: error instanceof InvalidCvUploadError ? error.message : "The CV could not be read. Try another PDF, DOC, DOCX, TXT or RTF file." });
+  }
+  try {
+    const db = await getDb();
+    if (!db) return res.status(503).json({ error: "CV matching is temporarily unavailable." });
+    const [job] = await db.select().from(jobs).where(and(eq(jobs.id, jobId), eq(jobs.status, "published"))).limit(1);
+    if (!job) return res.status(404).json({ error: "Published job not found." });
+    const jobText = [job.title, job.category, job.description, job.responsibilities, job.qualifications].filter(Boolean).join(" ");
+    return res.json({ ...scoreCvForJob(cvText, jobText), jobTitle: job.title, retained: false, note: "This is a basic keyword and structure estimate—not a hiring decision or guarantee. Your uploaded CV and extracted text are not saved." });
+  } finally {
+    uploadedBuffer.fill(0);
+    cvText = "";
+  }
 });
 
 export function createMemberRouter() { return router; }
