@@ -1380,3 +1380,47 @@ button, a, input, select, textarea { max-width:100%; }
 @media (max-width:760px) { .member-dashboard-grid{grid-template-columns:1fr}.member-cv-panel{grid-column:auto}.member-content{width:calc(100% - 28px);padding-top:25px}.member-topbar{padding-right:14px;padding-left:14px}.member-topbar>div{gap:9px}.member-signed-in{display:none}.member-auth-main{width:calc(100% - 28px);grid-template-columns:1fr;margin-top:20px}.member-auth-main .login-art{display:none}.member-auth-main .login-card{padding:32px 25px}.member-nav-login,.member-nav-signup{min-height:30px;padding-right:8px;padding-left:8px;font-size:9px} }
 @media (max-width:480px) { .member-topbar .brand-wordmark{font-size:13px}.member-topbar>div>strong{font-size:10px}.member-signout{padding:7px;font-size:9px}.member-welcome{padding:22px 18px}.member-panel{padding:15px}.member-section-heading h2{font-size:23px}.cv-result{align-items:flex-start;flex-direction:column}.cv-score{width:82px;height:82px}.member-auth-main .login-card{padding:28px 18px}.member-admin-table{min-width:650px} }
 @media (max-width:350px) { .home-page-header .remote-jobs-nav-group > .remote-jobs-nav-link { padding:0 7px; font-size:8px; } }
+
+
+/* Private member profile and consent-led talent directory. */
+.member-profile-panel { grid-column:1/-1; }
+.member-profile-form { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px 18px; margin-top:18px; }
+.member-profile-form > label:not(.member-file-field) { display:flex; flex-direction:column; gap:7px; color:#455f50; font-size:10px; font-weight:700; }
+.member-profile-form input:not([type="checkbox"]), .member-directory-search input { width:100%; min-height:42px; border:1px solid #dfe6dd; border-radius:3px; padding:10px 12px; background:#fffefa; color:#253d32; font-size:12px; }
+.member-profile-form input:focus, .member-directory-search input:focus { outline:2px solid rgba(57,114,78,.20); border-color:#668d70; }
+.member-file-field { display:flex; flex-direction:column; gap:7px; color:#455f50; font-size:10px; font-weight:700; }
+.member-file-field input[type="file"] { width:100%; min-height:44px; border:1px dashed #b9c9b9; border-radius:3px; padding:9px; background:#f8faf6; color:#506458; font-size:10px; }
+.member-file-field small { color:#7a887e; font-size:9px; font-weight:400; }
+.member-consent-control { grid-column:1/-1; display:flex; align-items:flex-start; gap:11px; padding:13px; border:1px solid #dce7dc; background:#f5f8f3; color:#405849; cursor:pointer; }
+.member-consent-control input[type="checkbox"] { flex:none; width:17px; height:17px; margin:2px 0 0; accent-color:#276447; }
+.member-consent-control span { display:flex; flex-direction:column; gap:4px; }
+.member-consent-control strong { font-size:11px; }
+.member-consent-control small, .member-privacy-note { color:#738176; font-size:9px; line-height:1.6; }
+.member-profile-form > .member-privacy-note { grid-column:1/-1; margin:0; }
+.member-profile-form > button { justify-self:start; }
+.member-existing-cv { grid-column:1/-1; display:flex; align-items:center; gap:8px; min-height:38px; padding:8px 10px; border:1px solid #e3e9e1; background:#fbfcf9; color:#5d7162; font-size:10px; }
+.member-existing-cv > svg { flex:none; color:#7c9b7f; }
+.member-existing-cv > span { overflow-wrap:anywhere; }
+.member-remove-cv { display:inline-flex; align-items:center; gap:5px; margin-left:auto; border:0; background:transparent; color:#956054; font-size:9px; cursor:pointer; }
+.member-cv-form .member-file-field { margin-top:2px; }
+.member-directory-heading { display:flex; align-items:end; justify-content:space-between; gap:18px; margin:28px 0 13px; }
+.member-directory-heading h2 { margin:5px 0; color:#203a30; font-family:var(--font-display); font-size:25px; font-weight:500; }
+.member-directory-heading p { margin:0; color:#728075; font-size:10px; }
+.member-directory-search { display:flex; align-items:center; gap:8px; width:min(100%,360px); min-height:40px; padding-left:11px; border:1px solid #dfe6dd; background:#fffefa; color:#78907e; }
+.member-directory-search input { min-height:38px; border:0; padding-left:0; outline:none; }
+.member-admin-table { min-width:1000px; }
+.member-cv-download { display:inline-flex; align-items:center; gap:5px; color:#276447; font-size:10px; font-weight:700; text-decoration:underline; text-underline-offset:2px; }
+.member-account-heading { margin-top:30px; }
+.member-admin-privacy { display:flex; align-items:flex-start; gap:9px; color:#4e6755; font-size:10px; line-height:1.55; }
+.member-admin-privacy svg { flex:none; margin-top:1px; color:#48815d; }
+@media (max-width:760px) {
+  .member-profile-panel { grid-column:auto; }
+  .member-profile-form { grid-template-columns:1fr; }
+  .member-directory-heading { align-items:stretch; flex-direction:column; }
+  .member-directory-search { width:100%; }
+}
+@media (max-width:480px) {
+  .member-consent-control { padding:10px; }
+  .member-existing-cv { align-items:flex-start; flex-wrap:wrap; }
+  .member-remove-cv { margin-left:24px; }
+}

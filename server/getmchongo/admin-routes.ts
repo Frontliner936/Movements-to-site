@@ -4,7 +4,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import sharp from "sharp";
 import { ensureGeoVisitorTotalsTable, getDb } from "../db";
-import { announcements, companies, contactMessages, geoVisitorTotals, jobs, jobReactions, jobViewers, memberAccounts, pendingJobs, scanSchedules, siteMetrics, sources } from "../../drizzle/schema";
+import { announcements, companies, contactMessages, geoVisitorTotals, jobs, jobReactions, jobViewers, memberAccounts, memberProfiles, pendingJobs, scanSchedules, siteMetrics, sources } from "../../drizzle/schema";
 import { ADMIN_EMAIL, isAdmin, login, logout, requireAdmin, requireSameOrigin } from "./auth";
 import { runSource } from "./source-runner";
 import { validateSourceUrl, type SourceType } from "./collector";
@@ -527,6 +527,32 @@ router.get("/members", async (_req, res) => {
   const members = await db.select({ id: memberAccounts.id, displayName: memberAccounts.displayName, email: memberAccounts.email, isActive: memberAccounts.isActive, createdAt: memberAccounts.createdAt, lastSignedIn: memberAccounts.lastSignedIn })
     .from(memberAccounts).orderBy(desc(memberAccounts.createdAt)).limit(500);
   return res.json({ members });
+});
+
+router.get("/members/directory", async (_req, res) => {
+  const db = await getDb(); if (!db) return sendDbUnavailable(res);
+  const profiles = await db.select({ memberId: memberProfiles.memberId, fullName: memberProfiles.fullName, phoneNumber: memberProfiles.phoneNumber, location: memberProfiles.location, profession: memberProfiles.profession, cvFileName: memberProfiles.cvFileName, email: memberAccounts.email, updatedAt: memberProfiles.updatedAt })
+    .from(memberProfiles).innerJoin(memberAccounts, eq(memberProfiles.memberId, memberAccounts.id))
+    .where(and(eq(memberProfiles.directoryOptIn, true), eq(memberAccounts.isActive, true))).orderBy(desc(memberProfiles.updatedAt)).limit(500);
+  return res.json({ profiles });
+});
+
+router.get("/members/:memberId/profile-cv", async (req, res) => {
+  const memberId = Number(req.params.memberId);
+  if (!Number.isSafeInteger(memberId) || memberId < 1) return res.status(400).json({ error: "Invalid member." });
+  const db = await getDb(); if (!db) return sendDbUnavailable(res);
+  const [profile] = await db.select({ directoryOptIn: memberProfiles.directoryOptIn, isActive: memberAccounts.isActive, cvFileName: memberProfiles.cvFileName, cvMimeType: memberProfiles.cvMimeType, cvData: memberProfiles.cvData })
+    .from(memberProfiles).innerJoin(memberAccounts, eq(memberProfiles.memberId, memberAccounts.id))
+    .where(eq(memberProfiles.memberId, memberId)).limit(1);
+  if (!profile?.directoryOptIn || !profile.isActive || !profile.cvData || !profile.cvFileName) return res.status(404).json({ error: "No opted-in CV is available." });
+  const allowedTypes = new Set(["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain", "application/rtf"]);
+  if (!profile.cvMimeType || !allowedTypes.has(profile.cvMimeType)) return res.status(404).json({ error: "No supported CV is available." });
+  const fileName = profile.cvFileName.replace(/[\r\n"\\]/g, "_").slice(0, 255) || "member-cv";
+  res.setHeader("Content-Type", profile.cvMimeType);
+  res.setHeader("Content-Disposition", `attachment; filename*=UTF-8''${encodeURIComponent(fileName)}`);
+  res.setHeader("Cache-Control", "no-store");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  return res.send(profile.cvData);
 });
 
 export function createAdminRouter() { return router; }

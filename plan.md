@@ -47,8 +47,9 @@ A mobile-first Tanzanian jobs and opportunities board with a clear separation be
 - Uploaded source documents are memory-only and exposed to the model through a random, expiring, token-protected fetch URL; remove the temporary bytes after the request and never persist the source document. Do not use the source PDF/poster automatically as a public company logo or listing image. Map only validated extracted fields into the existing `JobEditor`, force draft status, and require an administrator to review and save/publish explicitly.
 - Add optional visitor email/password accounts in a separate member table; hash passwords with per-account salts and never store or reveal plaintext passwords. Use secure HTTP-only member sessions, independent from administrator authentication, same-origin checks and rate limits. Require a separately configured signing secret for member sessions.
 - Provide member signup/sign-in/sign-out and a private `/dashboard`. Signed-in members can manage account-owned saved jobs and select categories/locations for job alerts. Since no transactional email service is configured, show matching newly published jobs inside the member dashboard and do not claim email alerts.
-- Offer a CV-to-selected-published-job ATS-style match percentage using submitted plain text, with a concise explanation that the deterministic score is an estimate rather than a guarantee of hiring/interview or ATS selection. Process CV text in memory only; do not save uploads/text or expose it to administrators.
-- Add an administrator-only member list with display name, email, signup/last-sign-in dates and active status, but never password hashes, saved-job data or CV contents. Account APIs must verify session ownership; anonymous job browsing, applications and anonymous reactions continue to work.
+- Offer a CV-to-selected-published-job ATS-style match percentage using an uploaded PDF, DOC, DOCX, TXT or RTF CV no larger than 5 MB. Extract only enough text for the score, process it in memory and discard the temporary upload; explain that the deterministic score is an estimate rather than a guarantee of hiring/interview or ATS selection.
+- Let signed-in members maintain a professional profile with full name, phone number, location and profession. Profile and CV information remain private to the member unless they explicitly opt into the talent directory; only administrators can view opted-in records. Store the optional profile CV privately in MySQL, allow the member to replace/remove it or opt out, and never create public profile pages or recruiter accounts.
+- Extend the protected administrator Members view to show opted-in professional profiles and provide a protected CV download. Never show CV contents or contact/profile details from non-opted-in members; never expose password hashes or saved-job data. Account APIs must verify session ownership; anonymous job browsing, applications and anonymous reactions continue to work.
 - Keep React routes and server code modular, maintain the route manifest, add the additive MySQL migration, and keep secrets out of source, migrations, logs and public bundles.
 
 ## Project structure
@@ -60,7 +61,7 @@ A mobile-first Tanzanian jobs and opportunities board with a clear separation be
 - `client/src/pages/CvServices.tsx`, `client/src/lib/cvServices.ts` — package display, category details, benefits, centralized prices and WhatsApp order links.
 - `client/src/pages/ContactUs.tsx`, `client/src/pages/admin/AdminMessages.tsx` — visitor message form and protected admin inbox.
 - `client/src/pages/admin/AdminAnalytics.tsx` — per-published-job unique-browser counts.
-- `client/src/pages/MemberAuth.tsx`, `client/src/pages/MemberDashboard.tsx`, `client/src/pages/admin/AdminMembers.tsx` — optional visitor account screens and privacy-limited admin account management.
+- `client/src/pages/MemberAuth.tsx`, `client/src/pages/MemberDashboard.tsx`, `client/src/pages/admin/AdminMembers.tsx` — visitor account screens, member-owned professional profiles, file-based CV matching, and opt-in admin-only talent records.
 - `client/src/lib/pageMetadata.ts` — synchronize client-side job titles and share-card metadata with server-rendered details.
 - `client/src/components/` — brand header, search/filters, job cards, detail sections, status labels and admin forms.
 - `client/src/index.css`, `client/index.html` — responsive visual system and Get Mchongo page metadata.
@@ -68,7 +69,7 @@ A mobile-first Tanzanian jobs and opportunities board with a clear separation be
 - `server/_core/index.ts` — Express app startup and API mount points.
 - `server/getmchongo/` — authentication, public API, server-rendered job share metadata, admin CRUD, upload handling, source collection, duplicate detection and scheduled callback services.
 - `server/getmchongo/job-ad-structurer.ts` — strict-schema multimodal extraction and URL-safe normalization; `temporary-documents.ts` — unguessable, expiring, memory-only document access for the model.
-- `server/getmchongo/member-auth.ts`, `member-routes.ts` — separate member credential/session handling, member-owned preferences, favorites, matching-job notices, CV scoring and protected member summaries.
+- `server/getmchongo/member-auth.ts`, `member-routes.ts`, `member-cv.ts` — separate member credential/session handling, member-owned preferences, favorites, private profile/CV operations, supported-format text extraction, matching-job notices and CV scoring.
 - `drizzle/schema.ts`, `drizzle/migrations/` — relational tables and additive migration.
 
 ### Share-preview image references

@@ -71,6 +71,13 @@
       "when": 1792930502227,
       "tag": "0009_member_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "5",
+      "when": 1793110116879,
+      "tag": "0010_member_professional_profiles",
+      "breakpoints": true
     }
   ]
 }
