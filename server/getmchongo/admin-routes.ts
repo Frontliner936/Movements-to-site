@@ -11,6 +11,7 @@ import { validateSourceUrl, type SourceType } from "./collector";
 import { MAX_JOB_AD_FILE_BYTES, MAX_JOB_AD_TEXT, structureJobAd, type OutputLanguage } from "./job-ad-structurer";
 import { decodeSocialPostDescription, encodeSocialPostDescription } from "./social-post-storage";
 import { saveLocalFile } from "./local-storage";
+import { recordJobPublicationEvent } from "./job-email-alerts";
 
 const router = Router();
 const loginAttempts = new Map<string, { count: number; until: number }>();
@@ -242,8 +243,12 @@ router.post("/jobs", async (req, res) => {
       const [company] = await db.select({ id: companies.id }).from(companies).where(eq(companies.id, input.companyId)).limit(1);
       if (!company) return res.status(400).json({ error: "Select an existing company profile or leave the company profile blank." });
     }
-    const result = await db.insert(jobs).values(input);
-    const id = Number((result as any)?.[0]?.insertId ?? 0);
+    const id = await db.transaction(async tx => {
+      const result = await tx.insert(jobs).values(input);
+      const createdId = Number((result as any)?.[0]?.insertId ?? 0);
+      if (createdId > 0 && input.status === "published") await recordJobPublicationEvent(tx, createdId);
+      return createdId;
+    });
     const [created] = await db.select().from(jobs).where(eq(jobs.id, id)).limit(1);
     return res.status(201).json({ job: created ? presentJob(created) : null });
   } catch (error) { return res.status(400).json({ error: error instanceof Error ? error.message : "Job could not be saved." }); }
@@ -259,7 +264,10 @@ router.put("/jobs/:id", async (req, res) => {
       const [company] = await db.select({ id: companies.id }).from(companies).where(eq(companies.id, input.companyId)).limit(1);
       if (!company) return res.status(400).json({ error: "Select an existing company profile or leave the company profile blank." });
     }
-    await db.update(jobs).set(input).where(eq(jobs.id, id));
+    await db.transaction(async tx => {
+      await tx.update(jobs).set(input).where(eq(jobs.id, id));
+      if (old.status !== "published" && input.status === "published") await recordJobPublicationEvent(tx, id);
+    });
     const [updated] = await db.select().from(jobs).where(eq(jobs.id, id)).limit(1);
     return res.json({ job: updated ? presentJob(updated) : null });
   } catch (error) { return res.status(400).json({ error: error instanceof Error ? error.message : "Job could not be updated." }); }
@@ -400,6 +408,7 @@ router.post("/pending/:id/approve", async (req, res) => {
       }
       const inserted = await tx.insert(jobs).values({ title: pending.title, companyId, companyName: pending.companyName, companyDescription: pending.companyDescription, companyLogoUrl: pending.companyLogoUrl, companyWebsiteUrl: pending.companyWebsiteUrl, category: pending.category, location: pending.location, deadline: pending.deadline, description: pending.description, responsibilities: pending.responsibilities, qualifications: pending.qualifications, howToApply: pending.howToApply, applicationUrl: pending.applicationUrl, imageUrl: pending.imageUrl, sourceUrl: pending.sourceUrl, sourceId: pending.sourceId, status: "published", publishedAt: now() });
       publishedId = Number((inserted as any)?.[0]?.insertId ?? 0);
+      if (publishedId > 0) await recordJobPublicationEvent(tx, publishedId);
       await tx.update(pendingJobs).set({ status: "approved", reviewedAt: now() }).where(and(eq(pendingJobs.id, id), eq(pendingJobs.status, "pending")));
       didPublish = true;
     });

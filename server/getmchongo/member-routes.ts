@@ -3,12 +3,13 @@ import { and, desc, eq, gte, inArray, like, or } from "drizzle-orm";
 import { Router } from "express";
 import type { Request } from "express";
 import { getDb } from "../db";
-import { jobs, memberAccounts, memberCvReports, memberFavorites, memberProfiles } from "../../drizzle/schema";
+import { jobs, memberAccounts, memberCvReports, memberFavorites, memberJobAlertEvents, memberProfiles } from "../../drizzle/schema";
 import { clearMemberSession, getMemberId, hashMemberPassword, isMemberAuthConfigured, requireMember, setMemberSession, verifyMemberPassword } from "./member-auth";
 import { requireSameOrigin } from "./auth";
 import { decodeCvBase64, extractCvText, inspectCvUpload, InvalidCvUploadError } from "./member-cv";
 import { extractJobAdvertText, InvalidJobAdvertError } from "./member-job-advert";
 import { scoreCvAts } from "./cv-ats-scoring";
+import { isJobAlertEmailConfigured } from "./job-email-alerts";
 
 const router = Router();
 router.use((_req, res, next) => { res.setHeader("Cache-Control", "no-store"); next(); });
@@ -52,7 +53,7 @@ function loginKey(req: Request, email: string) {
   return `${ipHash}:${email}`;
 }
 function safeMember(row: any) {
-  return { id: row.id, displayName: row.displayName, email: row.email, isActive: row.isActive, createdAt: row.createdAt, lastSignedIn: row.lastSignedIn, alertsEnabled: row.alertsEnabled, alertCategories: parseList(row.alertCategories), alertLocations: parseList(row.alertLocations) };
+  return { id: row.id, displayName: row.displayName, email: row.email, isActive: row.isActive, createdAt: row.createdAt, lastSignedIn: row.lastSignedIn, alertsEnabled: row.alertsEnabled, emailAlertsEnabled: row.emailAlertsEnabled === true, alertCategories: parseList(row.alertCategories), alertLocations: parseList(row.alertLocations) };
 }
 function safeProfile(row: any) {
   return row ? { fullName: row.fullName, phoneNumber: row.phoneNumber, location: row.location, profession: row.profession, directoryOptIn: row.directoryOptIn, cvFileName: row.cvFileName, updatedAt: row.updatedAt } : { fullName: "", phoneNumber: "", location: "", profession: "", directoryOptIn: false, cvFileName: null, updatedAt: null };
@@ -130,6 +131,13 @@ router.get("/dashboard", requireMember, async (_req, res) => {
   if (!db) return res.status(503).json({ error: "Your dashboard is temporarily unavailable." });
   const [member] = await db.select(SAFE_MEMBER_FIELDS).from(memberAccounts).where(and(eq(memberAccounts.id, memberId), eq(memberAccounts.isActive, true))).limit(1);
   if (!member) return res.status(401).json({ error: "Sign in to access your member dashboard." });
+  let emailAlertSchemaAvailable = true;
+  let emailAlertsEnabled = false;
+  try {
+    const [emailPreference] = await db.select({ emailAlertsEnabled: memberAccounts.emailAlertsEnabled }).from(memberAccounts).where(eq(memberAccounts.id, memberId)).limit(1);
+    await db.select({ jobId: memberJobAlertEvents.jobId }).from(memberJobAlertEvents).limit(1);
+    emailAlertsEnabled = emailPreference?.emailAlertsEnabled === true;
+  } catch { emailAlertSchemaAvailable = false; }
   const favorites = await db.select({ job: jobs }).from(memberFavorites).innerJoin(jobs, eq(memberFavorites.jobId, jobs.id))
     .where(and(eq(memberFavorites.memberId, memberId), eq(jobs.status, "published"))).orderBy(desc(memberFavorites.createdAt)).limit(200);
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
@@ -145,7 +153,7 @@ router.get("/dashboard", requireMember, async (_req, res) => {
   const alerts = member.alertsEnabled && (categories.length || locations.length)
     ? await db.select().from(jobs).where(and(...predicates)).orderBy(desc(jobs.publishedAt)).limit(25)
     : [];
-  return res.json({ member: safeMember(member), favorites: favorites.map(row => row.job), alerts });
+  return res.json({ member: safeMember({ ...member, emailAlertsEnabled }), emailAlertSchemaAvailable, emailAlertsAvailable: emailAlertSchemaAvailable && isJobAlertEmailConfigured(), favorites: favorites.map(row => row.job), alerts });
 });
 
 router.put("/preferences", requireMember, async (req, res) => {
@@ -154,11 +162,31 @@ router.put("/preferences", requireMember, async (req, res) => {
   const categories = clean(req.body?.categories);
   const locations = clean(req.body?.locations);
   const enabled = req.body?.enabled;
+  const emailAlertsEnabled = req.body?.emailAlertsEnabled;
   if (!categories || !locations || typeof enabled !== "boolean") return res.status(400).json({ error: "Choose valid alert preferences." });
+  if (emailAlertsEnabled !== undefined && typeof emailAlertsEnabled !== "boolean") return res.status(400).json({ error: "Choose whether to receive email alerts." });
   if (enabled && !categories.length && !locations.length) return res.status(400).json({ error: "Choose at least one category or location before enabling alerts." });
+  if (emailAlertsEnabled === true && !categories.length && !locations.length) return res.status(400).json({ error: "Choose at least one category or location before enabling email alerts." });
+  if (emailAlertsEnabled === true && !isJobAlertEmailConfigured()) return res.status(503).json({ error: "Email alerts are not configured yet. Dashboard alerts remain available; please try again after the site administrator configures email delivery." });
   const db = await getDb();
   if (!db) return res.status(503).json({ error: "Your preferences could not be saved." });
-  await db.update(memberAccounts).set({ alertCategories: JSON.stringify(categories), alertLocations: JSON.stringify(locations), alertsEnabled: enabled }).where(eq(memberAccounts.id, Number(res.locals.memberId)));
+  if (emailAlertsEnabled === true) {
+    try {
+      await db.select({ emailAlertsEnabled: memberAccounts.emailAlertsEnabled }).from(memberAccounts).where(eq(memberAccounts.id, Number(res.locals.memberId))).limit(1);
+      await db.select({ jobId: memberJobAlertEvents.jobId }).from(memberJobAlertEvents).limit(1);
+    } catch { return res.status(503).json({ error: "Email-alert storage is not installed yet. Ask the site administrator to apply migrations 0013 and 0014." }); }
+  }
+  const changes: Partial<typeof memberAccounts.$inferInsert> = { alertCategories: JSON.stringify(categories), alertLocations: JSON.stringify(locations), alertsEnabled: enabled };
+  if (emailAlertsEnabled !== undefined) changes.emailAlertsEnabled = emailAlertsEnabled;
+  try {
+    await db.update(memberAccounts).set(changes).where(eq(memberAccounts.id, Number(res.locals.memberId)));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (!/email_alerts_enabled/i.test(message) || !/unknown column|doesn't exist|no such column/i.test(message)) throw error;
+    if (emailAlertsEnabled !== false) return res.status(503).json({ error: "Email-alert storage is not installed yet. Ask the site administrator to apply migrations 0013 and 0014." });
+    const { emailAlertsEnabled: _emailAlertsEnabled, ...legacyChanges } = changes;
+    await db.update(memberAccounts).set(legacyChanges).where(eq(memberAccounts.id, Number(res.locals.memberId)));
+  }
   return res.json({ saved: true });
 });
 

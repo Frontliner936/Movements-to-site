@@ -1616,3 +1616,14 @@ button, a, input, select, textarea { max-width:100%; }
 @media (max-width:760px) { .member-cv-ats-panel { grid-column:auto; }.member-ats-category-list { grid-template-columns:1fr; }.member-ats-form { grid-template-columns:1fr; }.member-ats-form .member-ats-file-field,.member-ats-form .member-ats-privacy { grid-column:auto; }.member-ats-form>.primary-button { justify-self:stretch; }.member-ats-report { padding:15px; } }
 @media (max-width:480px) { .member-ats-weight-badge { font-size:8px; padding:6px 7px; }.member-ats-report-heading { align-items:flex-start; gap:12px; }.member-ats-score-ring { width:80px; height:80px; }.member-ats-score-ring strong { font-size:30px; }.member-ats-report-heading h3 { font-size:22px; }.member-ats-report-heading .eyebrow { font-size:7px; }.member-ats-keywords { grid-template-columns:1fr; }.member-ats-history-row { align-items:flex-start; flex-direction:column; }.member-ats-history-row>div:last-child { width:100%; justify-content:flex-end; }.member-cv-ats-panel .member-section-heading { align-items:flex-start; flex-wrap:wrap; padding:13px; }.member-cv-ats-panel .member-section-heading>div { flex:1 1 170px; }.member-cv-ats-panel .member-section-heading h2 { font-size:clamp(26px,8vw,32px); }.member-ats-weight-badge { margin-left:60px; margin-top:0; }.member-ats-weight-row { font-size:7px; } }
 @media (prefers-reduced-motion:reduce) { .member-ats-progress span { transition:none; } }
+
+
+/* Separate, explicit member email-alert consent and delivery readiness. */
+.member-email-alert-toggle { margin-top: 0.55rem; }
+.member-email-alert-toggle input { accent-color: #b58a31; }
+.member-alert-help { display: block; margin: 0.35rem 0 0.95rem !important; color: #6d786f !important; font-size: 0.8rem !important; line-height: 1.55 !important; }
+.member-alert-help.is-ready { color: #285c43 !important; }
+.member-email-alert-toggle:has(input:disabled) { opacity: 0.72; }
+@media (max-width: 640px) {
+  .member-alert-help { font-size: 0.76rem !important; }
+}

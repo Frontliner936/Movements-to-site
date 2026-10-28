@@ -89,13 +89,19 @@
 - Count visitors who have actively liked and saved each specific opportunity, and show the exact like and save totals directly on the visitor-facing job listings and opportunity detail page, not only in admin.
 - Update the displayed totals after a visitor likes or saves/unsaves that opportunity; use the existing per-visitor reaction tracking.
 
-## [x] Visitor signup, private member dashboard, saved jobs, alerts, and CV match check
+## [x] Visitor signup, private member dashboard, saved jobs, and dashboard job alerts
 - Visitors can optionally create an account with a display name, email address, and password, then sign in and sign out. Signup passwords must be 6–128 characters and include at least one uppercase letter, one lowercase letter and one symbol; numbers are optional. Store salted, one-way password hashes only; keep member login and sessions separate from the protected administrator login. Rate-limit repeated failed authentication attempts and use a secure, HTTP-only session cookie.
 - A signed-in visitor can open a private dashboard, manage their account-owned saved/favorite jobs and choose job categories and locations for alerts. Keep preferences private to that member and enforce ownership on every account API request.
-- When a newly published job matches a member's selected alert preferences, show the matching opportunity in that member's dashboard. Do not claim email notifications unless a transactional email provider is configured.
-- A member can upload a PDF, DOC, DOCX, TXT or RTF CV no larger than 5 MB for an ATS-style percentage/match estimate against a selected published job. Explain that the score is an estimate, not a hiring or interview guarantee; process submitted CV content ephemerally and do not persist the temporary upload or extracted text.
+- When a newly published job matches a member's selected alert preferences, show the matching opportunity in that member's dashboard.
 - The protected admin dashboard includes a Members/Users view that shows account email, display name, signup/last-sign-in dates and account status. Never expose plaintext passwords, password hashes, saved-job details, or non-opted-in profile/CV data. Opted-in professional profiles are handled by the separate private talent-directory outcome below.
 - Provide public signup and sign-in entry points and a member dashboard route, with clear logged-out/logged-in navigation and access control. Anonymous visitors continue to browse and apply without signing up.
+
+## [ ] Email alerts for matching jobs
+- Members can separately opt in to email notifications for matching jobs. Email opt-in is off by default and does not change or automatically follow the existing dashboard-alert preference. Send alerts to the signed-in member account's email address; use the same saved category/location filters, requiring at least one selected category or location.
+- Notify only when a new job is published (including an administrator publishing a draft or approving a pending listing). Do not send historical jobs, and do not send another alert for the same member/job when an already-published job is edited or republished.
+- Record each newly published job in a transactional outbox, then queue per-member/per-job deliveries durably; prevent duplicate queue entries and retry transient failures a bounded number of times. Skip unsent alerts when a member opts out, and serialize opt-out saves against an email submission already in progress. Send separate messages to recipients rather than exposing recipient lists.
+- Emails identify the matching job and link to its public listing. If SMTP or the public site origin is not configured, keep dashboard alerts available, clearly report that email delivery is unavailable, prevent new email opt-ins, and never claim a message was sent.
+- Keep mail credentials server-side in deployment environment variables. Apply `drizzle/0013_member_email_alerts.sql` and `drizzle/0014_member_job_alert_events.sql` in order to add the separate opt-in, delivery ledger and transactional publication outbox; configure SMTP host, port, security mode, username, password and verified sender address plus the public HTTPS site origin before enabling email delivery.
 
 
 ## [x] Optional private professional profiles and admin talent directory

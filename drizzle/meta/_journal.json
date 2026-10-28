@@ -92,6 +92,20 @@
       "when": 1793166629501,
       "tag": "0012_member_cv_ats_reports",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "5",
+      "when": 1793173521325,
+      "tag": "0013_member_email_alerts",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "5",
+      "when": 1793173999710,
+      "tag": "0014_member_job_alert_events",
+      "breakpoints": true
     }
   ]
 }
