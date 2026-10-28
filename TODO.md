@@ -114,3 +114,12 @@
 - The protected admin dashboard includes recruiter business/contact details, location, selected tier, payer number, payment reference, payment status, approval status and timestamps; the administrator can confirm payment and approve or reject access.
 - Only approved, payment-verified recruiters can access the protected directory. Show only professional fields from member profiles whose owners explicitly opted in. Never expose CV files, password hashes, favorites or non-opted-in profile details to recruiters; retain administrator-only CV access.
 - Keep recruiter credentials/sessions separate from member and administrator sessions, store salted password hashes only, enforce same-origin writes and sign-in rate limits, and authorize every recruiter endpoint on the server.
+
+
+## [x] Member CV Checker & ATS Score
+- Add a **CV Checker & ATS Score** feature to Get Mchongo member accounts. Allow signed-in members to upload PDF or DOCX CVs and receive a score out of 100 based on these exact weights: ATS compatibility (25%), contact details (10%), work experience (15%), job relevance and keywords (15%), education (10%), grammar (10%), formatting (10%), and completeness (5%).
+- Display each category score, identify issues, and provide actionable improvement suggestions. Make the scoring basis transparent; distinguish observable document/text checks from heuristic estimates and do not present the result as an employer or ATS decision.
+- Allow members to test against a specific job description (either a published role or supplied description), save and revisit reports, and retest an improved CV while retaining separate reports for prior checks.
+- Ensure a responsive, professional UI matching Get Mchongo’s green, gold, and cream branding.
+- Handle CVs securely: authenticate and authorize on the server, validate file type/content and size, process uploaded CV bytes and extracted text in memory only, do not save checker uploads or CV text, and scope report reading/deletion to the owning member. Persist only the score findings, suggestions, safe target label and report timestamps; do not persist a supplied job-description body.
+- Explain that scores are heuristic estimates and never guarantee ATS success, job consideration, interviews, or hiring. Grammar checks are not a comprehensive proofreading service, and plain-text extraction cannot fully inspect visual layout.

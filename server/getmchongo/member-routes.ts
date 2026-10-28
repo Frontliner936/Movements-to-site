@@ -3,14 +3,16 @@ import { and, desc, eq, gte, inArray, like, or } from "drizzle-orm";
 import { Router } from "express";
 import type { Request } from "express";
 import { getDb } from "../db";
-import { jobs, memberAccounts, memberFavorites, memberProfiles } from "../../drizzle/schema";
+import { jobs, memberAccounts, memberCvReports, memberFavorites, memberProfiles } from "../../drizzle/schema";
 import { clearMemberSession, getMemberId, hashMemberPassword, isMemberAuthConfigured, requireMember, setMemberSession, verifyMemberPassword } from "./member-auth";
 import { requireSameOrigin } from "./auth";
 import { decodeCvBase64, extractCvText, inspectCvUpload, InvalidCvUploadError } from "./member-cv";
+import { scoreCvAts } from "./cv-ats-scoring";
 
 const router = Router();
 router.use((_req, res, next) => { res.setHeader("Cache-Control", "no-store"); next(); });
 const attempts = new Map<string, { count: number; resetAt: number }>();
+const cvCheckAttempts = new Map<number, { count: number; resetAt: number }>();
 const EMAIL_RE = /^[^\s@<>]+@[^\s@<>.]+(?:\.[^\s@<>.]+)*\.[^\s@<>.]{2,}$/;
 const SAFE_MEMBER_FIELDS = { id: memberAccounts.id, displayName: memberAccounts.displayName, email: memberAccounts.email, isActive: memberAccounts.isActive, createdAt: memberAccounts.createdAt, lastSignedIn: memberAccounts.lastSignedIn, alertsEnabled: memberAccounts.alertsEnabled, alertCategories: memberAccounts.alertCategories, alertLocations: memberAccounts.alertLocations };
 const SIGNUP_RESPONSE = { message: "If an account can be created for that email, it is ready. Sign in to continue." };
@@ -233,6 +235,85 @@ router.put("/profile", requireMember, async (req, res) => {
   } finally {
     uploadedBuffer?.fill(0);
   }
+});
+
+router.post("/cv-check", requireMember, async (req, res) => {
+  if (!requireSameOrigin(req, res)) return;
+  const memberId = Number(res.locals.memberId);
+  const now = Date.now();
+  const prior = cvCheckAttempts.get(memberId);
+  if (prior && prior.resetAt > now && prior.count >= 10) return res.status(429).json({ error: "You have reached the CV checker limit. Please try again later." });
+  if (!prior || prior.resetAt <= now) cvCheckAttempts.set(memberId, { count: 1, resetAt: now + 60 * 60_000 });
+  else prior.count++;
+  if (cvCheckAttempts.size > 1000) for (const [id, attempt] of cvCheckAttempts) if (attempt.resetAt <= now) cvCheckAttempts.delete(id);
+
+  let uploadedBuffer: Buffer | null = null;
+  let cvText = "";
+  try {
+    if (typeof req.body?.cvFileName !== "string") throw new InvalidCvUploadError("Choose a PDF or DOCX CV file.");
+    const fileName = req.body.cvFileName;
+    const extension = fileName.split(".").pop()?.toLowerCase();
+    if (extension !== "pdf" && extension !== "docx") throw new InvalidCvUploadError("The CV Checker accepts PDF and DOCX files only.");
+    uploadedBuffer = decodeCvBase64(req.body?.cvBase64);
+    inspectCvUpload(fileName, uploadedBuffer);
+    cvText = await extractCvText(fileName, uploadedBuffer);
+
+    let targetText = "";
+    let targetLabel = "General CV review";
+    const jobIdValue = req.body?.jobId;
+    const jobDescription = typeof req.body?.jobDescription === "string" ? req.body.jobDescription.trim() : "";
+    if (jobIdValue !== undefined && jobIdValue !== null && jobIdValue !== "") {
+      const jobId = Number(jobIdValue);
+      if (!Number.isSafeInteger(jobId) || jobId < 1 || jobDescription) return res.status(400).json({ error: "Choose one published job or paste one job description, not both." });
+      const db = await getDb();
+      if (!db) return res.status(503).json({ error: "CV reports are temporarily unavailable." });
+      const [job] = await db.select().from(jobs).where(and(eq(jobs.id, jobId), eq(jobs.status, "published"))).limit(1);
+      if (!job) return res.status(404).json({ error: "Published job not found." });
+      targetText = [job.title, job.category, job.description, job.responsibilities, job.qualifications].filter(Boolean).join(" ");
+      targetLabel = job.title.slice(0, 300);
+    } else if (jobDescription) {
+      if (jobDescription.length < 50 || jobDescription.length > 20_000) return res.status(400).json({ error: "A job description must be 50–20,000 characters." });
+      targetText = jobDescription;
+      targetLabel = "Custom job description";
+    }
+
+    const report = scoreCvAts(cvText, targetText);
+    const db = await getDb();
+    if (!db) return res.status(503).json({ error: "CV reports are temporarily unavailable." });
+    const inserted = await db.insert(memberCvReports).values({ memberId, score: report.score, targetLabel, reportJson: JSON.stringify(report) });
+    const reportId = Number((inserted as any)?.[0]?.insertId ?? 0);
+    if (!reportId) return res.status(500).json({ error: "The CV report could not be saved." });
+    const [saved] = await db.select({ createdAt: memberCvReports.createdAt }).from(memberCvReports).where(and(eq(memberCvReports.id, reportId), eq(memberCvReports.memberId, memberId))).limit(1);
+    return res.json({ report: { ...report, id: reportId, targetLabel, createdAt: saved?.createdAt ?? new Date() } });
+  } catch (error) {
+    return res.status(400).json({ error: error instanceof InvalidCvUploadError ? error.message : "The CV could not be checked. Try a text-based PDF or DOCX file." });
+  } finally {
+    uploadedBuffer?.fill(0);
+    cvText = "";
+  }
+});
+
+router.get("/cv-reports", requireMember, async (_req, res) => {
+  const memberId = Number(res.locals.memberId);
+  const db = await getDb();
+  if (!db) return res.status(503).json({ error: "Saved CV reports are temporarily unavailable." });
+  const rows = await db.select({ id: memberCvReports.id, score: memberCvReports.score, targetLabel: memberCvReports.targetLabel, reportJson: memberCvReports.reportJson, createdAt: memberCvReports.createdAt })
+    .from(memberCvReports).where(eq(memberCvReports.memberId, memberId)).orderBy(desc(memberCvReports.createdAt)).limit(50);
+  const reports = rows.flatMap(row => {
+    try { return [{ id: row.id, score: row.score, targetLabel: row.targetLabel, createdAt: row.createdAt, report: JSON.parse(row.reportJson) }]; }
+    catch { return []; }
+  });
+  return res.json({ reports });
+});
+
+router.delete("/cv-reports/:reportId", requireMember, async (req, res) => {
+  if (!requireSameOrigin(req, res)) return;
+  const reportId = Number(req.params.reportId);
+  if (!Number.isSafeInteger(reportId) || reportId < 1) return res.status(400).json({ error: "Invalid CV report." });
+  const db = await getDb();
+  if (!db) return res.status(503).json({ error: "The CV report could not be deleted." });
+  const removed = await db.delete(memberCvReports).where(and(eq(memberCvReports.id, reportId), eq(memberCvReports.memberId, Number(res.locals.memberId))));
+  return res.json({ deleted: Number((removed as any)?.[0]?.affectedRows ?? 0) > 0 });
 });
 
 router.post("/favorites/:jobId", requireMember, async (req, res) => {

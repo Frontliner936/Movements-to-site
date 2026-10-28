@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
-import { ArrowRight, Award, Bookmark, BriefcaseBusiness, FileCheck2, FileText, LogOut, Mail, MapPin, Phone, RefreshCw, ShieldCheck, Sparkles, Trash2, UserRound } from "lucide-react";
+import { ArrowRight, Award, Bookmark, BriefcaseBusiness, CheckCircle2, FileCheck2, FileText, LogOut, Mail, MapPin, Phone, RefreshCw, ShieldCheck, Sparkles, Trash2, UserRound } from "lucide-react";
 import { Brand } from "@/components/Brand";
 import { api, jsonBody, type Job } from "@/lib/api";
 
@@ -8,10 +8,13 @@ type Member = { id: number; displayName: string; email: string; createdAt: strin
 type MemberProfile = { fullName: string; phoneNumber: string; location: string; profession: string; directoryOptIn: boolean; cvFileName: string | null; updatedAt: string | null };
 type ProfileFields = Omit<MemberProfile, "cvFileName" | "updatedAt">;
 type Result = { score: number; matchedKeywords: string[]; missingKeywords: string[]; sectionsFound: number; sectionCount: number; jobTitle: string; note: string };
+type AtsCategory = { id: string; label: string; weight: number; score: number; points: number; summary: string; findings: { issue: string; suggestion: string }[] };
+type AtsReport = { id: number; score: number; targetLabel: string; createdAt: string; categories: AtsCategory[]; strengths: string[]; matchedKeywords: string[]; missingKeywords: string[]; targetProvided: boolean; disclaimer: string };
 type DashboardData = { member: Member; favorites: Job[]; alerts: Job[] };
 const CV_MAX_BYTES = 5 * 1024 * 1024;
 const CV_ACCEPT = ".pdf,.doc,.docx,.txt,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/rtf";
 const CV_EXTENSIONS = new Set(["pdf", "doc", "docx", "txt", "rtf"]);
+const ATS_CV_ACCEPT = ".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
 async function fileToBase64(file: File) {
   const bytes = new Uint8Array(await file.arrayBuffer());
@@ -46,8 +49,16 @@ export default function MemberDashboard() {
   const [matchCvFile, setMatchCvFile] = useState<File | null>(null);
   const [cvJobId, setCvJobId] = useState("");
   const matchCvInput = useRef<HTMLInputElement>(null);
+  const atsCvInput = useRef<HTMLInputElement>(null);
   const profileCvInput = useRef<HTMLInputElement>(null);
   const [result, setResult] = useState<Result | null>(null);
+  const [atsCvFile, setAtsCvFile] = useState<File | null>(null);
+  const [atsTargetMode, setAtsTargetMode] = useState<"general" | "published" | "custom">("general");
+  const [atsJobId, setAtsJobId] = useState("");
+  const [atsJobDescription, setAtsJobDescription] = useState("");
+  const [atsReport, setAtsReport] = useState<AtsReport | null>(null);
+  const [savedAtsReports, setSavedAtsReports] = useState<AtsReport[]>([]);
+  const [reportsAvailable, setReportsAvailable] = useState(true);
   const [message, setMessage] = useState("");
   const [messageError, setMessageError] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -72,6 +83,11 @@ export default function MemberDashboard() {
         setProfileFields({ ...emptyProfile, fullName: dashboard.member.displayName });
         setProfileUnavailable(true);
       }
+      try {
+        const saved = await api<{ reports: Array<{ id: number; score: number; targetLabel: string; createdAt: string; report: Omit<AtsReport, "id" | "score" | "targetLabel" | "createdAt"> }> }>("/api/gm/member/cv-reports");
+        const reports = saved.reports.map(row => ({ ...row.report, id: row.id, score: row.score, targetLabel: row.targetLabel, createdAt: row.createdAt }));
+        setSavedAtsReports(reports); setReportsAvailable(true);
+      } catch { setReportsAvailable(false); }
     } catch (error) {
       if (error instanceof Error && /sign in|401/i.test(error.message)) setLocation("/login");
       else { setMessage(error instanceof Error ? error.message : "Your dashboard could not be loaded."); setMessageError(true); }
@@ -136,6 +152,43 @@ export default function MemberDashboard() {
     finally { setBusy(false); }
   }
 
+  async function checkAtsCv(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault(); setMessage(""); setMessageError(false); setAtsReport(null); setBusy(true);
+    try {
+      if (!atsCvFile) throw new Error("Choose your PDF or DOCX CV first.");
+      validateCvFile(atsCvFile);
+      const extension = atsCvFile.name.split(".").pop()?.toLowerCase();
+      if (extension !== "pdf" && extension !== "docx") throw new Error("The CV Checker accepts PDF and DOCX files only.");
+      if (atsTargetMode === "published" && !atsJobId) throw new Error("Choose a published job description to compare with.");
+      if (atsTargetMode === "custom" && atsJobDescription.trim().length < 50) throw new Error("Paste at least 50 characters of the target job description.");
+      const body: Record<string, unknown> = { cvFileName: atsCvFile.name, cvBase64: await fileToBase64(atsCvFile) };
+      if (atsTargetMode === "published") body.jobId = Number(atsJobId);
+      if (atsTargetMode === "custom") body.jobDescription = atsJobDescription.trim();
+      const saved = await api<{ report: AtsReport }>("/api/gm/member/cv-check", { method: "POST", body: jsonBody(body) });
+      setAtsReport(saved.report);
+      setSavedAtsReports(current => [saved.report, ...current.filter(report => report.id !== saved.report.id)].slice(0, 50));
+      setReportsAvailable(true); setAtsCvFile(null);
+      if (atsCvInput.current) atsCvInput.current.value = "";
+      setMessage("Your CV review has been saved. Upload an improved PDF or DOCX to create a new report and compare your progress.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "Your CV could not be checked."); setMessageError(true); }
+    finally { setBusy(false); }
+  }
+
+  function viewAtsReport(report: AtsReport) {
+    setAtsReport(report);
+    document.getElementById("member-ats-report")?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  async function deleteAtsReport(reportId: number) {
+    setMessage(""); setMessageError(false);
+    try {
+      await api(`/api/gm/member/cv-reports/${reportId}`, { method: "DELETE" });
+      setSavedAtsReports(current => current.filter(report => report.id !== reportId));
+      setAtsReport(current => current?.id === reportId ? null : current);
+      setMessage("Saved CV report deleted.");
+    } catch (error) { setMessage(error instanceof Error ? error.message : "The CV report could not be deleted."); setMessageError(true); }
+  }
+
   if (loading) return <div className="admin-loading"><Brand /><span className="loading-dot" />Opening your dashboard…</div>;
   if (!data) return <div className="member-page"><header className="site-header"><div className="header-inner"><Brand /></div></header><main className="member-error"><h1>We couldn't open your dashboard.</h1><p>{message || "Please sign in and try again."}</p><Link className="primary-button" href="/login">Sign in <ArrowRight size={15} /></Link></main></div>;
 
@@ -192,6 +245,28 @@ export default function MemberDashboard() {
         <section className="member-panel member-cv-panel"><div className="member-section-heading"><span className="member-section-icon"><RefreshCw size={18} /></span><div><span className="eyebrow muted-eyebrow">ROLE MATCH</span><h2>Check your CV</h2></div></div><p className="member-panel-intro">Compare a CV file with a published opportunity. The check looks at shared role keywords and common CV sections.</p>
           <form className="admin-form member-cv-form" onSubmit={checkCv}><label>Choose a job<select value={cvJobId} onChange={event => setCvJobId(event.target.value)} required><option value="">Select a published opportunity</option>{jobs.map(job => <option key={job.id} value={job.id}>{job.title}{job.companyName ? ` — ${job.companyName}` : ""}</option>)}</select></label><label className="member-file-field"><span>Upload your CV for this match check</span><input ref={matchCvInput} type="file" accept={CV_ACCEPT} onChange={event => setMatchCvFile(event.target.files?.[0] ?? null)} required /><small>PDF, DOC, DOCX, TXT or RTF · maximum 5 MB</small></label><p className="member-privacy-note">This match-check upload is extracted in memory for this request only. The uploaded file and extracted text are discarded and are not saved to your profile.</p><button className="primary-button" type="submit" disabled={busy || !matchCvFile || !cvJobId}>{busy ? "Checking…" : "Check my match"}<ArrowRight size={15} /></button></form>
           {result && <div className="cv-result" role="status"><div className="cv-score"><strong>{result.score}%</strong><span>estimated match</span></div><div><h3>{result.jobTitle}</h3><p>{result.note}</p><p>CV sections detected: {result.sectionsFound}/{result.sectionCount}</p>{result.matchedKeywords.length > 0 && <p><strong>Matched:</strong> {result.matchedKeywords.join(", ")}</p>}{result.missingKeywords.length > 0 && <p><strong>Consider reflecting accurately, if relevant:</strong> {result.missingKeywords.join(", ")}</p>}</div></div>}
+        </section>
+
+        <section className="member-panel member-cv-ats-panel"><div className="member-section-heading"><span className="member-section-icon member-ats-icon"><FileCheck2 size={18} /></span><div><span className="eyebrow muted-eyebrow">CV CHECKER & ATS SCORE</span><h2>Make your CV easier to read</h2></div><span className="member-ats-weight-badge">8 categories · 100 points</span></div>
+          <p className="member-panel-intro">Get a practical, evidence-based checklist from your CV text. Add a target job description for a role-specific keyword review, then retest after making improvements.</p>
+          <form id="member-ats-form" className="admin-form member-ats-form" onSubmit={checkAtsCv}>
+            <label>What would you like to review?<select value={atsTargetMode} onChange={event => setAtsTargetMode(event.target.value as "general" | "published" | "custom")}><option value="general">General CV review</option><option value="published">Compare with a published job</option><option value="custom">Paste a specific job description</option></select></label>
+            {atsTargetMode === "published" && <label>Published job<select value={atsJobId} onChange={event => setAtsJobId(event.target.value)} required><option value="">Choose a published job</option>{jobs.map(job => <option key={job.id} value={job.id}>{job.title}{job.companyName ? ` — ${job.companyName}` : ""}</option>)}</select></label>}
+            {atsTargetMode === "custom" && <label>Target job description<textarea rows={6} minLength={50} maxLength={20000} value={atsJobDescription} onChange={event => setAtsJobDescription(event.target.value)} placeholder="Paste the role responsibilities and qualifications here (50–20,000 characters)." required /><small className="field-help">Compared in memory only. The job description text is not saved with the report.</small></label>}
+            <label className="member-file-field member-ats-file-field"><span>Upload the CV you want to check</span><input ref={atsCvInput} type="file" accept={ATS_CV_ACCEPT} onChange={event => setAtsCvFile(event.target.files?.[0] ?? null)} required /><small>PDF or DOCX · maximum 5 MB · selectable text required</small></label>
+            <p className="member-privacy-note member-ats-privacy"><ShieldCheck size={14} />Your CV file and extracted text are processed for this check and discarded. Only the score, category findings, suggestions and safe target label are saved to your private account. This is a heuristic review—not an ATS system, full proofread or success guarantee.</p>
+            <button className="primary-button" type="submit" disabled={busy || !atsCvFile || (atsTargetMode === "published" && !atsJobId) || (atsTargetMode === "custom" && atsJobDescription.trim().length < 50)}>{busy ? "Reviewing your CV…" : "Check and save report"}<ArrowRight size={15} /></button>
+          </form>
+          {!reportsAvailable && <p role="status" className="admin-alert error-alert member-ats-migration-note">Saved reports need the latest member CV reports database update. Ask the site administrator to apply the documented migration.</p>}
+          {atsReport && <div id="member-ats-report" className="member-ats-report" aria-live="polite"><div className="member-ats-report-heading"><div className="member-ats-score-ring" style={{ "--ats-score": `${atsReport.score}%` } as React.CSSProperties}><strong>{atsReport.score}</strong><span>out of 100</span></div><div><span className="eyebrow muted-eyebrow">SAVED CV REVIEW · {new Date(atsReport.createdAt).toLocaleDateString()}</span><h3>{atsReport.targetLabel}</h3><p>Weighted estimate from eight transparent checks. Each category shows its score and contribution to your total.</p></div></div>
+            {atsReport.strengths.length > 0 && <div className="member-ats-strengths"><CheckCircle2 size={15} /><span><strong>What’s working:</strong> {atsReport.strengths.join(" · ")}</span></div>}
+            <div className="member-ats-category-list">{atsReport.categories.map(category => <article className="member-ats-category" key={category.id}><div className="member-ats-category-top"><div><h4>{category.label}</h4><p>{category.summary}</p></div><strong>{category.score}<small>/100</small></strong></div><div className="member-ats-progress" role="progressbar" aria-label={`${category.label} score`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={category.score}><span style={{ width: `${category.score}%` }} /></div><div className="member-ats-weight-row"><span>Weight {category.weight}%</span><span>Contribution {category.points.toFixed(2)} / {category.weight} points</span></div>{category.findings.length > 0 ? <ul className="member-ats-findings">{category.findings.map((finding, index) => <li key={`${category.id}-${index}`}><strong>{finding.issue}</strong><span>{finding.suggestion}</span></li>)}</ul> : <p className="member-ats-clear"><CheckCircle2 size={13} />No issues detected by this category’s checks.</p>}</article>)}</div>
+            {atsReport.targetProvided && <div className="member-ats-keywords"><div><strong>Matched role terms</strong><p>{atsReport.matchedKeywords.length ? atsReport.matchedKeywords.join(" · ") : "No matching terms detected."}</p></div><div><strong>Terms to review</strong><p>{atsReport.missingKeywords.length ? atsReport.missingKeywords.join(" · ") : "No sampled terms are missing."}</p><small>Add a term only if it accurately reflects your skills or experience.</small></div></div>}
+            <p className="member-ats-disclaimer">{atsReport.disclaimer}</p><button type="button" className="secondary-button member-ats-retest" onClick={() => { setAtsReport(null); document.getElementById("member-ats-form")?.scrollIntoView({ behavior: "smooth", block: "center" }); }}>Retest an improved CV <RefreshCw size={14} /></button>
+          </div>}
+          <div className="member-ats-history"><div className="member-directory-heading"><div><span className="eyebrow muted-eyebrow">YOUR PRIVATE REPORTS</span><h3>Saved CV reviews</h3><p>Reports stay in your account until you delete them. New tests create separate reports for progress comparisons.</p></div></div>
+            {savedAtsReports.length ? <div className="member-ats-report-list">{savedAtsReports.map(report => <article className={`member-ats-history-row${atsReport?.id === report.id ? " selected" : ""}`} key={report.id}><div><span className="member-ats-history-score">{report.score}<small>/100</small></span><span><strong>{report.targetLabel}</strong><small>{new Date(report.createdAt).toLocaleString()}</small></span></div><div><button type="button" className="member-ats-view" onClick={() => viewAtsReport(report)}>View report</button><button type="button" className="member-remove-cv" onClick={() => void deleteAtsReport(report.id)} aria-label={`Delete report for ${report.targetLabel}`}><Trash2 size={14} />Delete</button></div></article>)}</div> : <div className="member-empty member-ats-empty"><FileText size={19} /><p>Your saved CV reports will appear here after your first check.</p></div>}
+          </div>
         </section>
       </div>
       <p className="member-footer-note"><ShieldCheck size={15} />Your dashboard is private. Profile sharing with the administrator is optional; keep your password to yourself.</p>
