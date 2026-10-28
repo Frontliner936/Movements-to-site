@@ -6,6 +6,7 @@ import { registerGetMchongoRoutes } from "../getmchongo/router";
 import { registerJobShareMetadata } from "../getmchongo/share-meta";
 import { serveLocalStorage } from "../getmchongo/local-storage";
 import { startLocalScanScheduler } from "../getmchongo/local-scheduler";
+import { startJobAlertEmailWorker } from "../getmchongo/job-email-alerts";
 
 async function startServer() {
   const app = express();
@@ -26,6 +27,7 @@ async function startServer() {
   }
 
   startLocalScanScheduler();
+  startJobAlertEmailWorker();
   const port = Number(process.env.PORT || "3000");
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("Invalid PORT");
   server.on("error", error => { console.error("Server failed:", error.message); process.exit(1); });

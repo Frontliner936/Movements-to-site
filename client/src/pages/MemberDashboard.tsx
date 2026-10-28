@@ -4,12 +4,12 @@ import { ArrowRight, Award, Bookmark, BriefcaseBusiness, CheckCircle2, FileCheck
 import { Brand } from "@/components/Brand";
 import { api, jsonBody, type Job } from "@/lib/api";
 
-type Member = { id: number; displayName: string; email: string; createdAt: string; lastSignedIn: string | null; alertsEnabled: boolean; alertCategories: string[]; alertLocations: string[] };
+type Member = { id: number; displayName: string; email: string; createdAt: string; lastSignedIn: string | null; alertsEnabled: boolean; emailAlertsEnabled: boolean; alertCategories: string[]; alertLocations: string[] };
 type MemberProfile = { fullName: string; phoneNumber: string; location: string; profession: string; directoryOptIn: boolean; cvFileName: string | null; updatedAt: string | null };
 type ProfileFields = Omit<MemberProfile, "cvFileName" | "updatedAt">;
 type AtsCategory = { id: string; label: string; weight: number; score: number; points: number; summary: string; findings: { issue: string; suggestion: string }[] };
 type AtsReport = { id: number; score: number; targetLabel: string; createdAt: string; categories: AtsCategory[]; strengths: string[]; matchedKeywords: string[]; missingKeywords: string[]; targetProvided: boolean; disclaimer: string; sourceNotes?: string[] };
-type DashboardData = { member: Member; favorites: Job[]; alerts: Job[] };
+type DashboardData = { member: Member; favorites: Job[]; alerts: Job[]; emailAlertsAvailable: boolean; emailAlertSchemaAvailable: boolean };
 const CV_MAX_BYTES = 5 * 1024 * 1024;
 const CV_ACCEPT = ".pdf,.doc,.docx,.txt,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/rtf";
 const CV_EXTENSIONS = new Set(["pdf", "doc", "docx", "txt", "rtf"]);
@@ -49,6 +49,9 @@ export default function MemberDashboard() {
   const [chosenCategories, setChosenCategories] = useState<string[]>([]);
   const [chosenLocations, setChosenLocations] = useState<string[]>([]);
   const [alertsEnabled, setAlertsEnabled] = useState(false);
+  const [emailAlertsEnabled, setEmailAlertsEnabled] = useState(false);
+  const [emailAlertsAvailable, setEmailAlertsAvailable] = useState(false);
+  const [emailAlertSchemaAvailable, setEmailAlertSchemaAvailable] = useState(false);
   const [profile, setProfile] = useState<MemberProfile | null>(null);
   const [profileFields, setProfileFields] = useState<ProfileFields>(emptyProfile);
   const [profileUnavailable, setProfileUnavailable] = useState(false);
@@ -77,7 +80,7 @@ export default function MemberDashboard() {
         api<{ jobs: Job[]; categories: string[]; locations: string[] }>("/api/gm/jobs"),
       ]);
       setData(dashboard); setJobs(listing.jobs); setCategories(listing.categories); setLocations(listing.locations);
-      setChosenCategories(dashboard.member.alertCategories); setChosenLocations(dashboard.member.alertLocations); setAlertsEnabled(dashboard.member.alertsEnabled);
+      setChosenCategories(dashboard.member.alertCategories); setChosenLocations(dashboard.member.alertLocations); setAlertsEnabled(dashboard.member.alertsEnabled); setEmailAlertsEnabled(dashboard.member.emailAlertsEnabled); setEmailAlertsAvailable(dashboard.emailAlertsAvailable); setEmailAlertSchemaAvailable(dashboard.emailAlertSchemaAvailable);
       try {
         const profileResult = await api<{ profile: MemberProfile }>("/api/gm/member/profile");
         setProfile(profileResult.profile);
@@ -120,8 +123,8 @@ export default function MemberDashboard() {
   async function savePreferences(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setMessage(""); setMessageError(false); setBusy(true);
     try {
-      await api("/api/gm/member/preferences", { method: "PUT", body: jsonBody({ categories: chosenCategories, locations: chosenLocations, enabled: alertsEnabled }) });
-      setMessage("Your private alert preferences are saved."); await refresh();
+      await api("/api/gm/member/preferences", { method: "PUT", body: jsonBody({ categories: chosenCategories, locations: chosenLocations, enabled: alertsEnabled, emailAlertsEnabled }) });
+      setMessage("Your alert preferences are saved."); await refresh();
     } catch (error) { setMessage(error instanceof Error ? error.message : "Preferences could not be saved."); setMessageError(true); }
     finally { setBusy(false); }
   }
@@ -227,7 +230,7 @@ export default function MemberDashboard() {
 
         <section className="member-panel member-alerts"><div className="member-section-heading"><span className="member-section-icon"><Sparkles size={18} /></span><div><span className="eyebrow muted-eyebrow">FRESH MATCHES</span><h2>Jobs for you</h2></div></div>
           {!alertsEnabled || (!chosenCategories.length && !chosenLocations.length) ? <div className="member-empty"><Sparkles size={20} /><p>Choose categories or locations below to see new matching jobs here.</p></div> : data.alerts.length ? <div className="member-job-list">{data.alerts.map(job => <article className="member-job-row" key={job.id}><div><Link href={`/jobs/${job.id}`}>{job.title}</Link><p>{job.companyName || "Employer"}{job.location ? ` · ${job.location}` : ""}</p></div><span className="member-new-label">NEW</span></article>)}</div> : <div className="member-empty"><Sparkles size={20} /><p>No recent published jobs match your selections yet.</p></div>}
-          <form className="member-preferences" onSubmit={savePreferences}><h3>Choose what to track</h3><fieldset><legend>Categories</legend><div className="member-chip-list">{categories.slice(0, 24).map(item => <button type="button" key={item} className={chosenCategories.includes(item) ? "member-chip selected" : "member-chip"} aria-pressed={chosenCategories.includes(item)} onClick={() => toggleChoice(item, chosenCategories, setChosenCategories)}>{item}</button>)}</div>{!categories.length && <small>No categories available yet.</small>}</fieldset><fieldset><legend>Locations</legend><div className="member-chip-list">{locations.slice(0, 24).map(item => <button type="button" key={item} className={chosenLocations.includes(item) ? "member-chip selected" : "member-chip"} aria-pressed={chosenLocations.includes(item)} onClick={() => toggleChoice(item, chosenLocations, setChosenLocations)}>{item}</button>)}</div>{!locations.length && <small>No locations available yet.</small>}</fieldset><label className="member-toggle"><input type="checkbox" checked={alertsEnabled} onChange={event => setAlertsEnabled(event.target.checked)} />Show matching jobs in my dashboard</label><button type="submit" className="secondary-button" disabled={busy}>{busy ? "Saving…" : "Save preferences"}</button><small className="member-privacy-note">These alerts appear here when you return. Email alerts are not enabled.</small></form>
+          <form className="member-preferences" onSubmit={savePreferences}><h3>Choose what to track</h3><fieldset><legend>Categories</legend><div className="member-chip-list">{categories.slice(0, 24).map(item => <button type="button" key={item} className={chosenCategories.includes(item) ? "member-chip selected" : "member-chip"} aria-pressed={chosenCategories.includes(item)} onClick={() => toggleChoice(item, chosenCategories, setChosenCategories)}>{item}</button>)}</div>{!categories.length && <small>No categories available yet.</small>}</fieldset><fieldset><legend>Locations</legend><div className="member-chip-list">{locations.slice(0, 24).map(item => <button type="button" key={item} className={chosenLocations.includes(item) ? "member-chip selected" : "member-chip"} aria-pressed={chosenLocations.includes(item)} onClick={() => toggleChoice(item, chosenLocations, setChosenLocations)}>{item}</button>)}</div>{!locations.length && <small>No locations available yet.</small>}</fieldset><label className="member-toggle"><input type="checkbox" checked={alertsEnabled} onChange={event => setAlertsEnabled(event.target.checked)} />Show matching jobs in my dashboard</label><small className="member-alert-help">Dashboard alerts remain available here. Email alerts are a separate choice below.</small><label className="member-toggle member-email-alert-toggle"><input type="checkbox" checked={emailAlertsEnabled} disabled={busy || (!emailAlertsAvailable && !emailAlertsEnabled)} aria-describedby="member-email-alert-help" onChange={event => setEmailAlertsEnabled(event.target.checked)} />Email me when a new matching job is posted</label><small id="member-email-alert-help" className={`member-alert-help${emailAlertsAvailable ? " is-ready" : ""}`}>{!emailAlertSchemaAvailable ? "Email preferences need the site administrator to apply database migration 0013." : emailAlertsAvailable ? `New matches will be sent to ${data.member.email}. You can turn off email alerts here at any time.` : emailAlertsEnabled ? "Email delivery is currently unavailable. You may turn off email alerts here." : "Email delivery is not configured yet. Your dashboard alerts will continue to work; ask the site administrator to configure email delivery."}</small><button type="submit" className="secondary-button" disabled={busy}>{busy ? "Saving…" : "Save preferences"}</button></form>
         </section>
 
         <section id="member-profile-editor" className="member-panel member-profile-panel"><div className="member-section-heading"><span className="member-section-icon"><UserRound size={18} /></span><div><span className="eyebrow muted-eyebrow">YOUR PROFESSIONAL PROFILE</span><h2>Shape your profile</h2></div></div><p className="member-panel-intro">Add your profession or qualifications, contact details and CV. Your information is private by default; you decide whether to share it with the Get Mchongo administrator.</p>

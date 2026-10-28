@@ -179,6 +179,7 @@ export const memberAccounts = mysqlTable("gm_member_accounts", {
   alertCategories: text("alert_categories"),
   alertLocations: text("alert_locations"),
   alertsEnabled: boolean("alerts_enabled").default(false).notNull(),
+  emailAlertsEnabled: boolean("email_alerts_enabled").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   lastSignedIn: timestamp("last_signed_in"),
 });
@@ -204,6 +205,31 @@ export const memberFavorites = mysqlTable("gm_member_favorites", {
   jobId: int("job_id").notNull().references(() => jobs.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, table => [uniqueIndex("gm_member_favorite_unique").on(table.memberId, table.jobId)]);
+
+/** Durable per-member job-alert delivery state; no recipient email or message body is duplicated here. */
+export const memberJobAlertDeliveries = mysqlTable("gm_member_job_alert_deliveries", {
+  id: int("id").autoincrement().primaryKey(),
+  memberId: int("member_id").notNull().references(() => memberAccounts.id, { onDelete: "cascade" }),
+  jobId: int("job_id").notNull().references(() => jobs.id, { onDelete: "cascade" }),
+  status: mysqlEnum("status", ["pending", "sending", "sent", "failed", "cancelled"]).default("pending").notNull(),
+  attemptCount: int("attempt_count").default(0).notNull(),
+  nextAttemptAt: timestamp("next_attempt_at").defaultNow().notNull(),
+  attemptedAt: timestamp("attempted_at"),
+  sentAt: timestamp("sent_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, table => [
+  uniqueIndex("gm_member_job_alert_delivery_unique").on(table.memberId, table.jobId),
+  index("gm_member_job_alert_delivery_pending").on(table.status, table.nextAttemptAt),
+]);
+
+/** Transactional outbox marker: every newly published job is reconciled once, even after worker downtime. */
+export const memberJobAlertEvents = mysqlTable("gm_member_job_alert_events", {
+  jobId: int("job_id").primaryKey().references(() => jobs.id, { onDelete: "cascade" }),
+  status: mysqlEnum("status", ["pending", "processed"]).default("pending").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  processedAt: timestamp("processed_at"),
+}, table => [index("gm_member_job_alert_event_pending").on(table.status, table.createdAt)]);
 
 /** Member-owned ATS reviews; only the generated findings are retained, never CV bytes or text. */
 export const memberCvReports = mysqlTable("gm_member_cv_reports", {
