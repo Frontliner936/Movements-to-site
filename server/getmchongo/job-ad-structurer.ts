@@ -545,7 +545,7 @@ async function ocrPdf(bytes: Buffer, pageCount: number): Promise<{ text: string;
   } finally { await rm(directory, { recursive: true, force: true }); }
 }
 
-async function extractDocumentText(document: { mimeType: "application/pdf" | "image/jpeg" | "image/png" | "image/webp"; bytes: Buffer }): Promise<{ text: string; notes: string[] }> {
+export async function extractJobAdDocumentText(document: { mimeType: "application/pdf" | "image/jpeg" | "image/png" | "image/webp"; bytes: Buffer }): Promise<{ text: string; notes: string[] }> {
   const directory = await mkdtemp(path.join(os.tmpdir(), "getmchongo-ad-"));
   try {
     if (document.mimeType === "application/pdf") {
@@ -584,7 +584,7 @@ export async function structureJobAd(options: {
   let sourceText = options.sourceText.trim();
   const extractionNotes: string[] = [];
   if (options.document) {
-    const extracted = await extractDocumentText(options.document);
+    const extracted = await extractJobAdDocumentText(options.document);
     sourceText = [sourceText, extracted.text].filter(Boolean).join("\n\n").slice(0, MAX_JOB_AD_TEXT);
     extractionNotes.push(...extracted.notes);
   }

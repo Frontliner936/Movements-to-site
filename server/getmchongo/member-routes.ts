@@ -7,6 +7,7 @@ import { jobs, memberAccounts, memberCvReports, memberFavorites, memberProfiles 
 import { clearMemberSession, getMemberId, hashMemberPassword, isMemberAuthConfigured, requireMember, setMemberSession, verifyMemberPassword } from "./member-auth";
 import { requireSameOrigin } from "./auth";
 import { decodeCvBase64, extractCvText, inspectCvUpload, InvalidCvUploadError } from "./member-cv";
+import { extractJobAdvertText, InvalidJobAdvertError } from "./member-job-advert";
 import { scoreCvAts } from "./cv-ats-scoring";
 
 const router = Router();
@@ -230,8 +231,22 @@ router.post("/cv-check", requireMember, async (req, res) => {
   if (cvCheckAttempts.size > 1000) for (const [id, attempt] of cvCheckAttempts) if (attempt.resetAt <= now) cvCheckAttempts.delete(id);
 
   let uploadedBuffer: Buffer | null = null;
+  let jobAdvertBuffer: Buffer | null = null;
   let cvText = "";
+  let jobAdvertText = "";
+  let targetText = "";
   try {
+    const jobIdValue = req.body?.jobId;
+    const jobDescription = typeof req.body?.jobDescription === "string" ? req.body.jobDescription.trim() : "";
+    const jobAdvertFileName = req.body?.jobAdvertFileName;
+    const jobAdvertBase64 = req.body?.jobAdvertBase64;
+    const hasAdvertUpload = Boolean(jobAdvertFileName || jobAdvertBase64);
+    if (jobDescription.length > 20_000) return res.status(400).json({ error: "A pasted job description must be no more than 20,000 characters." });
+    if (jobDescription && jobDescription.length < 50) return res.status(400).json({ error: "A pasted job description must contain at least 50 characters." });
+    if (hasAdvertUpload && (typeof jobAdvertFileName !== "string" || typeof jobAdvertBase64 !== "string")) return res.status(400).json({ error: "Choose the job-advert file again and retry." });
+    if (jobIdValue !== undefined && jobIdValue !== null && jobIdValue !== "" && (jobDescription || hasAdvertUpload)) return res.status(400).json({ error: "Choose one published job or provide a custom job description/advert, not both." });
+    if (jobIdValue === undefined && !jobDescription && !hasAdvertUpload && req.body?.targetMode === "custom") return res.status(400).json({ error: "Paste a job description or upload a job advert." });
+
     if (typeof req.body?.cvFileName !== "string") throw new InvalidCvUploadError("Choose a PDF or DOCX CV file.");
     const fileName = req.body.cvFileName;
     const extension = fileName.split(".").pop()?.toLowerCase();
@@ -240,26 +255,39 @@ router.post("/cv-check", requireMember, async (req, res) => {
     inspectCvUpload(fileName, uploadedBuffer);
     cvText = await extractCvText(fileName, uploadedBuffer);
 
-    let targetText = "";
     let targetLabel = "General CV review";
-    const jobIdValue = req.body?.jobId;
-    const jobDescription = typeof req.body?.jobDescription === "string" ? req.body.jobDescription.trim() : "";
     if (jobIdValue !== undefined && jobIdValue !== null && jobIdValue !== "") {
       const jobId = Number(jobIdValue);
-      if (!Number.isSafeInteger(jobId) || jobId < 1 || jobDescription) return res.status(400).json({ error: "Choose one published job or paste one job description, not both." });
+      if (!Number.isSafeInteger(jobId) || jobId < 1) return res.status(400).json({ error: "Choose a published job or provide a custom job description." });
       const db = await getDb();
       if (!db) return res.status(503).json({ error: "CV reports are temporarily unavailable." });
       const [job] = await db.select().from(jobs).where(and(eq(jobs.id, jobId), eq(jobs.status, "published"))).limit(1);
       if (!job) return res.status(404).json({ error: "Published job not found." });
       targetText = [job.title, job.category, job.description, job.responsibilities, job.qualifications].filter(Boolean).join(" ");
       targetLabel = job.title.slice(0, 300);
-    } else if (jobDescription) {
-      if (jobDescription.length < 50 || jobDescription.length > 20_000) return res.status(400).json({ error: "A job description must be 50–20,000 characters." });
-      targetText = jobDescription;
-      targetLabel = "Custom job description";
+    } else {
+      let jobAdvertNotes: string[] = [];
+      if (hasAdvertUpload) {
+        jobAdvertBuffer = decodeCvBase64(jobAdvertBase64, "job advert");
+        const extracted = await extractJobAdvertText(jobAdvertFileName, jobAdvertBuffer);
+        jobAdvertText = extracted.text;
+        jobAdvertNotes = extracted.notes;
+      }
+      targetText = [jobDescription, jobAdvertText].filter(Boolean).join("\n\n").slice(0, 40_000);
+      if (jobDescription || hasAdvertUpload) {
+        targetLabel = jobDescription && hasAdvertUpload ? "Pasted description + uploaded advert" : hasAdvertUpload ? "Uploaded job advert" : "Custom job description";
+      }
+      const report = { ...scoreCvAts(cvText, targetText), sourceNotes: jobAdvertNotes };
+      const db = await getDb();
+      if (!db) return res.status(503).json({ error: "CV reports are temporarily unavailable." });
+      const inserted = await db.insert(memberCvReports).values({ memberId, score: report.score, targetLabel, reportJson: JSON.stringify(report) });
+      const reportId = Number((inserted as any)?.[0]?.insertId ?? 0);
+      if (!reportId) return res.status(500).json({ error: "The CV report could not be saved." });
+      const [saved] = await db.select({ createdAt: memberCvReports.createdAt }).from(memberCvReports).where(and(eq(memberCvReports.id, reportId), eq(memberCvReports.memberId, memberId))).limit(1);
+      return res.json({ report: { ...report, id: reportId, targetLabel, createdAt: saved?.createdAt ?? new Date() } });
     }
 
-    const report = scoreCvAts(cvText, targetText);
+    const report = { ...scoreCvAts(cvText, targetText), sourceNotes: [] as string[] };
     const db = await getDb();
     if (!db) return res.status(503).json({ error: "CV reports are temporarily unavailable." });
     const inserted = await db.insert(memberCvReports).values({ memberId, score: report.score, targetLabel, reportJson: JSON.stringify(report) });
@@ -268,10 +296,16 @@ router.post("/cv-check", requireMember, async (req, res) => {
     const [saved] = await db.select({ createdAt: memberCvReports.createdAt }).from(memberCvReports).where(and(eq(memberCvReports.id, reportId), eq(memberCvReports.memberId, memberId))).limit(1);
     return res.json({ report: { ...report, id: reportId, targetLabel, createdAt: saved?.createdAt ?? new Date() } });
   } catch (error) {
-    return res.status(400).json({ error: error instanceof InvalidCvUploadError ? error.message : "The CV could not be checked. Try a text-based PDF or DOCX file." });
+    if (error instanceof InvalidCvUploadError || error instanceof InvalidJobAdvertError) return res.status(400).json({ error: error.message });
+    const errorMessage = error instanceof Error ? error.message : "";
+    if (/gm_member_cv_reports/i.test(errorMessage) && /does not exist|unknown table|no such table/i.test(errorMessage)) return res.status(503).json({ error: "CV report storage is not installed yet. Ask the site administrator to apply migration 0012, then retry." });
+    return res.status(500).json({ error: "The CV check could not be completed or saved. Your uploaded files were not retained; please try again." });
   } finally {
     uploadedBuffer?.fill(0);
+    jobAdvertBuffer?.fill(0);
     cvText = "";
+    jobAdvertText = "";
+    targetText = "";
   }
 });
 

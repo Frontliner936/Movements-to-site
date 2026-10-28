@@ -11,7 +11,8 @@ async function startServer() {
   const app = express();
   app.set("trust proxy", 1);
   const server = createServer(app);
-  // Source documents and uploads are bounded server-side; image uploads have a 5 MB cap.
+  // Permit two bounded files for this route; keep the lower request cap for all other endpoints.
+  app.use("/api/gm/member/cv-check", express.json({ limit: "15mb" }));
   app.use(express.json({ limit: "7mb" }));
   app.use(express.urlencoded({ limit: "1mb", extended: true }));
   app.get("/api/health", (_req, res) => res.json({ status: "ok" }));

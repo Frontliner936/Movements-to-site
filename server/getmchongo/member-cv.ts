@@ -109,12 +109,12 @@ export function inspectCvUpload(fileName: string, buffer: Buffer) {
   return { fileName: cleanName, extension, mimeType };
 }
 
-export function decodeCvBase64(encoded: unknown) {
+export function decodeCvBase64(encoded: unknown, label = "CV") {
   if (typeof encoded !== "string" || !encoded.length || encoded.length > 7_100_000 || encoded.length % 4 !== 0 || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(encoded)) {
-    throw new InvalidCvUploadError("The CV upload could not be read. Choose the file again and retry.");
+    throw new InvalidCvUploadError(`The ${label} upload could not be read. Choose the file again and retry.`);
   }
   const buffer = Buffer.from(encoded, "base64");
-  if (buffer.toString("base64") !== encoded) throw new InvalidCvUploadError("The CV upload could not be read. Choose the file again and retry.");
+  if (buffer.toString("base64") !== encoded) throw new InvalidCvUploadError(`The ${label} upload could not be read. Choose the file again and retry.`);
   return buffer;
 }
 
