@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, uniqueIndex, customType } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, uniqueIndex, index, customType } from "drizzle-orm/mysql-core";
 
 const mediumBlob = customType<{ data: Buffer; driverData: Buffer }>({ dataType: () => "mediumblob" });
 
@@ -204,6 +204,16 @@ export const memberFavorites = mysqlTable("gm_member_favorites", {
   jobId: int("job_id").notNull().references(() => jobs.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, table => [uniqueIndex("gm_member_favorite_unique").on(table.memberId, table.jobId)]);
+
+/** Member-owned ATS reviews; only the generated findings are retained, never CV bytes or text. */
+export const memberCvReports = mysqlTable("gm_member_cv_reports", {
+  id: int("id").autoincrement().primaryKey(),
+  memberId: int("member_id").notNull().references(() => memberAccounts.id, { onDelete: "cascade" }),
+  score: int("score").notNull(),
+  targetLabel: varchar("target_label", { length: 300 }).notNull(),
+  reportJson: text("report_json").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, table => [index("gm_member_cv_report_member_created").on(table.memberId, table.createdAt)]);
 
 /** Separate recruiter credentials, manual payment review, and access approval. */
 export const recruiterAccounts = mysqlTable("gm_recruiter_accounts", {
