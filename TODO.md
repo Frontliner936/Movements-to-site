@@ -103,7 +103,7 @@
 - At the top of the member's private dashboard, show the saved name, profession/qualification, region/location, phone number, sign-in email and whether a profile CV is saved. Refresh the summary after a successful profile save; do not show the summary publicly.
 - Only the protected administrator can search/view opted-in profiles and download their CVs. Do not create public profile pages, public CV links or recruiter accounts. The admin view must not show non-opted-in profile fields or CVs.
 - Accept only PDF, DOC, DOCX, TXT and RTF CV files up to 5 MB; reject other formats. A member can replace/remove their stored profile CV and withdraw directory consent, which immediately hides their profile from the admin directory.
-- The profile CV is stored privately and is accessible to the administrator only while the member's directory consent is active. A separate CV-match upload is temporary: extract text in memory, score against a selected published job, and discard the uploaded file and extracted text after the request.
+- The profile CV is stored privately and is accessible to the administrator only while the member's directory consent is active.
 
 
 ## [ ] Recruiter account, payment review, and protected directory access

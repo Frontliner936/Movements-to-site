@@ -56,24 +56,6 @@ function safeMember(row: any) {
 function safeProfile(row: any) {
   return row ? { fullName: row.fullName, phoneNumber: row.phoneNumber, location: row.location, profession: row.profession, directoryOptIn: row.directoryOptIn, cvFileName: row.cvFileName, updatedAt: row.updatedAt } : { fullName: "", phoneNumber: "", location: "", profession: "", directoryOptIn: false, cvFileName: null, updatedAt: null };
 }
-function terms(value: string) {
-  const stop = new Set("the and for with from this that your you are our all not will has have job role work team skills experience knowledge ability required preferred about into within across including using use years education degree successful candidate position responsibilities qualifications requirements description location apply application".split(" "));
-  return [...new Set((value.toLowerCase().match(/[a-z][a-z0-9+#.-]{2,}/g) ?? []).map(word => word.replace(/[.+-]+$/g, "")).filter(word => word.length >= 3 && !stop.has(word)))];
-}
-export function scoreCvForJob(cvText: string, jobText: string) {
-  const jobTerms = terms(jobText).slice(0, 30);
-  const cvTerms = new Set(terms(cvText));
-  const allMatchedKeywords = jobTerms.filter(word => cvTerms.has(word));
-  const matchedKeywords = allMatchedKeywords.slice(0, 20);
-  const missingKeywords = jobTerms.filter(word => !cvTerms.has(word)).slice(0, 12);
-  const keywordScore = jobTerms.length ? allMatchedKeywords.length / jobTerms.length : 0;
-  const sectionPatterns = [/\b(experience|employment|work history)\b/i, /\b(education|qualification)\b/i, /\b(skills|competencies)\b/i, /\b(summary|profile|objective)\b/i, /\b(contact|email|phone|linkedin)\b/i];
-  const sectionsFound = sectionPatterns.filter(pattern => pattern.test(cvText)).length;
-  const lengthScore = cvText.trim().length >= 500 ? 1 : Math.min(1, cvText.trim().length / 500);
-  const score = Math.max(0, Math.min(100, Math.round(keywordScore * 80 + (sectionsFound / sectionPatterns.length) * 15 + lengthScore * 5)));
-  return { score, matchedKeywords, missingKeywords, sectionsFound, sectionCount: sectionPatterns.length };
-}
-
 router.get("/session", async (req, res) => {
   const memberId = await getMemberId(req);
   if (!memberId) return res.json({ authenticated: false, member: null });
@@ -332,33 +314,6 @@ router.post("/favorites/:jobId", requireMember, async (req, res) => {
   }
   await db.insert(memberFavorites).values({ memberId, jobId });
   return res.json({ saved: true });
-});
-
-router.post("/cv-match", requireMember, async (req, res) => {
-  if (!requireSameOrigin(req, res)) return;
-  const jobId = Number(req.body?.jobId);
-  if (!Number.isSafeInteger(jobId) || jobId < 1) return res.status(400).json({ error: "Choose a published job to compare with your CV." });
-  let uploadedBuffer: Buffer | null = null;
-  let cvText = "";
-  try {
-    uploadedBuffer = decodeCvBase64(req.body?.cvBase64);
-    if (typeof req.body?.cvFileName !== "string") throw new InvalidCvUploadError("Choose a supported CV file.");
-    cvText = await extractCvText(req.body.cvFileName, uploadedBuffer);
-  } catch (error) {
-    uploadedBuffer?.fill(0);
-    return res.status(400).json({ error: error instanceof InvalidCvUploadError ? error.message : "The CV could not be read. Try another PDF, DOC, DOCX, TXT or RTF file." });
-  }
-  try {
-    const db = await getDb();
-    if (!db) return res.status(503).json({ error: "CV matching is temporarily unavailable." });
-    const [job] = await db.select().from(jobs).where(and(eq(jobs.id, jobId), eq(jobs.status, "published"))).limit(1);
-    if (!job) return res.status(404).json({ error: "Published job not found." });
-    const jobText = [job.title, job.category, job.description, job.responsibilities, job.qualifications].filter(Boolean).join(" ");
-    return res.json({ ...scoreCvForJob(cvText, jobText), jobTitle: job.title, retained: false, note: "This is a basic keyword and structure estimate—not a hiring decision or guarantee. Your uploaded CV and extracted text are not saved." });
-  } finally {
-    uploadedBuffer.fill(0);
-    cvText = "";
-  }
 });
 
 export function createMemberRouter() { return router; }
