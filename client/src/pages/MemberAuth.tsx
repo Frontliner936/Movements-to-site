@@ -44,7 +44,7 @@ export default function MemberAuth() {
         <div className="login-icon"><UserRound size={21} /></div>
         <span className="eyebrow muted-eyebrow">GET MCHONGO · JOB SEEKERS</span>
         <h1>{signup ? "Create your account." : "Welcome back."}</h1>
-        <p className="login-intro">{signup ? "Save opportunities, set job alerts and check how your CV matches a role." : "Sign in to see your saved opportunities and job matches."}</p>
+        <p className="login-intro">{signup ? "Save opportunities, set job alerts and get a practical CV and ATS-readiness review." : "Sign in to see your saved opportunities and private CV review reports."}</p>
         {notice && !signup && <p role="status" className="admin-alert success-alert">{notice}</p>}
         <form onSubmit={submit} className="admin-form login-form">
           {signup && <label>Display name<input type="text" autoComplete="name" minLength={2} maxLength={100} value={displayName} onChange={event => setDisplayName(event.target.value)} required /></label>}
@@ -53,7 +53,7 @@ export default function MemberAuth() {
           {error && <p role="alert" className="form-error">{error}</p>}
           <button className="primary-button login-submit" type="submit" disabled={busy}>{busy ? "Please wait…" : signup ? "Create account" : "Sign in"}<ArrowRight size={16} /></button>
         </form>
-        <p className="login-secure-note"><LockKeyhole size={13} />CV match-check uploads are processed for that request only and are not saved.</p>
+        <p className="login-secure-note"><LockKeyhole size={13} />CV Checker uploads and extracted text are not stored. Only your review scores and suggestions are saved privately.</p>
         <Link className="login-public-link" href={signup ? "/login" : "/signup"}>{signup ? "Already have an account? Sign in" : "New to Get Mchongo? Create an account"}</Link>
       </section>
     </main>

@@ -7,7 +7,6 @@ import { api, jsonBody, type Job } from "@/lib/api";
 type Member = { id: number; displayName: string; email: string; createdAt: string; lastSignedIn: string | null; alertsEnabled: boolean; alertCategories: string[]; alertLocations: string[] };
 type MemberProfile = { fullName: string; phoneNumber: string; location: string; profession: string; directoryOptIn: boolean; cvFileName: string | null; updatedAt: string | null };
 type ProfileFields = Omit<MemberProfile, "cvFileName" | "updatedAt">;
-type Result = { score: number; matchedKeywords: string[]; missingKeywords: string[]; sectionsFound: number; sectionCount: number; jobTitle: string; note: string };
 type AtsCategory = { id: string; label: string; weight: number; score: number; points: number; summary: string; findings: { issue: string; suggestion: string }[] };
 type AtsReport = { id: number; score: number; targetLabel: string; createdAt: string; categories: AtsCategory[]; strengths: string[]; matchedKeywords: string[]; missingKeywords: string[]; targetProvided: boolean; disclaimer: string };
 type DashboardData = { member: Member; favorites: Job[]; alerts: Job[] };
@@ -46,12 +45,8 @@ export default function MemberDashboard() {
   const [profileUnavailable, setProfileUnavailable] = useState(false);
   const [profileCvFile, setProfileCvFile] = useState<File | null>(null);
   const [removeStoredCv, setRemoveStoredCv] = useState(false);
-  const [matchCvFile, setMatchCvFile] = useState<File | null>(null);
-  const [cvJobId, setCvJobId] = useState("");
-  const matchCvInput = useRef<HTMLInputElement>(null);
   const atsCvInput = useRef<HTMLInputElement>(null);
   const profileCvInput = useRef<HTMLInputElement>(null);
-  const [result, setResult] = useState<Result | null>(null);
   const [atsCvFile, setAtsCvFile] = useState<File | null>(null);
   const [atsTargetMode, setAtsTargetMode] = useState<"general" | "published" | "custom">("general");
   const [atsJobId, setAtsJobId] = useState("");
@@ -78,7 +73,7 @@ export default function MemberDashboard() {
         setProfileFields({ fullName: profileResult.profile.fullName || dashboard.member.displayName, phoneNumber: profileResult.profile.phoneNumber, location: profileResult.profile.location, profession: profileResult.profile.profession, directoryOptIn: profileResult.profile.directoryOptIn });
         setProfileUnavailable(false);
       } catch {
-        // An unapplied optional profile-table migration must not block saved jobs, alerts, or CV matching.
+        // An unapplied optional profile-table migration must not block saved jobs, alerts or the ATS checker.
         setProfile(null);
         setProfileFields({ ...emptyProfile, fullName: dashboard.member.displayName });
         setProfileUnavailable(true);
@@ -123,7 +118,7 @@ export default function MemberDashboard() {
   async function saveProfile(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); setMessage(""); setMessageError(false); setBusy(true);
     try {
-      if (profileUnavailable) throw new Error("Profile saving is temporarily unavailable. Please ask the site administrator to apply the member-profile database update. Saved jobs, alerts and CV matching are still available.");
+      if (profileUnavailable) throw new Error("Profile saving is temporarily unavailable. Please ask the site administrator to apply the member-profile database update. Saved jobs, alerts and the ATS checker are still available.");
       if (profileCvFile) validateCvFile(profileCvFile);
       const payload: Record<string, unknown> = { ...profileFields, removeCv: removeStoredCv && !profileCvFile };
       if (profileCvFile) {
@@ -137,18 +132,6 @@ export default function MemberDashboard() {
       if (profileCvInput.current) profileCvInput.current.value = "";
       setMessage(saved.profile.directoryOptIn ? "Your profile is saved and shared privately with the Get Mchongo administrator." : "Your profile is saved privately. It is not visible to the administrator unless you opt in.");
     } catch (error) { setMessage(error instanceof Error ? error.message : "Your profile could not be saved."); setMessageError(true); }
-    finally { setBusy(false); }
-  }
-
-  async function checkCv(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setMessage(""); setMessageError(false); setResult(null); setBusy(true);
-    try {
-      if (!matchCvFile) throw new Error("Choose your CV file first.");
-      validateCvFile(matchCvFile);
-      const response = await api<Result & { retained: false }>("/api/gm/member/cv-match", { method: "POST", body: jsonBody({ cvFileName: matchCvFile.name, cvBase64: await fileToBase64(matchCvFile), jobId: Number(cvJobId) }) });
-      setResult(response); setMatchCvFile(null);
-      if (matchCvInput.current) matchCvInput.current.value = "";
-    } catch (error) { setMessage(error instanceof Error ? error.message : "Your CV could not be checked."); setMessageError(true); }
     finally { setBusy(false); }
   }
 
@@ -228,7 +211,7 @@ export default function MemberDashboard() {
         </section>
 
         <section id="member-profile-editor" className="member-panel member-profile-panel"><div className="member-section-heading"><span className="member-section-icon"><UserRound size={18} /></span><div><span className="eyebrow muted-eyebrow">YOUR PROFESSIONAL PROFILE</span><h2>Shape your profile</h2></div></div><p className="member-panel-intro">Add your profession or qualifications, contact details and CV. Your information is private by default; you decide whether to share it with the Get Mchongo administrator.</p>
-          {profileUnavailable && <p role="status" className="admin-alert error-alert">Profile saving and stored-CV features are temporarily unavailable. The site administrator may need to apply the member-profile database update. Saved jobs, alerts and one-time CV matching are still available.</p>}
+          {profileUnavailable && <p role="status" className="admin-alert error-alert">Profile saving and stored-CV features are temporarily unavailable. The site administrator may need to apply the member-profile database update. Saved jobs, alerts and the ATS checker are still available.</p>}
           <form className="admin-form member-profile-form" onSubmit={saveProfile}>
             <label>Full name<input value={profileFields.fullName} onChange={event => setProfileFields(current => ({ ...current, fullName: event.target.value }))} maxLength={150} required={profileFields.directoryOptIn} placeholder="Your full name" /></label>
             <label>Phone number<input type="tel" value={profileFields.phoneNumber} onChange={event => setProfileFields(current => ({ ...current, phoneNumber: event.target.value }))} maxLength={40} required={profileFields.directoryOptIn} placeholder="e.g. +255 7XX XXX XXX" /></label>
@@ -240,11 +223,6 @@ export default function MemberDashboard() {
             <p className="member-privacy-note">If you leave sharing off, your saved profile and CV remain private to you. Withdrawing consent hides your information from the admin directory immediately.</p>
             <button type="submit" className="secondary-button" disabled={busy}>{busy ? "Saving…" : "Save profile"}<ArrowRight size={14} /></button>
           </form>
-        </section>
-
-        <section className="member-panel member-cv-panel"><div className="member-section-heading"><span className="member-section-icon"><RefreshCw size={18} /></span><div><span className="eyebrow muted-eyebrow">ROLE MATCH</span><h2>Check your CV</h2></div></div><p className="member-panel-intro">Compare a CV file with a published opportunity. The check looks at shared role keywords and common CV sections.</p>
-          <form className="admin-form member-cv-form" onSubmit={checkCv}><label>Choose a job<select value={cvJobId} onChange={event => setCvJobId(event.target.value)} required><option value="">Select a published opportunity</option>{jobs.map(job => <option key={job.id} value={job.id}>{job.title}{job.companyName ? ` — ${job.companyName}` : ""}</option>)}</select></label><label className="member-file-field"><span>Upload your CV for this match check</span><input ref={matchCvInput} type="file" accept={CV_ACCEPT} onChange={event => setMatchCvFile(event.target.files?.[0] ?? null)} required /><small>PDF, DOC, DOCX, TXT or RTF · maximum 5 MB</small></label><p className="member-privacy-note">This match-check upload is extracted in memory for this request only. The uploaded file and extracted text are discarded and are not saved to your profile.</p><button className="primary-button" type="submit" disabled={busy || !matchCvFile || !cvJobId}>{busy ? "Checking…" : "Check my match"}<ArrowRight size={15} /></button></form>
-          {result && <div className="cv-result" role="status"><div className="cv-score"><strong>{result.score}%</strong><span>estimated match</span></div><div><h3>{result.jobTitle}</h3><p>{result.note}</p><p>CV sections detected: {result.sectionsFound}/{result.sectionCount}</p>{result.matchedKeywords.length > 0 && <p><strong>Matched:</strong> {result.matchedKeywords.join(", ")}</p>}{result.missingKeywords.length > 0 && <p><strong>Consider reflecting accurately, if relevant:</strong> {result.missingKeywords.join(", ")}</p>}</div></div>}
         </section>
 
         <section className="member-panel member-cv-ats-panel"><div className="member-section-heading"><span className="member-section-icon member-ats-icon"><FileCheck2 size={18} /></span><div><span className="eyebrow muted-eyebrow">CV CHECKER & ATS SCORE</span><h2>Make your CV easier to read</h2></div><span className="member-ats-weight-badge">8 categories · 100 points</span></div>
