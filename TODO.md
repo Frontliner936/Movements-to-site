@@ -104,3 +104,13 @@
 - Only the protected administrator can search/view opted-in profiles and download their CVs. Do not create public profile pages, public CV links or recruiter accounts. The admin view must not show non-opted-in profile fields or CVs.
 - Accept only PDF, DOC, DOCX, TXT and RTF CV files up to 5 MB; reject other formats. A member can replace/remove their stored profile CV and withdraw directory consent, which immediately hides their profile from the admin directory.
 - The profile CV is stored privately and is accessible to the administrator only while the member's directory consent is active. A separate CV-match upload is temporary: extract text in memory, score against a selected published job, and discard the uploaded file and extracted text after the request.
+
+
+## [ ] Recruiter account, payment review, and protected directory access
+- Recruiters can create a separate account with email/password, a contact phone, business/company name, location, and business details; their application stays pending until an administrator approves it.
+- Recruiters can choose one of these member-count price bands: **0–199 members — TSh 15,000; 200–999 members — TSh 30,000; 1,000+ members — TSh 50,000.** Display the plan, exact range, amount, and recipient HaloPesa number **0638386459** before they submit payment details.
+- Do not claim or simulate an automatic HaloPesa redirect, transaction, or payment confirmation when no gateway is configured. Give payment instructions, then collect the payer phone number and transaction/reference details for manual review.
+- Recruiters can see their application, payment and approval states; account and directory access remain blocked until the administrator separately marks payment verified and approves access.
+- The protected admin dashboard includes recruiter business/contact details, location, selected tier, payer number, payment reference, payment status, approval status and timestamps; the administrator can confirm payment and approve or reject access.
+- Only approved, payment-verified recruiters can access the protected directory. Show only professional fields from member profiles whose owners explicitly opted in. Never expose CV files, password hashes, favorites or non-opted-in profile details to recruiters; retain administrator-only CV access.
+- Keep recruiter credentials/sessions separate from member and administrator sessions, store salted password hashes only, enforce same-origin writes and sign-in rate limits, and authorize every recruiter endpoint on the server.

@@ -204,3 +204,29 @@ export const memberFavorites = mysqlTable("gm_member_favorites", {
   jobId: int("job_id").notNull().references(() => jobs.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, table => [uniqueIndex("gm_member_favorite_unique").on(table.memberId, table.jobId)]);
+
+/** Separate recruiter credentials, manual payment review, and access approval. */
+export const recruiterAccounts = mysqlTable("gm_recruiter_accounts", {
+  id: int("id").autoincrement().primaryKey(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  passwordHash: varchar("password_hash", { length: 128 }).notNull(),
+  passwordSalt: varchar("password_salt", { length: 64 }).notNull(),
+  contactName: varchar("contact_name", { length: 150 }).notNull(),
+  phone: varchar("phone", { length: 40 }).notNull(),
+  companyName: varchar("company_name", { length: 240 }).notNull(),
+  location: varchar("location", { length: 240 }).notNull(),
+  businessDetails: text("business_details").notNull(),
+  memberCount: int("member_count").notNull(),
+  tier: mysqlEnum("tier", ["small", "medium", "large"]).notNull(),
+  priceTsh: int("price_tsh").notNull(),
+  applicationStatus: mysqlEnum("application_status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  paymentStatus: mysqlEnum("payment_status", ["unsubmitted", "submitted", "verified", "rejected"]).default("unsubmitted").notNull(),
+  paymentVerified: boolean("payment_verified").default(false).notNull(),
+  approved: boolean("approved").default(false).notNull(),
+  accessStatus: mysqlEnum("access_status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  payerPhone: varchar("payer_phone", { length: 40 }),
+  paymentReference: varchar("payment_reference", { length: 160 }),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});

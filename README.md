@@ -62,6 +62,13 @@ A GitHub repository does not contain uploaded media or the contents of a remote 
 - New account passwords must be 6–128 characters and include at least one uppercase letter, one lowercase letter and one symbol; a number is optional.
 - Job alerts appear inside the member dashboard for matching published jobs from the recent period. No transactional email provider is configured, so this feature does not send alert emails. CV matching accepts PDF, DOC, DOCX, TXT and RTF files up to 5 MB, extracts text in memory, does not persist the match-check upload or text, and returns a transparent keyword/structure estimate rather than a hiring guarantee. Uploaded profile CVs are stored privately in MySQL and are available only to the administrator while the member has opted in.
 
+## Recruiter accounts and manual payments
+
+- Before enabling recruiter sign-in, set a separate unique `RECRUITER_SESSION_SECRET` of at least 32 characters in the web-service environment. Generate one with `openssl rand -base64 48`; do not commit or share the value.
+- Apply the additive migration `drizzle/0011_recruiters.sql` to the existing MySQL database before deploying this feature. It adds `gm_recruiter_accounts` without replacing member, job or administrator data.
+- Recruiter plans are based on the selected database-size band: 0–199 members — TSh 15,000; 200–999 — TSh 30,000; 1,000+ — TSh 50,000. The public portal gives manual HaloPesa instructions for `0638386459` and collects the payer phone and transaction/reference; there is no payment gateway or automatic payment confirmation.
+- Admins review submitted payment references and separately approve or reject recruiter access in the protected Recruiters dashboard. Access requires both verified payment and approval. Recruiters see only professional information from member profiles whose owners opted into the directory; CV files and non-opted-in profiles remain unavailable to recruiters.
+
 ## Configuration reference
 
 See `.env.example`. `MANUS_API_URL`, `MANUS_API_KEY`, Manus OAuth settings, OpenAI credentials, and translation-provider credentials are not required for this app's public/admin flows, uploads, job-ad import, or source schedules.

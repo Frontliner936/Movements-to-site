@@ -4,7 +4,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import sharp from "sharp";
 import { ensureGeoVisitorTotalsTable, getDb } from "../db";
-import { announcements, companies, contactMessages, geoVisitorTotals, jobs, jobReactions, jobViewers, memberAccounts, memberProfiles, pendingJobs, scanSchedules, siteMetrics, sources } from "../../drizzle/schema";
+import { announcements, companies, contactMessages, geoVisitorTotals, jobs, jobReactions, jobViewers, memberAccounts, memberProfiles, pendingJobs, recruiterAccounts, scanSchedules, siteMetrics, sources } from "../../drizzle/schema";
 import { ADMIN_EMAIL, isAdmin, login, logout, requireAdmin, requireSameOrigin } from "./auth";
 import { runSource } from "./source-runner";
 import { validateSourceUrl, type SourceType } from "./collector";
@@ -527,6 +527,35 @@ router.get("/members", async (_req, res) => {
   const members = await db.select({ id: memberAccounts.id, displayName: memberAccounts.displayName, email: memberAccounts.email, isActive: memberAccounts.isActive, createdAt: memberAccounts.createdAt, lastSignedIn: memberAccounts.lastSignedIn })
     .from(memberAccounts).orderBy(desc(memberAccounts.createdAt)).limit(500);
   return res.json({ members });
+});
+
+
+router.get("/recruiters", async (_req, res) => {
+  const db = await getDb(); if (!db) return sendDbUnavailable(res);
+  const recruiters = await db.select({ id: recruiterAccounts.id, email: recruiterAccounts.email, contactName: recruiterAccounts.contactName, phone: recruiterAccounts.phone, companyName: recruiterAccounts.companyName, location: recruiterAccounts.location, businessDetails: recruiterAccounts.businessDetails, memberCount: recruiterAccounts.memberCount, tier: recruiterAccounts.tier, priceTsh: recruiterAccounts.priceTsh, applicationStatus: recruiterAccounts.applicationStatus, paymentStatus: recruiterAccounts.paymentStatus, paymentVerified: recruiterAccounts.paymentVerified, approved: recruiterAccounts.approved, accessStatus: recruiterAccounts.accessStatus, payerPhone: recruiterAccounts.payerPhone, paymentReference: recruiterAccounts.paymentReference, isActive: recruiterAccounts.isActive, createdAt: recruiterAccounts.createdAt, updatedAt: recruiterAccounts.updatedAt }).from(recruiterAccounts).orderBy(desc(recruiterAccounts.createdAt)).limit(1000);
+  return res.json({ recruiters });
+});
+router.post("/recruiters/:id/payment", async (req, res) => {
+  const id = idParam(req); if (!id) return res.status(400).json({ error: "Invalid recruiter id." });
+  if (typeof req.body?.verified !== "boolean") return res.status(400).json({ error: "Specify whether payment was manually verified." });
+  const db = await getDb(); if (!db) return sendDbUnavailable(res);
+  const [existing] = await db.select({ id: recruiterAccounts.id, paymentStatus: recruiterAccounts.paymentStatus, approved: recruiterAccounts.approved }).from(recruiterAccounts).where(eq(recruiterAccounts.id, id)).limit(1);
+  if (!existing) return res.status(404).json({ error: "Recruiter not found." });
+  const verified = req.body.verified;
+  if (verified && existing.paymentStatus !== "submitted") return res.status(400).json({ error: "A submitted payment reference is required before verification." });
+  await db.update(recruiterAccounts).set({ paymentVerified: verified, paymentStatus: verified ? "verified" : "rejected", accessStatus: !verified ? "rejected" : existing.approved ? "approved" : "pending" }).where(eq(recruiterAccounts.id, id));
+  return res.json({ updated: true });
+});
+router.post("/recruiters/:id/decision", async (req, res) => {
+  const id = idParam(req); if (!id) return res.status(400).json({ error: "Invalid recruiter id." });
+  const decision = req.body?.decision;
+  if (decision !== "approved" && decision !== "rejected") return res.status(400).json({ error: "Choose approved or rejected." });
+  const db = await getDb(); if (!db) return sendDbUnavailable(res);
+  const [existing] = await db.select({ id: recruiterAccounts.id, paymentVerified: recruiterAccounts.paymentVerified }).from(recruiterAccounts).where(eq(recruiterAccounts.id, id)).limit(1);
+  if (!existing) return res.status(404).json({ error: "Recruiter not found." });
+  const approved = decision === "approved";
+  await db.update(recruiterAccounts).set({ applicationStatus: decision, approved, accessStatus: !approved ? "rejected" : existing.paymentVerified ? "approved" : "pending" }).where(eq(recruiterAccounts.id, id));
+  return res.json({ updated: true });
 });
 
 router.get("/members/directory", async (_req, res) => {

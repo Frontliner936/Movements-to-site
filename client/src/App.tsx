@@ -19,6 +19,7 @@ import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import MemberAuth from "./pages/MemberAuth";
 import MemberDashboard from "./pages/MemberDashboard";
+import RecruiterPortal from "./pages/RecruiterPortal";
 import NotFound from "./pages/NotFound";
 
 function Router() {
@@ -38,6 +39,7 @@ function Router() {
     <Route path="/signup" component={MemberAuth} />
     <Route path="/login" component={MemberAuth} />
     <Route path="/dashboard" component={MemberDashboard} />
+    <Route path="/recruiter" component={RecruiterPortal} />
     <Route path="/404" component={NotFound} />
     <Route component={NotFound} />
   </Switch>;
