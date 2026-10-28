@@ -78,6 +78,13 @@
       "when": 1793110116879,
       "tag": "0010_member_professional_profiles",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "5",
+      "when": 1793164548171,
+      "tag": "0011_recruiters",
+      "breakpoints": true
     }
   ]
 }

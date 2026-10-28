@@ -27,7 +27,7 @@ export function SiteFooter() {
       <a className="footer-cv-services-link" href="/cv-services"><span><strong>CV Services</strong><small>Compare packages and get personalized support</small></span><ArrowRight size={16} aria-hidden="true" /></a>
     </div>
     <div className="footer-bottom-row">
-      <nav className="footer-links" aria-label="Footer navigation"><a href="/">Opportunities</a><a href="/announcements">Announcements</a><a href="/submit">Post a job</a><a href="/signup">Create job seeker account</a><a href="/login">Member sign in</a><a href="/contact"><MessageCircle size={13} />Send a message</a><a href="/admin/login">Admin access</a></nav>
+      <nav className="footer-links" aria-label="Footer navigation"><a href="/">Opportunities</a><a href="/announcements">Announcements</a><a href="/submit">Post a job</a><a href="/signup">Create job seeker account</a><a href="/login">Member sign in</a><a href="/recruiter">Join as a recruiter</a><a href="/contact"><MessageCircle size={13} />Send a message</a><a href="/admin/login">Admin access</a></nav>
       <span className="footer-year">© {new Date().getFullYear()} GET MCHONGO</span>
     </div>
     <p className="footer-location-disclosure">We use visitor IP addresses to estimate country and region for aggregate audience statistics. IPWhois receives the IP for lookup; this site stores aggregate location totals only. <a href="https://ipwhois.io/terms" target="_blank" rel="noopener noreferrer">About the lookup provider</a>.</p>
