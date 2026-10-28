@@ -8,12 +8,14 @@ type Member = { id: number; displayName: string; email: string; createdAt: strin
 type MemberProfile = { fullName: string; phoneNumber: string; location: string; profession: string; directoryOptIn: boolean; cvFileName: string | null; updatedAt: string | null };
 type ProfileFields = Omit<MemberProfile, "cvFileName" | "updatedAt">;
 type AtsCategory = { id: string; label: string; weight: number; score: number; points: number; summary: string; findings: { issue: string; suggestion: string }[] };
-type AtsReport = { id: number; score: number; targetLabel: string; createdAt: string; categories: AtsCategory[]; strengths: string[]; matchedKeywords: string[]; missingKeywords: string[]; targetProvided: boolean; disclaimer: string };
+type AtsReport = { id: number; score: number; targetLabel: string; createdAt: string; categories: AtsCategory[]; strengths: string[]; matchedKeywords: string[]; missingKeywords: string[]; targetProvided: boolean; disclaimer: string; sourceNotes?: string[] };
 type DashboardData = { member: Member; favorites: Job[]; alerts: Job[] };
 const CV_MAX_BYTES = 5 * 1024 * 1024;
 const CV_ACCEPT = ".pdf,.doc,.docx,.txt,.rtf,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/rtf";
 const CV_EXTENSIONS = new Set(["pdf", "doc", "docx", "txt", "rtf"]);
 const ATS_CV_ACCEPT = ".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+const JOB_AD_ACCEPT = ".pdf,.doc,.docx,.txt,.rtf,.jpg,.jpeg,.png,.webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/rtf,image/jpeg,image/png,image/webp";
+const JOB_AD_EXTENSIONS = new Set(["pdf", "doc", "docx", "txt", "rtf", "jpg", "jpeg", "png", "webp"]);
 
 async function fileToBase64(file: File) {
   const bytes = new Uint8Array(await file.arrayBuffer());
@@ -27,6 +29,13 @@ function validateCvFile(file: File) {
   if (!CV_EXTENSIONS.has(extension)) throw new Error("Choose a PDF, DOC, DOCX, TXT or RTF file.");
   if (!file.size) throw new Error("The selected CV file is empty.");
   if (file.size > CV_MAX_BYTES) throw new Error("CV files must be 5 MB or smaller.");
+}
+
+function validateJobAdvertFile(file: File) {
+  const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+  if (!JOB_AD_EXTENSIONS.has(extension)) throw new Error("Choose a PDF, Word, TXT, RTF, JPEG, PNG or WebP job advert.");
+  if (!file.size) throw new Error("The selected job-advert file is empty.");
+  if (file.size > CV_MAX_BYTES) throw new Error("Job-advert files must be 5 MB or smaller.");
 }
 
 const emptyProfile: ProfileFields = { fullName: "", phoneNumber: "", location: "", profession: "", directoryOptIn: false };
@@ -46,11 +55,13 @@ export default function MemberDashboard() {
   const [profileCvFile, setProfileCvFile] = useState<File | null>(null);
   const [removeStoredCv, setRemoveStoredCv] = useState(false);
   const atsCvInput = useRef<HTMLInputElement>(null);
+  const jobAdvertInput = useRef<HTMLInputElement>(null);
   const profileCvInput = useRef<HTMLInputElement>(null);
   const [atsCvFile, setAtsCvFile] = useState<File | null>(null);
   const [atsTargetMode, setAtsTargetMode] = useState<"general" | "published" | "custom">("general");
   const [atsJobId, setAtsJobId] = useState("");
   const [atsJobDescription, setAtsJobDescription] = useState("");
+  const [jobAdvertFile, setJobAdvertFile] = useState<File | null>(null);
   const [atsReport, setAtsReport] = useState<AtsReport | null>(null);
   const [savedAtsReports, setSavedAtsReports] = useState<AtsReport[]>([]);
   const [reportsAvailable, setReportsAvailable] = useState(true);
@@ -143,15 +154,24 @@ export default function MemberDashboard() {
       const extension = atsCvFile.name.split(".").pop()?.toLowerCase();
       if (extension !== "pdf" && extension !== "docx") throw new Error("The CV Checker accepts PDF and DOCX files only.");
       if (atsTargetMode === "published" && !atsJobId) throw new Error("Choose a published job description to compare with.");
-      if (atsTargetMode === "custom" && atsJobDescription.trim().length < 50) throw new Error("Paste at least 50 characters of the target job description.");
-      const body: Record<string, unknown> = { cvFileName: atsCvFile.name, cvBase64: await fileToBase64(atsCvFile) };
+      const pastedJobDescription = atsJobDescription.trim();
+      if (atsTargetMode === "custom" && !pastedJobDescription && !jobAdvertFile) throw new Error("Paste a job description or upload a job advert.");
+      if (atsTargetMode === "custom" && pastedJobDescription && pastedJobDescription.length < 50) throw new Error("A pasted job description must contain at least 50 characters.");
+      if (atsTargetMode === "custom" && pastedJobDescription.length > 20000) throw new Error("A pasted job description must be no more than 20,000 characters.");
+      if (atsTargetMode === "custom" && jobAdvertFile) validateJobAdvertFile(jobAdvertFile);
+      const body: Record<string, unknown> = { cvFileName: atsCvFile.name, cvBase64: await fileToBase64(atsCvFile), targetMode: atsTargetMode };
       if (atsTargetMode === "published") body.jobId = Number(atsJobId);
-      if (atsTargetMode === "custom") body.jobDescription = atsJobDescription.trim();
+      if (atsTargetMode === "custom" && pastedJobDescription) body.jobDescription = pastedJobDescription;
+      if (atsTargetMode === "custom" && jobAdvertFile) {
+        body.jobAdvertFileName = jobAdvertFile.name;
+        body.jobAdvertBase64 = await fileToBase64(jobAdvertFile);
+      }
       const saved = await api<{ report: AtsReport }>("/api/gm/member/cv-check", { method: "POST", body: jsonBody(body) });
       setAtsReport(saved.report);
       setSavedAtsReports(current => [saved.report, ...current.filter(report => report.id !== saved.report.id)].slice(0, 50));
-      setReportsAvailable(true); setAtsCvFile(null);
+      setReportsAvailable(true); setAtsCvFile(null); setJobAdvertFile(null);
       if (atsCvInput.current) atsCvInput.current.value = "";
+      if (jobAdvertInput.current) jobAdvertInput.current.value = "";
       setMessage("Your CV review has been saved. Upload an improved PDF or DOCX to create a new report and compare your progress.");
     } catch (error) { setMessage(error instanceof Error ? error.message : "Your CV could not be checked."); setMessageError(true); }
     finally { setBusy(false); }
@@ -228,15 +248,16 @@ export default function MemberDashboard() {
         <section className="member-panel member-cv-ats-panel"><div className="member-section-heading"><span className="member-section-icon member-ats-icon"><FileCheck2 size={18} /></span><div><span className="eyebrow muted-eyebrow">CV CHECKER & ATS SCORE</span><h2>Make your CV easier to read</h2></div><span className="member-ats-weight-badge">8 categories · 100 points</span></div>
           <p className="member-panel-intro">Get a practical, evidence-based checklist from your CV text. Add a target job description for a role-specific keyword review, then retest after making improvements.</p>
           <form id="member-ats-form" className="admin-form member-ats-form" onSubmit={checkAtsCv}>
-            <label>What would you like to review?<select value={atsTargetMode} onChange={event => setAtsTargetMode(event.target.value as "general" | "published" | "custom")}><option value="general">General CV review</option><option value="published">Compare with a published job</option><option value="custom">Paste a specific job description</option></select></label>
+            <label>What would you like to review?<select value={atsTargetMode} onChange={event => { const mode = event.target.value as "general" | "published" | "custom"; setAtsTargetMode(mode); if (mode !== "custom") { setJobAdvertFile(null); setAtsJobDescription(""); if (jobAdvertInput.current) jobAdvertInput.current.value = ""; } }}><option value="general">General CV review</option><option value="published">Compare with a published job</option><option value="custom">Use a specific job description</option></select></label>
             {atsTargetMode === "published" && <label>Published job<select value={atsJobId} onChange={event => setAtsJobId(event.target.value)} required><option value="">Choose a published job</option>{jobs.map(job => <option key={job.id} value={job.id}>{job.title}{job.companyName ? ` — ${job.companyName}` : ""}</option>)}</select></label>}
-            {atsTargetMode === "custom" && <label>Target job description<textarea rows={6} minLength={50} maxLength={20000} value={atsJobDescription} onChange={event => setAtsJobDescription(event.target.value)} placeholder="Paste the role responsibilities and qualifications here (50–20,000 characters)." required /><small className="field-help">Compared in memory only. The job description text is not saved with the report.</small></label>}
+            {atsTargetMode === "custom" && <><label>Paste job-description text (optional if you upload an advert)<textarea rows={6} maxLength={20000} value={atsJobDescription} onChange={event => setAtsJobDescription(event.target.value)} placeholder="Paste the role responsibilities and qualifications here (50–20,000 characters). You can also upload the advert below." /><small className="field-help">You may paste text, upload a file, or provide both. Pasted text is not saved with the report.</small></label><label className="member-file-field member-ats-file-field"><span>Upload a job advert (optional)</span><input ref={jobAdvertInput} type="file" accept={JOB_AD_ACCEPT} onChange={event => setJobAdvertFile(event.target.files?.[0] ?? null)} /><small>{jobAdvertFile ? `${jobAdvertFile.name} · ${(jobAdvertFile.size / 1024 / 1024).toFixed(2)} MB` : "PDF, DOC, DOCX, TXT, RTF, JPEG, PNG or WebP · maximum 5 MB"}</small></label></>}
             <label className="member-file-field member-ats-file-field"><span>Upload the CV you want to check</span><input ref={atsCvInput} type="file" accept={ATS_CV_ACCEPT} onChange={event => setAtsCvFile(event.target.files?.[0] ?? null)} required /><small>PDF or DOCX · maximum 5 MB · selectable text required</small></label>
             <p className="member-privacy-note member-ats-privacy"><ShieldCheck size={14} />Your CV file and extracted text are processed for this check and discarded. Only the score, category findings, suggestions and safe target label are saved to your private account. This is a heuristic review—not an ATS system, full proofread or success guarantee.</p>
-            <button className="primary-button" type="submit" disabled={busy || !atsCvFile || (atsTargetMode === "published" && !atsJobId) || (atsTargetMode === "custom" && atsJobDescription.trim().length < 50)}>{busy ? "Reviewing your CV…" : "Check and save report"}<ArrowRight size={15} /></button>
+            <button className="primary-button" type="submit" disabled={busy || !atsCvFile || (atsTargetMode === "published" && !atsJobId) || (atsTargetMode === "custom" && !atsJobDescription.trim() && !jobAdvertFile) || (atsTargetMode === "custom" && atsJobDescription.trim().length > 0 && atsJobDescription.trim().length < 50)}>{busy ? "Reviewing your CV…" : "Check and save report"}<ArrowRight size={15} /></button>
           </form>
           {!reportsAvailable && <p role="status" className="admin-alert error-alert member-ats-migration-note">Saved reports need the latest member CV reports database update. Ask the site administrator to apply the documented migration.</p>}
           {atsReport && <div id="member-ats-report" className="member-ats-report" aria-live="polite"><div className="member-ats-report-heading"><div className="member-ats-score-ring" style={{ "--ats-score": `${atsReport.score}%` } as React.CSSProperties}><strong>{atsReport.score}</strong><span>out of 100</span></div><div><span className="eyebrow muted-eyebrow">SAVED CV REVIEW · {new Date(atsReport.createdAt).toLocaleDateString()}</span><h3>{atsReport.targetLabel}</h3><p>Weighted estimate from eight transparent checks. Each category shows its score and contribution to your total.</p></div></div>
+            {atsReport.sourceNotes?.length ? <div className="member-ats-source-notes"><strong>Advert extraction notes</strong><ul>{atsReport.sourceNotes.map((note, index) => <li key={index}>{note}</li>)}</ul><small>Check the original advert to confirm names, requirements, dates and other details were read correctly.</small></div> : null}
             {atsReport.strengths.length > 0 && <div className="member-ats-strengths"><CheckCircle2 size={15} /><span><strong>What’s working:</strong> {atsReport.strengths.join(" · ")}</span></div>}
             <div className="member-ats-category-list">{atsReport.categories.map(category => <article className="member-ats-category" key={category.id}><div className="member-ats-category-top"><div><h4>{category.label}</h4><p>{category.summary}</p></div><strong>{category.score}<small>/100</small></strong></div><div className="member-ats-progress" role="progressbar" aria-label={`${category.label} score`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={category.score}><span style={{ width: `${category.score}%` }} /></div><div className="member-ats-weight-row"><span>Weight {category.weight}%</span><span>Contribution {category.points.toFixed(2)} / {category.weight} points</span></div>{category.findings.length > 0 ? <ul className="member-ats-findings">{category.findings.map((finding, index) => <li key={`${category.id}-${index}`}><strong>{finding.issue}</strong><span>{finding.suggestion}</span></li>)}</ul> : <p className="member-ats-clear"><CheckCircle2 size={13} />No issues detected by this category’s checks.</p>}</article>)}</div>
             {atsReport.targetProvided && <div className="member-ats-keywords"><div><strong>Matched role terms</strong><p>{atsReport.matchedKeywords.length ? atsReport.matchedKeywords.join(" · ") : "No matching terms detected."}</p></div><div><strong>Terms to review</strong><p>{atsReport.missingKeywords.length ? atsReport.missingKeywords.join(" · ") : "No sampled terms are missing."}</p><small>Add a term only if it accurately reflects your skills or experience.</small></div></div>}
