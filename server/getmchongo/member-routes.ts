@@ -10,6 +10,7 @@ import { decodeCvBase64, extractCvText, inspectCvUpload, InvalidCvUploadError } 
 import { extractJobAdvertText, InvalidJobAdvertError } from "./member-job-advert";
 import { scoreCvAts } from "./cv-ats-scoring";
 import { isJobAlertEmailConfigured } from "./job-email-alerts";
+import { encodeStoredCategories, MAX_POSITION_LENGTH, MAX_POSITIONS, splitStoredCategories } from "./alert-preferences";
 
 const router = Router();
 router.use((_req, res, next) => { res.setHeader("Cache-Control", "no-store"); next(); });
@@ -53,7 +54,7 @@ function loginKey(req: Request, email: string) {
   return `${ipHash}:${email}`;
 }
 function safeMember(row: any) {
-  return { id: row.id, displayName: row.displayName, email: row.email, isActive: row.isActive, createdAt: row.createdAt, lastSignedIn: row.lastSignedIn, alertsEnabled: row.alertsEnabled, emailAlertsEnabled: row.emailAlertsEnabled === true, alertCategories: parseList(row.alertCategories), alertLocations: parseList(row.alertLocations) };
+  return { id: row.id, displayName: row.displayName, email: row.email, isActive: row.isActive, createdAt: row.createdAt, lastSignedIn: row.lastSignedIn, alertsEnabled: row.alertsEnabled, emailAlertsEnabled: row.emailAlertsEnabled === true, alertCategories: splitStoredCategories(row.alertCategories).categories, alertPositions: splitStoredCategories(row.alertCategories).positions, alertLocations: parseList(row.alertLocations) };
 }
 function safeProfile(row: any) {
   return row ? { fullName: row.fullName, phoneNumber: row.phoneNumber, location: row.location, profession: row.profession, directoryOptIn: row.directoryOptIn, cvFileName: row.cvFileName, updatedAt: row.updatedAt } : { fullName: "", phoneNumber: "", location: "", profession: "", directoryOptIn: false, cvFileName: null, updatedAt: null };
@@ -142,15 +143,23 @@ router.get("/dashboard", requireMember, async (_req, res) => {
     .where(and(eq(memberFavorites.memberId, memberId), eq(jobs.status, "published"))).orderBy(desc(memberFavorites.createdAt)).limit(200);
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const predicates = [eq(jobs.status, "published"), gte(jobs.publishedAt, since)];
-  const categories = parseList(member.alertCategories);
+  const { categories, positions } = splitStoredCategories(member.alertCategories);
   const locations = parseList(member.alertLocations);
   if (categories.length) predicates.push(inArray(jobs.category, categories));
+  if (positions.length) {
+    const positionPredicates = positions.flatMap(position => {
+      const pattern = `%${position.replace(/[\\%_]/g, "\\$&")}%`;
+      return [like(jobs.title, pattern), like(jobs.category, pattern)];
+    });
+    const positionClause = or(...positionPredicates);
+    if (positionClause) predicates.push(positionClause);
+  }
   if (locations.length) {
     const locationPredicates = locations.map(location => like(jobs.location, `%${location.replace(/[\\%_]/g, "\\$&")}%`));
     const locationClause = or(...locationPredicates);
     if (locationClause) predicates.push(locationClause);
   }
-  const alerts = member.alertsEnabled && (categories.length || locations.length)
+  const alerts = member.alertsEnabled && (categories.length || positions.length || locations.length)
     ? await db.select().from(jobs).where(and(...predicates)).orderBy(desc(jobs.publishedAt)).limit(25)
     : [];
   return res.json({ member: safeMember({ ...member, emailAlertsEnabled }), emailAlertSchemaAvailable, emailAlertsAvailable: emailAlertSchemaAvailable && isJobAlertEmailConfigured(), favorites: favorites.map(row => row.job), alerts });
@@ -161,12 +170,16 @@ router.put("/preferences", requireMember, async (req, res) => {
   const clean = (value: unknown) => Array.isArray(value) && value.length <= 30 && value.every(item => typeof item === "string" && item.trim().length > 0 && item.trim().length <= 120) ? [...new Set(value.map(item => item.trim()))] : null;
   const categories = clean(req.body?.categories);
   const locations = clean(req.body?.locations);
+  const rawPositions = req.body?.positions ?? [];
+  const positions = Array.isArray(rawPositions) && rawPositions.length <= MAX_POSITIONS && rawPositions.every(item => typeof item === "string" && item.trim().length >= 2 && item.trim().length <= MAX_POSITION_LENGTH)
+    ? [...new Set(rawPositions.map((item: string) => item.trim().replace(/\s+/g, " ")))]
+    : null;
   const enabled = req.body?.enabled;
   const emailAlertsEnabled = req.body?.emailAlertsEnabled;
-  if (!categories || !locations || typeof enabled !== "boolean") return res.status(400).json({ error: "Choose valid alert preferences." });
+  if (!categories || !locations || !positions || typeof enabled !== "boolean") return res.status(400).json({ error: "Choose valid alert preferences. Positions must be 2–100 characters, up to 10." });
   if (emailAlertsEnabled !== undefined && typeof emailAlertsEnabled !== "boolean") return res.status(400).json({ error: "Choose whether to receive email alerts." });
-  if (enabled && !categories.length && !locations.length) return res.status(400).json({ error: "Choose at least one category or location before enabling alerts." });
-  if (emailAlertsEnabled === true && !categories.length && !locations.length) return res.status(400).json({ error: "Choose at least one category or location before enabling email alerts." });
+  if (enabled && !categories.length && !positions.length && !locations.length) return res.status(400).json({ error: "Choose at least one category, position or location before enabling alerts." });
+  if (emailAlertsEnabled === true && !categories.length && !positions.length && !locations.length) return res.status(400).json({ error: "Choose at least one category, position or location before enabling email alerts." });
   if (emailAlertsEnabled === true && !isJobAlertEmailConfigured()) return res.status(503).json({ error: "Email alerts are not configured yet. Dashboard alerts remain available; please try again after the site administrator configures email delivery." });
   const db = await getDb();
   if (!db) return res.status(503).json({ error: "Your preferences could not be saved." });
@@ -176,7 +189,7 @@ router.put("/preferences", requireMember, async (req, res) => {
       await db.select({ jobId: memberJobAlertEvents.jobId }).from(memberJobAlertEvents).limit(1);
     } catch { return res.status(503).json({ error: "Email-alert storage is not installed yet. Ask the site administrator to apply migrations 0013 and 0014." }); }
   }
-  const changes: Partial<typeof memberAccounts.$inferInsert> = { alertCategories: JSON.stringify(categories), alertLocations: JSON.stringify(locations), alertsEnabled: enabled };
+  const changes: Partial<typeof memberAccounts.$inferInsert> = { alertCategories: encodeStoredCategories(categories, positions), alertLocations: JSON.stringify(locations), alertsEnabled: enabled };
   if (emailAlertsEnabled !== undefined) changes.emailAlertsEnabled = emailAlertsEnabled;
   try {
     await db.update(memberAccounts).set(changes).where(eq(memberAccounts.id, Number(res.locals.memberId)));
