@@ -2,6 +2,7 @@ import { and, asc, eq, lte, sql } from "drizzle-orm";
 import { createTransport, type Transporter } from "nodemailer";
 import { jobs, memberAccounts, memberJobAlertDeliveries, memberJobAlertEvents } from "../../drizzle/schema";
 import { getDb } from "../db";
+import { jobMatchesPositions, parseStoredList, splitStoredCategories, type AlertJobFields } from "./alert-preferences";
 
 type Job = typeof jobs.$inferSelect;
 type MemberAlertPreferences = { alertCategories: string | null; alertLocations: string | null };
@@ -13,18 +14,12 @@ const BATCH_SIZE = 12;
 const EVENT_BATCH_SIZE = 12;
 const RETRY_DELAYS_MS = [60_000, 5 * 60_000, 20 * 60_000, 60 * 60_000, 6 * 60 * 60_000];
 
-function selectedValues(raw: string | null): string[] {
-  try {
-    const value = JSON.parse(raw ?? "[]");
-    return Array.isArray(value) ? [...new Set(value.filter((item): item is string => typeof item === "string").map(item => item.trim()).filter(Boolean))].slice(0, 30) : [];
-  } catch { return []; }
-}
-
-export function jobMatchesAlertPreferences(job: Pick<Job, "category" | "location">, preferences: MemberAlertPreferences) {
-  const categories = selectedValues(preferences.alertCategories);
-  const locations = selectedValues(preferences.alertLocations);
-  if (!categories.length && !locations.length) return false;
+export function jobMatchesAlertPreferences(job: AlertJobFields, preferences: MemberAlertPreferences) {
+  const { categories, positions } = splitStoredCategories(preferences.alertCategories);
+  const locations = parseStoredList(preferences.alertLocations);
+  if (!categories.length && !positions.length && !locations.length) return false;
   if (categories.length && (!job.category || !categories.some(value => value.toLocaleLowerCase() === job.category!.trim().toLocaleLowerCase()))) return false;
+  if (positions.length && !jobMatchesPositions(job, positions)) return false;
   if (locations.length && (!job.location || !locations.some(value => job.location!.toLocaleLowerCase().includes(value.toLocaleLowerCase())))) return false;
   return true;
 }

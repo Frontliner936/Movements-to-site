@@ -1627,3 +1627,24 @@ button, a, input, select, textarea { max-width:100%; }
 @media (max-width: 640px) {
   .member-alert-help { font-size: 0.76rem !important; }
 }
+
+/* Member alert preferences: closed-by-default pickers so long lists only take space when opened */
+.member-pref-groups{display:flex;flex-direction:column;gap:8px}
+.member-pref-group{border:1px solid #e2e8e0;background:#fffefa}
+.member-pref-group summary{display:flex;align-items:center;gap:10px;min-height:42px;padding:9px 12px;cursor:pointer;list-style:none}
+.member-pref-group summary::-webkit-details-marker{display:none}
+.member-pref-group summary:focus-visible{outline:2px solid #74a185;outline-offset:-2px}
+.member-pref-title{flex:0 0 auto;font-size:11px;font-weight:700;color:#3f5a4b}
+.member-pref-summary{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px;color:#8a978e}
+.member-pref-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#eaf2e9;color:#246148;font-size:9px;font-weight:700}
+.member-pref-chevron{flex:0 0 auto;color:#738279;transition:transform .15s ease}
+.member-pref-group[open] .member-pref-chevron{transform:rotate(180deg)}
+.member-pref-group[open] summary{border-bottom:1px solid #edf0eb}
+.member-pref-body{display:flex;flex-direction:column;gap:8px;padding:10px 12px 12px}
+.member-pref-scroll{max-height:200px;overflow-y:auto;padding-right:4px}
+.member-pref-search,.member-pref-add input{width:100%;min-width:0;min-height:34px;padding:0 10px;border:1px solid #d9e1d6;background:#fff;font-size:11px;color:#203b31}
+.member-pref-add{display:flex;gap:6px}
+.member-pref-add .secondary-button{display:inline-flex;align-items:center;gap:4px;min-height:34px;flex:0 0 auto}
+.member-pref-help{font-size:9px;color:#97a198}
+.member-pref-problem{font-size:9px;color:#a33a2c}
+.member-pref-body .member-chip svg{vertical-align:-1px}

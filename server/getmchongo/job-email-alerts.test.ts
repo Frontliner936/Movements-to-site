@@ -16,6 +16,14 @@ describe("jobMatchesAlertPreferences", () => {
     expect(jobMatchesAlertPreferences(job, { alertCategories: "[]", alertLocations: '["ARUSHA"]' })).toBe(true);
   });
 
+  it("matches a tracked position or department by job title or category", () => {
+    const job = { title: "Registered Nurse", category: "Healthcare", location: "Mwanza" };
+    expect(jobMatchesAlertPreferences(job, { alertCategories: '["position:nurse"]', alertLocations: "[]" })).toBe(true);
+    expect(jobMatchesAlertPreferences(job, { alertCategories: '["position:Accountant"]', alertLocations: "[]" })).toBe(false);
+    expect(jobMatchesAlertPreferences(job, { alertCategories: '["position:Nurse"]', alertLocations: '["Dodoma"]' })).toBe(false);
+    expect(jobMatchesAlertPreferences(job, { alertCategories: '["Healthcare","position:Nurse"]', alertLocations: '["Mwanza"]' })).toBe(true);
+  });
+
   it("does not send when no usable alert filters are saved", () => {
     const job = { category: "Finance", location: "Mwanza" };
     expect(jobMatchesAlertPreferences(job, { alertCategories: null, alertLocations: null })).toBe(false);
