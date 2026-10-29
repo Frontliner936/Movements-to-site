@@ -2188,3 +2188,22 @@ button, a, input, select, textarea { max-width:100%; }
  .home-top-band .hero-wrap { gap:16px; }
  .home-top-band .hero-art.hero-photo-card { height:clamp(220px,62vw,290px); min-height:220px; }
 }
+
+
+/* Compact dropdown menu positioned directly below the Get Mchongo brand */
+.brand-menu-stack { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px; height: 100%; position: relative; flex: none; }
+.brand-menu-stack > .brand { line-height: 1; }
+.site-menu-wrap { position: relative; z-index: 80; margin-left: 2px; }
+.site-menu-toggle { display: inline-flex; align-items: center; gap: 7px; padding: 4px 8px; border: 1px solid #dce5dc; border-radius: 7px; background: #fffefa; color: #17664f; font-size: 11px; font-weight: 700; cursor: pointer; }
+.site-menu-toggle:hover { background: #edf4ed; border-color: #b7d0be; }
+.site-menu-dropdown { position: absolute; left: 0; top: calc(100% + 9px); display: flex; flex-direction: column; width: 230px; padding: 7px; border: 1px solid #e0e6dc; border-radius: 12px; background: #fffefa; box-shadow: 0 18px 42px rgba(20,48,35,.16); }
+.site-menu-dropdown a { display: block; padding: 11px 12px; border-radius: 7px; color: #263c31; font-size: 13px; font-weight: 600; }
+.site-menu-dropdown a:hover, .site-menu-dropdown a:focus-visible { background: #edf4ed; color: #12664f; }
+@media (max-width: 760px) {
+  .site-header { height: 90px; }
+  .header-inner { width: calc(100% - 32px); }
+  .brand-menu-stack { gap: 2px; }
+  .brand-mark { width: 34px; height: 34px; }
+  .brand-wordmark { font-size: 15px; }
+  .site-menu-toggle { font-size: 10px; padding: 3px 7px; }
+}
