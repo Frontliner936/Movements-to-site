@@ -9,10 +9,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { announcementKinds, api, recordHomeView, recordWhatsAppChannelClick, type Announcement, type Job } from "@/lib/api";
 
 const INITIAL_JOB_COUNT = 9;
-const heroPhotos = [
-  { src: "/images/tanzania-career-applicant.webp", alt: "A Tanzanian job seeker preparing an application." },
-  { src: "/images/tanzania-career-team.webp", alt: "Tanzanian colleagues sharing ideas in a modern workplace." },
-];
+const heroPhoto = { src: "/images/homepage-hero-woman.webp", alt: "A young woman with braided hair holding notebooks outdoors on a university campus." };
 
 export default function Home() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -27,7 +24,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [memberSignedIn, setMemberSignedIn] = useState(false);
   const [remoteJobsCount, setRemoteJobsCount] = useState<number | null>(null);
-  const [heroPhotoIndex, setHeroPhotoIndex] = useState(0);
+  
 
   useEffect(() => { recordHomeView(); }, []);
 
@@ -103,15 +100,7 @@ export default function Home() {
             <a href="#opportunities" className="hero-cta">Explore opportunities <ArrowDownRight size={17} /></a>
           </div>
           <figure className="hero-art hero-photo-card">
-            <div className={`hero-photo-slides${heroPhotoIndex === heroPhotos.length ? " hero-photo-slides-resetting" : ""}`} aria-label="Rotating photos of Tanzanian and East African professionals" style={{ transform: `translateX(-${heroPhotoIndex * (100 / (heroPhotos.length + 1))}%)` }} onTransitionEnd={() => { if (heroPhotoIndex === heroPhotos.length) setHeroPhotoIndex(0); }}>
-              {[...heroPhotos, heroPhotos[0]].map((photo, index) => <div className={`hero-photo-slide${index === heroPhotoIndex ? " hero-photo-slide-current" : ""}`} key={`${photo.src}-${index}`}><img src={photo.src} alt={index === heroPhotoIndex ? photo.alt : ""} aria-hidden={index !== heroPhotoIndex} /></div>)}
-            </div>
-            <div className="hero-photo-shade" aria-hidden="true" />
-            <button className="hero-carousel-arrow hero-carousel-prev" type="button" aria-label="Previous photo" onClick={() => setHeroPhotoIndex(index => index === 0 ? heroPhotos.length - 1 : index - 1)}><ChevronDown size={20} /></button>
-            <button className="hero-carousel-arrow hero-carousel-next" type="button" aria-label="Next photo" onClick={() => setHeroPhotoIndex(index => index === 0 ? 1 : 0)}><ChevronDown size={20} /></button>
-            <div className="hero-carousel-dots" role="group" aria-label="Choose a photo">
-              {heroPhotos.map((photo, index) => <button key={photo.src} type="button" aria-label={`Show photo ${index + 1}`} aria-pressed={heroPhotoIndex === index} className={heroPhotoIndex === index ? "is-active" : ""} onClick={() => setHeroPhotoIndex(index)} />)}
-            </div>
+            <img className="hero-single-photo" src={heroPhoto.src} alt={heroPhoto.alt} />
           </figure>
         </section>
 
