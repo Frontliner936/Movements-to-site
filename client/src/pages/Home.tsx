@@ -9,7 +9,7 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { announcementKinds, api, recordHomeView, recordWhatsAppChannelClick, type Announcement, type Job } from "@/lib/api";
 
 const INITIAL_JOB_COUNT = 9;
-const heroPhoto = { src: "/images/homepage-hero-woman.webp", alt: "A young woman with braided hair holding notebooks outdoors on a university campus." };
+const heroPhoto = { src: "/images/tanzania-career-hero.webp", alt: "A young woman with braided hair holding notebooks outdoors on a university campus." };
 
 export default function Home() {
   const [jobs, setJobs] = useState<Job[]>([]);
