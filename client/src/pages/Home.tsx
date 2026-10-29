@@ -165,7 +165,7 @@ export default function Home() {
           ) : null}
         </section>
 
-        <section className="how-section" id="how-it-works"><div className="how-number">02 / THE MCHONGO WAY</div><div className="how-copy"><h2>Real opportunities.<br /><em>Original application links.</em></h2><p>Get Mchongo brings opportunities together in one clear place. When a role catches your eye, you go straight to the original application — no extra hoops.</p><a href="#opportunities" className="text-link">Browse the board <ArrowRight size={15} /></a></div><div className="how-photo-frame how-text-panel"><span className="eyebrow">YOUR NEXT MOVE</span><strong>Find. Save. Apply.</strong><span>One clear next step.</span></div></section>
+
       </main>
 
       <SiteFooter />
