@@ -2086,3 +2086,64 @@ button, a, input, select, textarea { max-width:100%; }
   border-color: #12664f;
   color: #fffefa;
 }
+
+
+/* Home hero: slim, wide photographic banner to balance the removed headline. */
+.home-page-header {
+  background: linear-gradient(110deg, #080d0b 0%, #0b2b20 58%, #07513d 100%);
+  border-bottom-color: rgba(255,255,255,.12);
+}
+.home-page-header .main-nav a,
+.home-page-header .header-actions a { color: #f8f7ee; }
+.home-page-header .header-actions .header-submit-link,
+.home-page-header .header-actions .member-nav-signup { color: #111a15; }
+.home-top-band { background: linear-gradient(110deg, #f8f8ef 0%, #edf4e9 100%); }
+.home-top-band .hero-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-height: 0;
+  padding: 24px 0 34px;
+}
+.home-top-band .hero-art.hero-photo-card {
+  order: 0;
+  width: 100%;
+  min-height: 0;
+  height: clamp(112px, 15vw, 176px);
+  margin: 0;
+  border-radius: 4px 58px 4px 4px;
+  box-shadow: 0 12px 28px rgba(29,67,51,.09);
+}
+.home-top-band .hero-photo-card::before { width: 110px; height: 110px; top: 12px; right: 18px; }
+.home-top-band .hero-photo-orbit { top: 18px; right: 40px; width: 88px; }
+.home-top-band .hero-photo-sun { top: 39px; right: 72px; width: 24px; height: 24px; box-shadow: 0 0 0 7px rgba(242,201,109,.2); }
+.home-top-band .hero-photo-topline { top: 12px; left: 15px; padding: 7px 10px; font-size: 7px; }
+.home-top-band .hero-photo-note { left: 15px; bottom: 13px; padding: 8px 11px; }
+.home-top-band .hero-photo-note strong { font-size: 13px; }
+.home-top-band .hero-photo-note small { font-size: 7px; }
+.home-top-band .hero-photo-caption { right: 18px; bottom: 17px; font-size: 7px; }
+.home-top-band .hero-photo-route { display: none; }
+.home-top-band .hero-photo-secondary { right: 12%; bottom: 14px; width: 82px; height: 68px; padding: 4px; }
+.home-top-band .hero-photo-secondary span { display: none; }
+.home-top-band .hero-copy {
+  order: 1;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 0 0 0 4.5%;
+}
+.home-top-band .hero-copy .whatsapp-channel-link { margin: 0; }
+.home-top-band .hero-copy .hero-cta { margin: 0; }
+@media (max-width: 680px) {
+  .home-top-band .hero-wrap { width: calc(100% - 28px); gap: 16px; padding: 18px 0 25px; }
+  .home-top-band .hero-art.hero-photo-card { height: 118px; border-radius: 4px 34px 4px 4px; }
+  .home-top-band .hero-photo-card::before { width: 78px; height: 78px; top: 10px; right: 8px; }
+  .home-top-band .hero-photo-orbit { top: 16px; right: 18px; width: 58px; }
+  .home-top-band .hero-photo-sun { top: 31px; right: 40px; width: 18px; height: 18px; }
+  .home-top-band .hero-photo-secondary { display: none; }
+  .home-top-band .hero-photo-note { left: 9px; bottom: 8px; padding: 6px 8px; }
+  .home-top-band .hero-photo-note strong { font-size: 11px; }
+  .home-top-band .hero-photo-caption { right: 10px; bottom: 12px; font-size: 6px; }
+  .home-top-band .hero-copy { padding-left: 1px; gap: 16px; flex-wrap: wrap; }
+}
