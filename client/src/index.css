@@ -1900,3 +1900,97 @@ button, a, input, select, textarea { max-width:100%; }
     transition: none;
   }
 }
+
+
+/* Visible black navigation treatment: dark pill container, white labels, and gold active accents. */
+.site-header.home-page-header {
+  border-bottom: 4px solid #111411;
+}
+.home-page-header .home-pill-navbar {
+  background: #111411;
+  border: 1px solid #111411;
+  box-shadow: 0 8px 0 rgba(17, 20, 17, .10), 0 12px 28px rgba(17, 20, 17, .20);
+}
+.home-page-header .home-pill-navbar .main-nav a,
+.home-page-header .home-pill-navbar .header-actions > a {
+  color: #fffefa;
+  border-color: transparent;
+  background: transparent;
+}
+.home-page-header .home-pill-navbar .main-nav a:hover,
+.home-page-header .home-pill-navbar .main-nav a:focus-visible,
+.home-page-header .home-pill-navbar .header-actions > a:hover,
+.home-page-header .home-pill-navbar .header-actions > a:focus-visible {
+  background: #292e2a;
+  border-color: #525a53;
+  color: #fffefa;
+}
+.home-page-header .home-pill-navbar .header-actions > .remote-jobs-nav-link {
+  background: #f2c96d;
+  border-color: #f2c96d;
+  color: #111411;
+}
+.home-page-header .home-pill-navbar .header-actions > .header-submit-link {
+  background: #fffefa;
+  border-color: #fffefa;
+  color: #111411;
+}
+.home-page-header .home-pill-navbar .header-actions > .header-submit-link:hover {
+  background: #e8ece7;
+  border-color: #e8ece7;
+  color: #111411;
+}
+
+/* Keep the dark navigation graphic consistent after the page scrolls. */
+.home-page-header.is-scrolled .home-pill-navbar {
+  background: #111411;
+  border-color: #111411;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .24);
+}
+.home-page-header.is-scrolled .home-pill-navbar .main-nav a,
+.home-page-header.is-scrolled .home-pill-navbar .header-actions > a {
+  background: transparent;
+  border-color: transparent;
+  color: #fffefa;
+}
+.home-page-header.is-scrolled .home-pill-navbar .main-nav a:hover,
+.home-page-header.is-scrolled .home-pill-navbar .main-nav a:focus-visible,
+.home-page-header.is-scrolled .home-pill-navbar .header-actions > a:hover,
+.home-page-header.is-scrolled .home-pill-navbar .header-actions > a:focus-visible {
+  background: #292e2a;
+  border-color: #525a53;
+  color: #fffefa;
+}
+.home-page-header.is-scrolled .home-pill-navbar .header-actions > .remote-jobs-nav-link {
+  background: #f2c96d;
+  border-color: #f2c96d;
+  color: #111411;
+}
+.home-page-header.is-scrolled .home-pill-navbar .header-actions > .header-submit-link,
+.home-page-header.is-scrolled .home-pill-navbar .header-actions > .header-submit-link:hover {
+  background: #fffefa;
+  border-color: #fffefa;
+  color: #111411;
+}
+
+/* A small black brand tile ties the logo into the navigation palette. */
+.site-header.home-page-header .brand-mark {
+  color: #f2c96d;
+  background: #111411;
+  border: 1px solid #111411;
+  border-radius: 8px;
+  padding: 5px;
+  box-sizing: content-box;
+}
+.site-header.home-page-header .brand-wordmark {
+  color: #111411;
+}
+.site-header.home-page-header.is-scrolled .brand-wordmark {
+  color: #fffefa;
+}
+@media (max-width: 680px) {
+  .home-page-header .home-pill-navbar {
+    border-radius: 18px;
+    box-shadow: 0 5px 0 rgba(17, 20, 17, .10), 0 8px 20px rgba(17, 20, 17, .16);
+  }
+}
