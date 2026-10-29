@@ -69,12 +69,12 @@ export default function JobDetail() {
               {job.responsibilities && <section className="detail-section"><span className="eyebrow muted-eyebrow">THE WORK</span><h2>Responsibilities</h2><RichJobText text={job.responsibilities} forceList="ordered" /></section>}
               {job.qualifications && <section className="detail-section"><span className="eyebrow muted-eyebrow">WHAT YOU'LL NEED</span><h2>Qualifications & requirements</h2><RichJobText text={job.qualifications} forceList="ordered" /></section>}
             </>}
+            {job.howToApply && <section className="detail-section"><span className="eyebrow muted-eyebrow">NEXT STEP</span><h2>How to apply</h2><RichJobText text={job.howToApply} /></section>}
             {job.applicationUrl && <aside className="apply-card detail-apply-card">
               <span className="eyebrow muted-eyebrow">CLICK TO APPLY</span>
               <a className="primary-button apply-button" href={job.applicationUrl} target="_blank" rel="noopener noreferrer">APPLY <ExternalLink size={16} /></a>
               <span className="sr-only" aria-live="polite">{notice}</span>
             </aside>}
-            {job.howToApply && <section className="detail-section"><span className="eyebrow muted-eyebrow">NEXT STEP</span><h2>How to apply</h2><RichJobText text={job.howToApply} /></section>}
             {job.sourceUrl && job.sourceUrl !== job.applicationUrl && <a className="source-link" href={job.sourceUrl} target="_blank" rel="noreferrer">View original source page <ExternalLink size={14} /></a>}
           </div>
         </div>
