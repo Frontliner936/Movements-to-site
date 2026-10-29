@@ -99,9 +99,7 @@ export default function Home() {
             </a>
             <a href="#opportunities" className="hero-cta">Explore opportunities <ArrowDownRight size={17} /></a>
           </div>
-          <figure className="hero-art hero-photo-card">
-            <img className="hero-single-photo" src={heroPhoto.src} alt={heroPhoto.alt} />
-          </figure>
+
         </section>
 
         {announcements.length > 0 && (
