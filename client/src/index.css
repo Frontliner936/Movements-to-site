@@ -2147,3 +2147,30 @@ button, a, input, select, textarea { max-width:100%; }
   .home-top-band .hero-photo-caption { right: 10px; bottom: 12px; font-size: 6px; }
   .home-top-band .hero-copy { padding-left: 1px; gap: 16px; flex-wrap: wrap; }
 }
+
+
+/* Homepage hero: slim, taller two-photo carousel with clear framing. */
+.home-top-band .hero-wrap { grid-template-columns: minmax(0, .58fr) minmax(0, 1fr); gap: 3.5%; align-items: center; }
+.home-top-band .hero-art.hero-photo-card { height: clamp(250px, 27vw, 340px); min-height: 250px; border-radius: 8px 42px 8px 8px; }
+.home-top-band .hero-photo-slides { width: 300%; }
+.home-top-band .hero-photo-slide { flex-basis: 33.333333%; width: 33.333333%; }
+.home-top-band .hero-photo-slide img { object-position: center 42%; transform: none; }
+.home-top-band .hero-photo-slide-current img { animation: none; }
+.home-top-band .hero-photo-card::before, .home-top-band .hero-photo-card::after { display: none; }
+.home-top-band .hero-photo-shade { background: linear-gradient(0deg,rgba(10,25,20,.18),transparent 40%); }
+.hero-carousel-arrow { position:absolute; top:50%; z-index:4; transform:translateY(-50%); width:40px; height:40px; display:grid; place-items:center; border:0; border-radius:50%; color:white; background:rgba(8,15,12,.72); cursor:pointer; }
+.hero-carousel-arrow svg { width:20px; height:20px; }
+.hero-carousel-prev { left:16px; }
+.hero-carousel-prev svg { transform:rotate(90deg); }
+.hero-carousel-next { right:16px; }
+.hero-carousel-next svg { transform:rotate(-90deg); }
+.hero-carousel-dots { position:absolute; z-index:4; left:50%; bottom:15px; transform:translateX(-50%); display:flex; gap:9px; align-items:center; }
+.hero-carousel-dots button { width:9px; height:9px; padding:0; border:1.5px solid white; border-radius:50%; background:transparent; cursor:pointer; }
+.hero-carousel-dots button.is-active { background:#f2c96d; border-color:#f2c96d; }
+@media (max-width: 680px) {
+  .home-top-band .hero-wrap { gap:16px; }
+  .home-top-band .hero-art.hero-photo-card { height:clamp(220px, 62vw, 290px); min-height:220px; border-radius:6px 30px 6px 6px; }
+  .hero-carousel-arrow { width:34px; height:34px; }
+  .hero-carousel-prev { left:10px; }
+  .hero-carousel-next { right:10px; }
+}
