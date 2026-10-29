@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDownRight, ArrowRight, BriefcaseBusiness, ChevronDown, Search, Sparkles } from "lucide-react";
+import { ArrowDownRight, ArrowRight, BriefcaseBusiness, ChevronDown, Search, Sparkles, Menu, X } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa6";
 import { Brand } from "@/components/Brand";
 import { EmptyBoardIllustration } from "@/components/EditorialVisuals";
@@ -24,6 +24,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [memberSignedIn, setMemberSignedIn] = useState(false);
   const [remoteJobsCount, setRemoteJobsCount] = useState<number | null>(null);
+  const [siteMenuOpen, setSiteMenuOpen] = useState(false);
   
 
   useEffect(() => { recordHomeView(); }, []);
@@ -86,7 +87,7 @@ export default function Home() {
   return (
     <div className="site-shell">
       <header className="site-header home-page-header">
-        <div className="header-inner"><Brand /><div className="home-pill-navbar"><nav className="main-nav" aria-label="Main navigation"><a className="nav-current" href="#opportunities">Opportunities</a></nav><div className="header-actions"><div className="remote-jobs-nav-group"><a className="remote-jobs-nav-link" href="/remote-jobs">View Remote Jobs <ArrowRight size={14} /></a>{remoteJobsCount !== null && <span className="remote-jobs-nav-count" role="status" aria-label={`${remoteJobsCount} remote ${remoteJobsCount === 1 ? "job" : "jobs"} available`} title={`${remoteJobsCount} remote ${remoteJobsCount === 1 ? "job" : "jobs"} available`}>{remoteJobsCount}</span>}</div><a className="header-submit-link" href="/submit">Post a job <ArrowRight size={14} /></a><a className="header-contact-link" href="/about-us">About us</a><a className="member-nav-login" href={memberSignedIn ? "/dashboard" : "/login"}>{memberSignedIn ? "My dashboard" : "Sign in"}</a>{!memberSignedIn && <a className="member-nav-signup" href="/signup">Join</a>}</div></div></div>
+        <div className="header-inner"><div className="brand-menu-stack"><Brand /><div className="site-menu-wrap"><button className="site-menu-toggle" type="button" aria-expanded={siteMenuOpen} aria-controls="site-menu-dropdown" onClick={() => setSiteMenuOpen(open => !open)}><span>{siteMenuOpen ? "Close menu" : "Menu"}</span>{siteMenuOpen ? <X size={16} /> : <Menu size={16} />}</button>{siteMenuOpen && <nav className="site-menu-dropdown" id="site-menu-dropdown" aria-label="Website menu"><a href="#opportunities" onClick={() => setSiteMenuOpen(false)}>Browse opportunities</a><a href="/remote-jobs" onClick={() => setSiteMenuOpen(false)}>Remote jobs</a><a href="/announcements" onClick={() => setSiteMenuOpen(false)}>Latest announcements</a><a href="/submit" onClick={() => setSiteMenuOpen(false)}>Post a job</a><a href="/about-us" onClick={() => setSiteMenuOpen(false)}>About Get Mchongo</a><a href={memberSignedIn ? "/dashboard" : "/login"} onClick={() => setSiteMenuOpen(false)}>{memberSignedIn ? "My dashboard" : "Sign in"}</a><a href="/signup" onClick={() => setSiteMenuOpen(false)}>Create an account</a></nav>}</div></div><div className="home-pill-navbar"><nav className="main-nav" aria-label="Main navigation"><a className="nav-current" href="#opportunities">Opportunities</a></nav><div className="header-actions"><div className="remote-jobs-nav-group"><a className="remote-jobs-nav-link" href="/remote-jobs">View Remote Jobs <ArrowRight size={14} /></a>{remoteJobsCount !== null && <span className="remote-jobs-nav-count" role="status" aria-label={`${remoteJobsCount} remote ${remoteJobsCount === 1 ? "job" : "jobs"} available`} title={`${remoteJobsCount} remote ${remoteJobsCount === 1 ? "job" : "jobs"} available`}>{remoteJobsCount}</span>}</div><a className="header-submit-link" href="/submit">Post a job <ArrowRight size={14} /></a><a className="header-contact-link" href="/about-us">About us</a><a className="member-nav-login" href={memberSignedIn ? "/dashboard" : "/login"}>{memberSignedIn ? "My dashboard" : "Sign in"}</a>{!memberSignedIn && <a className="member-nav-signup" href="/signup">Join</a>}</div></div></div>
       </header>
 
       <main>
