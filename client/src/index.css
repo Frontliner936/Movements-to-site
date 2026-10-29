@@ -1994,3 +1994,95 @@ button, a, input, select, textarea { max-width:100%; }
     box-shadow: 0 5px 0 rgba(17, 20, 17, .10), 0 8px 20px rgba(17, 20, 17, .16);
   }
 }
+
+
+/* Refine the header: restore the original logo and button styling, and apply the gradient to the large green header itself. */
+.site-header.home-page-header {
+  background: linear-gradient(115deg, #111411 0%, #173a32 42%, #214739 76%, #2d5945 100%);
+  border-bottom: 4px solid #111411;
+  box-shadow: 0 7px 22px rgba(13, 25, 19, .22);
+}
+
+/* Restore the original Get Mchongo brand mark and wordmark treatment. */
+.site-header.home-page-header .brand-mark {
+  color: var(--green);
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+.site-header.home-page-header .brand-wordmark,
+.site-header.home-page-header.is-scrolled .brand-wordmark {
+  color: #fffdf5;
+}
+
+/* Keep the navigation container light so the individual buttons return to their familiar green/gold styles. */
+.home-page-header .home-pill-navbar {
+  background: rgba(255, 253, 247, .97);
+  border: 1px solid rgba(255, 255, 255, .78);
+  box-shadow: 0 8px 26px rgba(5, 25, 17, .18), inset 0 1px 0 rgba(255, 255, 255, .8);
+}
+.home-page-header .home-pill-navbar .main-nav a,
+.home-page-header .home-pill-navbar .header-actions > a {
+  color: #194c3a;
+  border-color: transparent;
+  background: transparent;
+}
+.home-page-header .home-pill-navbar .main-nav a:hover,
+.home-page-header .home-pill-navbar .main-nav a:focus-visible,
+.home-page-header .home-pill-navbar .header-actions > a:hover,
+.home-page-header .home-pill-navbar .header-actions > a:focus-visible {
+  background: #e9f3ed;
+  border-color: #d4e5d8;
+  color: #0c4b3a;
+}
+.home-page-header .home-pill-navbar .header-actions > .remote-jobs-nav-link {
+  background: #fff4d7;
+  border-color: #f0d58e;
+  color: #654814;
+}
+.home-page-header .home-pill-navbar .header-actions > .header-submit-link {
+  background: #12664f;
+  border-color: #12664f;
+  color: #fffefa;
+}
+.home-page-header .home-pill-navbar .header-actions > .header-submit-link:hover {
+  background: #0c4b3a;
+  border-color: #0c4b3a;
+  color: #fffefa;
+}
+
+/* Keep those same familiar button styles when the header is in its scrolled state. */
+.home-page-header.is-scrolled {
+  background: linear-gradient(115deg, #111411 0%, #173a32 42%, #214739 100%);
+}
+.home-page-header.is-scrolled .home-pill-navbar {
+  background: rgba(255, 253, 247, .97);
+  border-color: rgba(255, 255, 255, .78);
+  box-shadow: 0 8px 26px rgba(5, 25, 17, .18), inset 0 1px 0 rgba(255, 255, 255, .8);
+}
+.home-page-header.is-scrolled .home-pill-navbar .main-nav a,
+.home-page-header.is-scrolled .home-pill-navbar .header-actions > a {
+  background: transparent;
+  border-color: transparent;
+  color: #194c3a;
+}
+.home-page-header.is-scrolled .home-pill-navbar .main-nav a:hover,
+.home-page-header.is-scrolled .home-pill-navbar .main-nav a:focus-visible,
+.home-page-header.is-scrolled .home-pill-navbar .header-actions > a:hover,
+.home-page-header.is-scrolled .home-pill-navbar .header-actions > a:focus-visible {
+  background: #e9f3ed;
+  border-color: #d4e5d8;
+  color: #0c4b3a;
+}
+.home-page-header.is-scrolled .home-pill-navbar .header-actions > .remote-jobs-nav-link {
+  background: #fff4d7;
+  border-color: #f0d58e;
+  color: #654814;
+}
+.home-page-header.is-scrolled .home-pill-navbar .header-actions > .header-submit-link,
+.home-page-header.is-scrolled .home-pill-navbar .header-actions > .header-submit-link:hover {
+  background: #12664f;
+  border-color: #12664f;
+  color: #fffefa;
+}
