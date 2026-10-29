@@ -12,9 +12,6 @@ const INITIAL_JOB_COUNT = 9;
 const heroPhotos = [
   { src: "/images/tanzania-career-applicant.webp", alt: "A Tanzanian job seeker preparing an application." },
   { src: "/images/tanzania-career-team.webp", alt: "Tanzanian colleagues sharing ideas in a modern workplace." },
-  { src: "/images/tanzania-career-colleagues.webp", alt: "East African professionals sharing ideas in a Dar es Salaam office." },
-  { src: "/images/tanzania-career-hero.webp", alt: "Tanzanian professionals collaborating around a laptop in a bright Dar es Salaam office." },
-  { src: "/images/tanzania-hero-detail.webp", alt: "A Tanzanian woman professional working at her desk in Dar es Salaam." },
 ];
 
 export default function Home() {
@@ -110,16 +107,11 @@ export default function Home() {
               {[...heroPhotos, heroPhotos[0]].map((photo, index) => <div className={`hero-photo-slide${index === heroPhotoIndex ? " hero-photo-slide-current" : ""}`} key={`${photo.src}-${index}`}><img src={photo.src} alt={index === heroPhotoIndex ? photo.alt : ""} aria-hidden={index !== heroPhotoIndex} /></div>)}
             </div>
             <div className="hero-photo-shade" aria-hidden="true" />
-            <div className="hero-photo-secondary">
-              <img src="/images/tanzania-hero-detail.webp" alt="Tanzanian woman professional working at her desk in Dar es Salaam." loading="eager" />
-              <span>MOVE WITH PURPOSE</span>
+            <button className="hero-carousel-arrow hero-carousel-prev" type="button" aria-label="Previous photo" onClick={() => setHeroPhotoIndex(index => index === 0 ? heroPhotos.length - 1 : index - 1)}><ChevronDown size={20} /></button>
+            <button className="hero-carousel-arrow hero-carousel-next" type="button" aria-label="Next photo" onClick={() => setHeroPhotoIndex(index => index === 0 ? 1 : 0)}><ChevronDown size={20} /></button>
+            <div className="hero-carousel-dots" role="group" aria-label="Choose a photo">
+              {heroPhotos.map((photo, index) => <button key={photo.src} type="button" aria-label={`Show photo ${index + 1}`} aria-pressed={heroPhotoIndex === index} className={heroPhotoIndex === index ? "is-active" : ""} onClick={() => setHeroPhotoIndex(index)} />)}
             </div>
-            <div className="hero-photo-orbit" aria-hidden="true" />
-            <div className="hero-photo-sun" aria-hidden="true" />
-            <div className="hero-photo-topline"><span className="hero-photo-live" /> MADE FOR TANZANIA</div>
-            <div className="hero-photo-route" aria-hidden="true"><svg viewBox="0 0 220 120"><path d="M4 106c48 0 67-51 113-54 36-3 45 20 82-36" /></svg></div>
-            <div className="hero-photo-note"><span className="hero-note-star"><Sparkles size={16} /></span><span><strong>Make your next move.</strong><small>Find. Save. Apply.</small></span></div>
-            <figcaption className="hero-photo-caption">YOUR NEXT CHAPTER <ArrowRight size={13} /></figcaption>
           </figure>
         </section>
 
