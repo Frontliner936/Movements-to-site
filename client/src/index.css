@@ -2207,3 +2207,9 @@ button, a, input, select, textarea { max-width:100%; }
   .brand-wordmark { font-size: 15px; }
   .site-menu-toggle { width: 56px; height: 42px; }
 }
+
+/* Keep the menu independent of the top navigation bar, just beneath it. */
+.standalone-site-menu { position: relative; z-index: 90; width: min(1320px, calc(100% - 48px)); margin: 12px auto 0; }
+.standalone-site-menu .site-menu-toggle { width: 58px; height: 44px; }
+.standalone-site-menu .site-menu-dropdown { top: calc(100% + 8px); }
+@media (max-width: 760px) { .standalone-site-menu { width: calc(100% - 32px); margin-top: 10px; } .standalone-site-menu .site-menu-toggle { width: 58px; height: 44px; } }
