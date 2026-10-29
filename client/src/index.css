@@ -1648,3 +1648,58 @@ button, a, input, select, textarea { max-width:100%; }
 .member-pref-help{font-size:9px;color:#97a198}
 .member-pref-problem{font-size:9px;color:#a33a2c}
 .member-pref-body .member-chip svg{vertical-align:-1px}
+
+
+/* Selective charcoal accents to balance the existing green-and-gold palette. */
+:root {
+  --accent-black: #151816;
+  --accent-charcoal: #292e2a;
+}
+
+/* A slim black edge gives the job search bar more definition without darkening the page. */
+.search-panel {
+  border-top: 3px solid var(--accent-black);
+}
+
+/* Make the main search action a strong black feature; green remains the site's primary brand color. */
+.search-button {
+  background: var(--accent-black);
+  border-color: var(--accent-black);
+  color: #fffefa;
+}
+.search-button:hover {
+  background: var(--accent-charcoal);
+  border-color: var(--accent-charcoal);
+}
+
+/* Add a restrained dark detail to the hero illustration and its orbit lines. */
+.hero-art {
+  background: linear-gradient(135deg, #e7efe7 0%, #e4ece4 72%, #d8e4d9 100%);
+}
+.hero-art::before,
+.hero-art::after {
+  border-color: rgba(21, 24, 22, .13);
+}
+.hero-orbit {
+  border-color: rgba(21, 24, 22, .18);
+}
+.hero-art-caption {
+  color: var(--accent-black);
+}
+.hero-art-note .note-dot {
+  background: var(--accent-black);
+}
+
+/* A crisp dark underline adds contrast to the otherwise soft green navigation. */
+.site-header.home-page-header {
+  border-bottom: 3px solid var(--accent-black);
+}
+.site-header.home-page-header.is-scrolled {
+  border-bottom-color: #f2c96d;
+}
+
+/* Keep keyboard focus clear against the new dark accents. */
+.search-button:focus-visible {
+  outline-color: #d4b15b;
+  outline-offset: 3px;
+}
