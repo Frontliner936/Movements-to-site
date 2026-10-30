@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, ArrowRight, BriefcaseBusiness, Wifi } from "lucide-react";
+import { ArrowLeft, ArrowRight, BriefcaseBusiness, Wifi, LogOut } from "lucide-react";
 import { Brand } from "@/components/Brand";
 import { JobCard } from "@/components/JobCard";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -11,9 +11,21 @@ export default function RemoteJobs() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [memberSignedIn, setMemberSignedIn] = useState(false);
   const socialRemoteJobs = jobs.filter(job => job.isSocialPost);
   const regularRemoteJobs = jobs.filter(job => !job.isSocialPost);
   const totalRemoteJobs = jobs.length;
+
+  useEffect(() => {
+    let active = true;
+    api<{ authenticated: boolean }>("/api/gm/member/session").then(result => { if (active) setMemberSignedIn(result.authenticated); }).catch(() => { if (active) setMemberSignedIn(false); });
+    return () => { active = false; };
+  }, []);
+
+  async function signOutMember() {
+    await api("/api/gm/member/logout", { method: "POST", body: "{}" }).catch(() => undefined);
+    setMemberSignedIn(false);
+  }
 
   const loadJobs = () => api<JobsResponse>("/api/gm/jobs?remote=true").then(data => setJobs(data.jobs));
   useEffect(() => {
@@ -27,7 +39,7 @@ export default function RemoteJobs() {
 
   return <div className="site-shell">
     <header className="site-header remote-jobs-header">
-      <div className="header-inner"><Brand /><div className="header-actions"><a className="header-submit-link" href="/submit">Post a job <ArrowRight size={14} /></a><a className="remote-jobs-home-link" href="/"><ArrowLeft size={14} />Home</a></div></div>
+      <div className="header-inner"><Brand /><div className="header-actions"><a className="header-submit-link" href="/submit">Post a job <ArrowRight size={14} /></a>{memberSignedIn && <button className="member-nav-login" type="button" onClick={() => void signOutMember()}><LogOut size={14} /> Sign out</button>}<a className="remote-jobs-home-link" href="/"><ArrowLeft size={14} />Home</a></div></div>
     </header>
     <main className="opportunities-section remote-jobs-page" aria-labelledby="remote-jobs-title">
       <div className="remote-jobs-hero"><span className="remote-jobs-hero-icon"><Wifi size={23} /></span><span className="eyebrow muted-eyebrow">WORK FROM ANYWHERE</span><h1 id="remote-jobs-title">Remote jobs<span className="heading-period">.</span></h1><p>Find flexible opportunities you can explore from anywhere. Browse clear job listings or social media adverts, then open any opportunity for full details.</p></div>
