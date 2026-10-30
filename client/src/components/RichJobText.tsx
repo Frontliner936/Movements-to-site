@@ -135,15 +135,15 @@ export function RawSocialPostText({ text, headline = "", className = "", organiz
       safety: "IMPORTANT NOTICE",
       other: "ADDITIONAL INFORMATION",
     };
-    const sections: Record<string, { heading: string; lines: string[] }[]> = Object.fromEntries(order.map(key => [key, []]));
+    const sections: Record<string, { key: string; heading: string; lines: string[] }[]> = Object.fromEntries(order.map(key => [key, []]));
     let current: { key: string; heading: string; lines: string[] } | null = null;
     const classify = (heading: string) => {
       const value = heading.toLocaleLowerCase();
       if (/about.*(company|organisation|organization|clipboard)|company overview/.test(value)) return "about";
       if (/position summary|job summary|role overview|about the (role|job)|^overview$/.test(value)) return "summary";
-      if (/what you.?ll do|responsibilit|duties|key tasks|your role/.test(value)) return "duties";
+      if (/responsibilit|duties|what you.?ll do|key tasks|key accountabilities|your role|your tasks/.test(value)) return "duties";
       if (/what we offer|benefits|perks|compensation|salary|^pay$/.test(value)) return "benefits";
-      if (/requirements|qualifications|what you.?ll need|eligibility|who we.?re looking for/.test(value)) return "requirements";
+      if (/requirements|qualifications|what you.?ll need|eligibility|who we.?re looking for|candidate profile|about you|you should have|you will bring|skills and experience|education and experience|experience and skills|knowledge and skills/.test(value)) return "requirements";
       if (/opportunity highlights|key highlights|job highlights/.test(value)) return "highlights";
       if (/hiring process|recruitment process/.test(value)) return "process";
       if (/how to apply|application|apply now|mode of application/.test(value)) return "application";
@@ -152,7 +152,7 @@ export function RawSocialPostText({ text, headline = "", className = "", organiz
       return "other";
     };
     const pushCurrent = () => {
-      if (current && current.lines.length) sections[current.key].push({ heading: current.heading, lines: current.lines });
+      if (current && current.lines.length) sections[current.key].push({ key: current.key, heading: current.heading, lines: current.lines });
     };
     lines.forEach((raw, index) => {
       const value = raw.trim();
@@ -179,7 +179,7 @@ export function RawSocialPostText({ text, headline = "", className = "", organiz
         <h3 className="social-post-section-heading">{section.heading}</h3>
         {section.lines.map((line, lineIndex) => {
           const item = line.match(socialPostListPrefix);
-          const shouldNumber = true;
+          const shouldNumber = section.key === "duties" || section.key === "requirements";
           if (item || shouldNumber) {
             itemNumber += 1;
             return <div className="social-post-list-line" key={`item-${sectionIndex}-${lineIndex}`}><span className="social-post-list-marker" aria-hidden="true">{itemNumber}.</span><span>{linkify(item ? item[2] : line, `organized-${sectionIndex}-${lineIndex}`)}</span></div>;
