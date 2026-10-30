@@ -88,15 +88,15 @@ function parseBlocks(text: string, forceList: boolean | "ordered" = false): Bloc
   return blocks;
 }
 
-export default function RichJobText({ text, className = "", forceList = false }: { text: string; className?: string; forceList?: boolean | "ordered" }) {
+export default function RichJobText({ text, className = "", forceList = false, emailHref }: { text: string; className?: string; forceList?: boolean | "ordered"; emailHref?: (email: string) => string }) {
   const blocks = parseBlocks(text, forceList);
   if (!blocks.length) return null;
   return <div className={`job-rich-text ${className}`.trim()}>
     {blocks.map((block, blockIndex) => block.kind === "paragraph"
-      ? <p key={`p-${blockIndex}`}>{block.lines.map((line, lineIndex) => <span key={`line-${blockIndex}-${lineIndex}`}>{lineIndex > 0 && <br />}{linkify(line, `p-${blockIndex}-${lineIndex}`)}</span>)}</p>
+      ? <p key={`p-${blockIndex}`}>{block.lines.map((line, lineIndex) => <span key={`line-${blockIndex}-${lineIndex}`}>{lineIndex > 0 && <br />}{linkify(line, `p-${blockIndex}-${lineIndex}`, emailHref)}</span>)}</p>
       : block.ordered
-        ? <ol key={`ol-${blockIndex}`}>{block.items.map((item, itemIndex) => <li key={`ol-${blockIndex}-${itemIndex}`}>{linkify(item, `ol-${blockIndex}-${itemIndex}`)}</li>)}</ol>
-        : <ul key={`ul-${blockIndex}`}>{block.items.map((item, itemIndex) => <li key={`ul-${blockIndex}-${itemIndex}`}>{linkify(item, `ul-${blockIndex}-${itemIndex}`)}</li>)}</ul>)}
+        ? <ol key={`ol-${blockIndex}`}>{block.items.map((item, itemIndex) => <li key={`ol-${blockIndex}-${itemIndex}`}>{linkify(item, `ol-${blockIndex}-${itemIndex}`, emailHref)}</li>)}</ol>
+        : <ul key={`ul-${blockIndex}`}>{block.items.map((item, itemIndex) => <li key={`ul-${blockIndex}-${itemIndex}`}>{linkify(item, `ul-${blockIndex}-${itemIndex}`, emailHref)}</li>)}</ul>)}
   </div>;
 }
 
@@ -113,7 +113,7 @@ function isSocialPostHeading(line: string) {
   return letters.length >= 4 && letters.length <= 75 && !/[.!?]$/u.test(value) && /^(?:about\s+\S|overview|what\s+you|who\s+we|hiring\s+process|important\s+note|quick\s+note|work\s+schedule|compensation|requirements?|qualifications?)/iu.test(value);
 }
 
-export function RawSocialPostText({ text, headline = "", className = "", organized = false }: { text: string; headline?: string; className?: string; organized?: boolean }) {
+export function RawSocialPostText({ text, headline = "", className = "", organized = false, emailHref }: { text: string; headline?: string; className?: string; organized?: boolean; emailHref?: (email: string) => string }) {
   const lines = text.replace(/\r\n?/g, "\n").split("\n");
   const firstContentIndex = lines.findIndex(line => line.trim());
   const headlineKey = headline.trim().replace(/\s+/g, " ").toLocaleLowerCase();
@@ -182,7 +182,7 @@ export function RawSocialPostText({ text, headline = "", className = "", organiz
           const shouldNumber = section.key === "duties" || section.key === "requirements";
           if (item || shouldNumber) {
             itemNumber += 1;
-            return <div className="social-post-list-line" key={`item-${sectionIndex}-${lineIndex}`}><span className="social-post-list-marker" aria-hidden="true">{itemNumber}.</span><span>{linkify(item ? item[2] : line, `organized-${sectionIndex}-${lineIndex}`)}</span></div>;
+            return <div className="social-post-list-line" key={`item-${sectionIndex}-${lineIndex}`}><span className="social-post-list-marker" aria-hidden="true">{itemNumber}.</span><span>{linkify(item ? item[2] : line, `organized-${sectionIndex}-${lineIndex}`, emailHref)}</span></div>;
           }
           itemNumber = 0;
           return <p className="social-post-paragraph" key={`paragraph-${sectionIndex}-${lineIndex}`}>{linkify(item ? item[2] : line, `organized-${sectionIndex}-${lineIndex}`)}</p>;
@@ -197,7 +197,7 @@ export function RawSocialPostText({ text, headline = "", className = "", organiz
     const value = line.trim();
     if (!value) { listNumber = 0; return <div className="social-post-space" aria-hidden="true" key={`raw-space-${index}`} />; }
     if (index === firstContentIndex && !showLead) return null;
-    if (index === firstContentIndex) { listNumber = 0; return <p className="social-post-lead" key={`raw-line-${index}`}>{linkify(value, `raw-${index}`)}</p>; }
+    if (index === firstContentIndex) { listNumber = 0; return <p className="social-post-lead" key={`raw-line-${index}`}>{linkify(value, `raw-${index}`, emailHref)}</p>; }
     if (isSocialPostHeading(value)) { listNumber = 0; return <h3 className="social-post-section-heading" key={`raw-line-${index}`}>{linkify(value, `raw-${index}`)}</h3>; }
     const listItem = value.match(socialPostListPrefix);
     if (listItem) { listNumber += 1; return <div className="social-post-list-line" key={`raw-line-${index}`}><span className="social-post-list-marker" aria-hidden="true">{listNumber}.</span><span>{linkify(listItem[2], `raw-${index}`)}</span></div>; }
