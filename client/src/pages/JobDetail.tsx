@@ -87,7 +87,7 @@ export default function JobDetail() {
       "Location: " + (applicant.location || "Not provided in my profile"), "",
       "Kind regards,", applicant.fullName,
     ].join("\n");
-    return "mailto:" + email + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+    return "https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(email) + "&su=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
   }
   async function toggle(kind: "like" | "save") {
     if (!job || busy) return;
@@ -113,12 +113,12 @@ export default function JobDetail() {
         <div className="detail-layout">
           <div className="detail-content">
             {(job.companyDescription || job.companyWebsiteUrl || job.companyHref) && <section className="detail-section"><span className="eyebrow muted-eyebrow">ABOUT THE ORGANISATION</span><h2>{job.companyName || "Company profile"}</h2>{job.companyDescription && <RichJobText text={job.companyDescription} />}{job.companyWebsiteUrl && <a href={job.companyWebsiteUrl} target="_blank" rel="noreferrer" className="text-link"><Globe2 size={14} />Official company website <ArrowUpRight size={14} /></a>}{job.companyHref && <Link href={job.companyHref} className="text-link">View company profile <ArrowUpRight size={14} /></Link>}</section>}
-            {job.isSocialPost ? job.description && <section className="social-post-detail"><div className="social-post-kicker"><span>ORIGINAL SOCIAL ADVERT</span><i>Shared as provided</i></div>{job.imageUrl && <HideBrokenImage className="social-post-detail-image" src={job.imageUrl} alt="Image attached to this social media advert" loading="lazy" />}<RawSocialPostText text={job.description} headline={job.title} organized={job.isRemote} /></section> : <>
-              {job.description && <section className="detail-section"><span className="eyebrow muted-eyebrow">THE OPPORTUNITY</span><h2>About the role</h2>{job.isRemote ? <RawSocialPostText text={job.description} headline={job.title} organized /> : <RichJobText text={job.description} />}</section>}
-              {job.responsibilities && <section className="detail-section"><span className="eyebrow muted-eyebrow">THE WORK</span><h2>Responsibilities</h2><RichJobText text={job.responsibilities} forceList="ordered" /></section>}
-              {job.qualifications && <section className="detail-section"><span className="eyebrow muted-eyebrow">WHAT YOU'LL NEED</span><h2>Qualifications & requirements</h2><RichJobText text={job.qualifications} forceList="ordered" /></section>}
+            {job.isSocialPost ? job.description && <section className="social-post-detail"><div className="social-post-kicker"><span>ORIGINAL SOCIAL ADVERT</span><i>Shared as provided</i></div>{job.imageUrl && <HideBrokenImage className="social-post-detail-image" src={job.imageUrl} alt="Image attached to this social media advert" loading="lazy" />}<RawSocialPostText text={job.description} headline={job.title} organized={job.isRemote} emailHref={applicationMailto} /></section> : <>
+              {job.description && <section className="detail-section"><span className="eyebrow muted-eyebrow">THE OPPORTUNITY</span><h2>About the role</h2>{job.isRemote ? <RawSocialPostText text={job.description} headline={job.title} organized emailHref={applicationMailto} /> : <RichJobText text={job.description} emailHref={applicationMailto} />}</section>}
+              {job.responsibilities && <section className="detail-section"><span className="eyebrow muted-eyebrow">THE WORK</span><h2>Responsibilities</h2><RichJobText text={job.responsibilities} forceList="ordered" emailHref={applicationMailto} /></section>}
+              {job.qualifications && <section className="detail-section"><span className="eyebrow muted-eyebrow">WHAT YOU'LL NEED</span><h2>Qualifications & requirements</h2><RichJobText text={job.qualifications} forceList="ordered" emailHref={applicationMailto} /></section>}
             </>}
-            {job.howToApply && <section className="detail-section"><span className="eyebrow muted-eyebrow">NEXT STEP</span><h2>How to apply</h2><RichJobText text={job.howToApply} forceList={hasMultipleApplicationSteps(job.howToApply) ? "ordered" : false} /></section>}
+            {job.howToApply && <section className="detail-section"><span className="eyebrow muted-eyebrow">NEXT STEP</span><h2>How to apply</h2><RichJobText text={job.howToApply} forceList={hasMultipleApplicationSteps(job.howToApply) ? "ordered" : false} emailHref={applicationMailto} /></section>}
             {job.applicationUrl && <aside className="apply-card detail-apply-card">
               <span className="eyebrow muted-eyebrow">CLICK TO APPLY</span>
               {getApplicationEmail(job.applicationUrl) ? memberLoading
