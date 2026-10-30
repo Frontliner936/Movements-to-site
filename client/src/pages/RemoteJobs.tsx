@@ -13,6 +13,7 @@ export default function RemoteJobs() {
   const [error, setError] = useState("");
   const socialRemoteJobs = jobs.filter(job => job.isSocialPost);
   const regularRemoteJobs = jobs.filter(job => !job.isSocialPost);
+  const totalRemoteJobs = jobs.length;
 
   const loadJobs = () => api<JobsResponse>("/api/gm/jobs?remote=true").then(data => setJobs(data.jobs));
   useEffect(() => {
@@ -29,13 +30,17 @@ export default function RemoteJobs() {
       <div className="header-inner"><Brand /><div className="header-actions"><a className="header-submit-link" href="/submit">Post a job <ArrowRight size={14} /></a><a className="remote-jobs-home-link" href="/"><ArrowLeft size={14} />Home</a></div></div>
     </header>
     <main className="opportunities-section remote-jobs-page" aria-labelledby="remote-jobs-title">
-      <div className="remote-jobs-hero"><span className="remote-jobs-hero-icon"><Wifi size={23} /></span><span className="eyebrow muted-eyebrow">WORK FROM ANYWHERE</span><h1 id="remote-jobs-title">Remote jobs<span className="heading-period">.</span></h1><p>Explore opportunities marked as remote. Review each listing and its original application details before applying.</p></div>
-      {!loading && !error && jobs.length > 0 && <div className="more-jobs-count"><BriefcaseBusiness size={16} /><span>{jobs.length} remote {jobs.length === 1 ? "opportunity" : "opportunities"}</span></div>}
+      <div className="remote-jobs-hero"><span className="remote-jobs-hero-icon"><Wifi size={23} /></span><span className="eyebrow muted-eyebrow">WORK FROM ANYWHERE</span><h1 id="remote-jobs-title">Remote jobs<span className="heading-period">.</span></h1><p>Find flexible opportunities you can explore from anywhere. Browse clear job listings or social media adverts, then open any opportunity for full details.</p></div>
+      {!loading && !error && totalRemoteJobs > 0 && <div className="remote-jobs-overview" aria-label="Remote opportunities summary">
+        <div className="remote-overview-stat"><strong>{totalRemoteJobs}</strong><span>Total remote opportunities</span></div>
+        <div className="remote-overview-stat"><strong>{regularRemoteJobs.length}</strong><span>Job listings</span></div>
+        <div className="remote-overview-stat"><strong>{socialRemoteJobs.length}</strong><span>Social media adverts</span></div>
+      </div>}
       {loading && <div className="loading-state"><span className="loading-dot" />Finding remote opportunities…</div>}
       {error && <div className="notice-card error-card"><strong>Remote jobs could not be loaded.</strong><p>{error}</p></div>}
       {!loading && !error && jobs.length > 0 && <div className="remote-job-groups">
-        {regularRemoteJobs.length > 0 && <section className="remote-job-group" aria-labelledby="standard-remote-jobs-title"><div className="form-section-heading"><span className="eyebrow muted-eyebrow">REMOTE OPPORTUNITIES</span><strong id="standard-remote-jobs-title">Remote job listings</strong></div><div className="jobs-feed">{regularRemoteJobs.map(job => <JobCard key={job.id} job={job} onChanged={() => { void loadJobs().catch(() => undefined); }} />)}</div></section>}
-        {socialRemoteJobs.length > 0 && <section className="remote-job-group" aria-labelledby="social-remote-jobs-title"><div className="form-section-heading"><span className="eyebrow muted-eyebrow">FROM SOCIAL MEDIA</span><strong id="social-remote-jobs-title">Remote social media adverts</strong></div><div className="jobs-feed">{socialRemoteJobs.map(job => <JobCard key={job.id} job={job} onChanged={() => { void loadJobs().catch(() => undefined); }} />)}</div></section>}
+        {regularRemoteJobs.length > 0 && <section className="remote-job-group" aria-labelledby="standard-remote-jobs-title"><div className="remote-group-heading"><div><span className="eyebrow muted-eyebrow">EXPLORE OPEN ROLES</span><h2 id="standard-remote-jobs-title">Remote job listings</h2><p>Structured opportunities with details to help you decide whether to apply.</p></div><span className="remote-group-count">{regularRemoteJobs.length} {regularRemoteJobs.length === 1 ? "listing" : "listings"}</span></div><div className="jobs-feed">{regularRemoteJobs.map(job => <JobCard key={job.id} job={job} onChanged={() => { void loadJobs().catch(() => undefined); }} />)}</div></section>}
+        {socialRemoteJobs.length > 0 && <section className="remote-job-group" aria-labelledby="social-remote-jobs-title"><div className="remote-group-heading"><div><span className="eyebrow muted-eyebrow">SHARED BY SOURCES</span><h2 id="social-remote-jobs-title">Remote social media adverts</h2><p>Original adverts shared from social platforms. Open one to read the complete message and source details.</p></div><span className="remote-group-count">{socialRemoteJobs.length} {socialRemoteJobs.length === 1 ? "advert" : "adverts"}</span></div><div className="jobs-feed">{socialRemoteJobs.map(job => <JobCard key={job.id} job={job} onChanged={() => { void loadJobs().catch(() => undefined); }} />)}</div></section>}
       </div>}
       {!loading && !error && jobs.length === 0 && <div className="more-jobs-empty"><span className="eyebrow muted-eyebrow">NEW POSSIBILITIES</span><h2>No remote listings just yet.</h2><p>Remote opportunities will appear here when the team publishes them. Check back soon.</p><a className="secondary-button" href="/"><ArrowLeft size={15} />Back to opportunities</a></div>}
     </main>
