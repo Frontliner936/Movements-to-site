@@ -23,8 +23,17 @@ export default function RemoteJobs() {
   }, []);
 
   async function signOutMember() {
-    await api("/api/gm/member/logout", { method: "POST", body: "{}" }).catch(() => undefined);
-    setMemberSignedIn(false);
+    try {
+      const result = await api<{ authenticated: boolean }>("/api/gm/member/logout", { method: "POST", body: "{}" });
+      if (result.authenticated === false) {
+        setMemberSignedIn(false);
+        window.location.assign("/");
+        return;
+      }
+      throw new Error("The sign-out request did not confirm that your session ended.");
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : "Could not sign out. Please try again.");
+    }
   }
 
   const loadJobs = () => api<JobsResponse>("/api/gm/jobs?remote=true").then(data => setJobs(data.jobs));
