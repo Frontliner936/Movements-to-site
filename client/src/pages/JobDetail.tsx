@@ -25,11 +25,31 @@ export default function JobDetail() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
+  const [memberLoading, setMemberLoading] = useState(true);
+  const [applicant, setApplicant] = useState<{ fullName: string; email: string; phoneNumber: string; location: string } | null>(null);
   const id = params?.id;
   const postedAt = job?.publishedAt ?? job?.createdAt ?? null;
   const postedLabel = formatPostedAgo(postedAt);
   const trackedJob = useRef<number | null>(null);
   useEffect(() => job ? applyJobPageMetadata(job) : undefined, [job]);
+  useEffect(() => {
+    let active = true;
+    async function loadApplicant() {
+      try {
+        const session = await api<{ authenticated: boolean; member: { displayName: string; email: string } | null }>("/api/gm/member/session");
+        if (!session.authenticated || !session.member) { if (active) setApplicant(null); return; }
+        let profile = { fullName: session.member.displayName, phoneNumber: "", location: "" };
+        try {
+          const result = await api<{ profile: { fullName: string; phoneNumber: string; location: string } }>("/api/gm/member/profile");
+          profile = { fullName: result.profile.fullName || session.member.displayName, phoneNumber: result.profile.phoneNumber || "", location: result.profile.location || "" };
+        } catch { /* Account email and display name remain available if the optional profile is incomplete. */ }
+        if (active) setApplicant({ ...profile, email: session.member.email });
+      } catch { if (active) setApplicant(null); }
+      finally { if (active) setMemberLoading(false); }
+    }
+    void loadApplicant();
+    return () => { active = false; };
+  }, []);
   useEffect(() => {
     if (!job || navigator.doNotTrack === "1" || trackedJob.current === job.id) return;
     trackedJob.current = job.id;
@@ -45,6 +65,30 @@ export default function JobDetail() {
   }
   useEffect(() => { void load(); }, [id]);
 
+  function getApplicationEmail(value: string | null | undefined) {
+    if (!value) return null;
+    const raw = value.trim();
+    if (/^mailto:/i.test(raw)) {
+      try { return new URL(raw).pathname.replace(/^\\/+/, ""); } catch { return raw.replace(/^mailto:/i, "").split(/[?;]/, 1)[0]; }
+    }
+    return /^[^\\s@<>]+@[^\\s@<>.]+(?:\\.[^\\s@<>.]+)*\\.[^\\s@<>.]{2,}$/.test(raw) ? raw : null;
+  }
+
+  function applicationMailto(email: string) {
+    if (!job || !applicant) return "#";
+    const subject = "Application for " + job.title + (job.companyName ? " - " + job.companyName : "");
+    const body = [
+      "Dear Hiring Team,", "",
+      "I am writing to apply for the " + job.title + " position" + (job.companyName ? " at " + job.companyName : "") + ". Please find my CV attached for your consideration.", "",
+      "Applicant details:",
+      "Full name: " + applicant.fullName,
+      "Email: " + applicant.email,
+      "Phone: " + (applicant.phoneNumber || "Not provided in my profile"),
+      "Location: " + (applicant.location || "Not provided in my profile"), "",
+      "Kind regards,", applicant.fullName,
+    ].join("\\n");
+    return "mailto:" + email + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+  }
   async function toggle(kind: "like" | "save") {
     if (!job || busy) return;
     setBusy(true); setNotice("");
@@ -77,7 +121,13 @@ export default function JobDetail() {
             {job.howToApply && <section className="detail-section"><span className="eyebrow muted-eyebrow">NEXT STEP</span><h2>How to apply</h2><RichJobText text={job.howToApply} forceList={hasMultipleApplicationSteps(job.howToApply) ? "ordered" : false} /></section>}
             {job.applicationUrl && <aside className="apply-card detail-apply-card">
               <span className="eyebrow muted-eyebrow">CLICK TO APPLY</span>
-              <a className="primary-button apply-button" href={job.applicationUrl} target="_blank" rel="noopener noreferrer">APPLY <ExternalLink size={16} /></a>
+              {getApplicationEmail(job.applicationUrl) ? memberLoading
+                ? <span className="secondary-button" aria-live="polite">Checking your account…</span>
+                : applicant
+                  ? <a className="primary-button apply-button" href={applicationMailto(getApplicationEmail(job.applicationUrl)!)}>EMAIL YOUR APPLICATION <ExternalLink size={16} /></a>
+                  : <Link className="primary-button apply-button" href={"/login?returnTo=" + encodeURIComponent("/jobs/" + job.id)}>SIGN IN TO APPLY BY EMAIL <ArrowUpRight size={16} /></Link>
+                : <a className="primary-button apply-button" href={job.applicationUrl} target="_blank" rel="noopener noreferrer">APPLY <ExternalLink size={16} /></a>}
+              {getApplicationEmail(job.applicationUrl) && applicant && <p className="apply-email-hint">Your account name, email and profile phone number will be added to the email. Attach your CV before sending.</p>}
               <span className="sr-only" aria-live="polite">{notice}</span>
             </aside>}
             {job.sourceUrl && job.sourceUrl !== job.applicationUrl && <a className="source-link" href={job.sourceUrl} target="_blank" rel="noreferrer">View original source page <ExternalLink size={14} /></a>}
