@@ -75,7 +75,8 @@ export default function JobDetail() {
   }
 
   function applicationMailto(email: string) {
-    if (!job || !applicant) return "#";
+    if (!job) return "#";
+    if (!applicant) return "/login?returnTo=" + encodeURIComponent("/jobs/" + job.id);
     const subject = "Application for " + job.title + (job.companyName ? " - " + job.companyName : "");
     const body = [
       "Dear Hiring Team,", "",
