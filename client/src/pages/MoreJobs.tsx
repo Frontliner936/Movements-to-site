@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, ArrowRight, BriefcaseBusiness } from "lucide-react";
+import { ArrowLeft, ArrowRight, BriefcaseBusiness, LogOut } from "lucide-react";
 import { Brand } from "@/components/Brand";
 import { JobCard } from "@/components/JobCard";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -25,6 +25,18 @@ export default function MoreJobs() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [memberSignedIn, setMemberSignedIn] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    api<{ authenticated: boolean }>("/api/gm/member/session").then(result => { if (active) setMemberSignedIn(result.authenticated); }).catch(() => { if (active) setMemberSignedIn(false); });
+    return () => { active = false; };
+  }, []);
+
+  async function signOutMember() {
+    await api("/api/gm/member/logout", { method: "POST", body: "{}" }).catch(() => undefined);
+    setMemberSignedIn(false);
+  }
 
   useEffect(() => {
     let active = true;
@@ -63,7 +75,7 @@ export default function MoreJobs() {
     <header className="site-header">
       <div className="header-inner">
         <Brand />
-        <div className="header-actions"><a className="header-submit-link" href="/submit">Post a job <ArrowRight size={14} /></a></div>
+        <div className="header-actions"><a className="header-submit-link" href="/submit">Post a job <ArrowRight size={14} /></a>{memberSignedIn && <button className="member-nav-login" type="button" onClick={() => void signOutMember()}><LogOut size={14} /> Sign out</button>}</div>
       </div>
     </header>
     <main className="opportunities-section more-jobs-page" aria-labelledby="more-jobs-title">
