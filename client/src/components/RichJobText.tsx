@@ -112,12 +112,78 @@ function isSocialPostHeading(line: string) {
   return letters.length >= 4 && letters.length <= 75 && value === value.toLocaleUpperCase() && !/[.!?]$/u.test(value);
 }
 
-export function RawSocialPostText({ text, headline = "", className = "" }: { text: string; headline?: string; className?: string }) {
-  const lines = text.replace(/\r\n?/g, "\n").split("\n");
+export function RawSocialPostText({ text, headline = "", className = "", organized = false }: { text: string; headline?: string; className?: string; organized?: boolean }) {
+  const lines = text.replace(/\\r\\n?/g, "\\n").split("\\n");
   const firstContentIndex = lines.findIndex(line => line.trim());
-  const headlineKey = headline.trim().replace(/\s+/g, " ").toLocaleLowerCase();
-  const firstLineKey = firstContentIndex >= 0 ? lines[firstContentIndex].trim().replace(/\s+/g, " ").toLocaleLowerCase() : "";
+  const headlineKey = headline.trim().replace(/\\s+/g, " ").toLocaleLowerCase();
+  const firstLineKey = firstContentIndex >= 0 ? lines[firstContentIndex].trim().replace(/\\s+/g, " ").toLocaleLowerCase() : "";
   const showLead = firstContentIndex >= 0 && firstLineKey !== headlineKey;
+
+  if (organized) {
+    const order = ["about", "summary", "duties", "benefits", "requirements", "highlights", "application", "safety", "other"];
+    const labels: Record<string, string> = {
+      about: "ABOUT THE COMPANY",
+      summary: "POSITION SUMMARY",
+      duties: "WHAT YOU'LL DO",
+      benefits: "WHAT WE OFFER",
+      requirements: "REQUIREMENTS",
+      highlights: "OPPORTUNITY HIGHLIGHTS",
+      application: "HOW TO APPLY",
+      safety: "IMPORTANT NOTICE",
+      other: "ADDITIONAL INFORMATION",
+    };
+    const sections: Record<string, { heading: string; lines: string[] }[]> = Object.fromEntries(order.map(key => [key, []]));
+    let current: { key: string; heading: string; lines: string[] } | null = null;
+    const classify = (heading: string) => {
+      const value = heading.toLocaleLowerCase();
+      if (/about.*(company|organisation|organization)|company overview/.test(value)) return "about";
+      if (/position summary|job summary|role overview|about the (role|job)/.test(value)) return "summary";
+      if (/what you.?ll do|responsibilit|duties|key tasks|your role/.test(value)) return "duties";
+      if (/what we offer|benefits|perks|compensation/.test(value)) return "benefits";
+      if (/requirements|qualifications|what you.?ll need|eligibility/.test(value)) return "requirements";
+      if (/opportunity highlights|key highlights|job highlights/.test(value)) return "highlights";
+      if (/how to apply|application|apply now|mode of application/.test(value)) return "application";
+      if (/important notice|safety|warning|scam/.test(value)) return "safety";
+      return "other";
+    };
+    const pushCurrent = () => {
+      if (current && current.lines.length) sections[current.key].push({ heading: current.heading, lines: current.lines });
+    };
+    lines.forEach((raw, index) => {
+      const value = raw.trim();
+      if (!value || (index === firstContentIndex && !showLead)) return;
+      if (index === firstContentIndex && showLead) {
+        current = { key: "summary", heading: "POSITION SUMMARY", lines: [value] };
+        return;
+      }
+      if (isSocialPostHeading(value)) {
+        pushCurrent();
+        const key = classify(value.replace(/:$/, ""));
+        current = { key, heading: labels[key] === "ADDITIONAL INFORMATION" ? value.replace(/:$/, "") : labels[key], lines: [] };
+        return;
+      }
+      if (!current) current = { key: "summary", heading: labels.summary, lines: [] };
+      current.lines.push(value);
+    });
+    pushCurrent();
+    const renderedSections = order.flatMap(key => sections[key]);
+    let itemNumber = 0;
+    return <div className={`raw-social-post-text ${className}`.trim()}>
+      {renderedSections.map((section, sectionIndex) => <section className="social-post-organized-section" key={`organized-${sectionIndex}`}>
+        <h3 className="social-post-section-heading">{section.heading}</h3>
+        {section.lines.map((line, lineIndex) => {
+          const item = line.match(socialPostListPrefix);
+          if (item) {
+            itemNumber += 1;
+            return <div className="social-post-list-line" key={`item-${sectionIndex}-${lineIndex}`}><span className="social-post-list-marker" aria-hidden="true">{itemNumber}.</span><span>{linkify(item[2], `organized-${sectionIndex}-${lineIndex}`)}</span></div>;
+          }
+          itemNumber = 0;
+          return <p className="social-post-paragraph" key={`paragraph-${sectionIndex}-${lineIndex}`}>{linkify(line, `organized-${sectionIndex}-${lineIndex}`)}</p>;
+        })}
+      </section>)}
+    </div>;
+  }
+
   let listNumber = 0;
   return <div className={`raw-social-post-text ${className}`.trim()}>{lines.map((line, index) => {
     const value = line.trim();
