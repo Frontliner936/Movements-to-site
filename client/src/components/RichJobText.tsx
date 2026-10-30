@@ -3,7 +3,7 @@ import React, { type ReactNode } from "react";
 const bulletPrefix = /^(?:[-*•▪‣]|\d+[.)])\s+/;
 const inlineLinkPattern = /https?:\/\/[^\s<>]+|www\.[^\s<>]+|[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}|\+?\d[\d().\s/-]{5,}\d/giu;
 
-function linkify(text: string, prefix: string): ReactNode[] {
+function linkify(text: string, prefix: string, emailHref?: (email: string) => string): ReactNode[] {
   const nodes: ReactNode[] = [];
   const pattern = new RegExp(inlineLinkPattern.source, inlineLinkPattern.flags);
   let cursor = 0;
@@ -20,7 +20,7 @@ function linkify(text: string, prefix: string): ReactNode[] {
     if (match.index > cursor) nodes.push(text.slice(cursor, match.index));
     const key = `${prefix}-link-${index++}`;
     if (/^[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}$/u.test(value)) {
-      nodes.push(<a key={key} href={`mailto:${value}`}>{value}</a>);
+      nodes.push(<a key={key} href={emailHref ? emailHref(value) : `mailto:${value}`}>{value}</a>);
     } else if (/^(?:https?:\/\/|www\.)/i.test(value)) {
       const href = value.startsWith("www.") ? `https://${value}` : value;
       nodes.push(<a key={key} href={href} target="_blank" rel="noopener noreferrer">{value}</a>);
