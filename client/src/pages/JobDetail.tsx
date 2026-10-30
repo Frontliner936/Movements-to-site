@@ -14,8 +14,8 @@ import { formatPostedAgo } from "@/lib/timeAgo";
 import { jobDeadlineLabel } from "@/lib/jobFormatting";
 
 function hasMultipleApplicationSteps(value: string) {
-  const lines = value.replace(/\\r\\n?/g, "\n").split("\n").map(line => line.trim()).filter(Boolean);
-  return lines.length > 1 && lines.every(line => /^(?:\\d+[.)]|[-*•▪‣])\s+/.test(line));
+  const lines = value.replace(/\r\n?/g, "\n").split("\n").map(line => line.trim()).filter(Boolean);
+  return lines.length > 1 && lines.every(line => /^(?:\d+[.)]|[-*•▪‣])\s+/.test(line));
 }
 
 export default function JobDetail() {
