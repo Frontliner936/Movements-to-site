@@ -113,7 +113,15 @@ function isSocialPostHeading(line: string) {
 }
 
 export function RawSocialPostText({ text, headline = "", className = "" }: { text: string; headline?: string; className?: string }) {
-  const lines = text.replace(/\r\n?/g, "\n").split("\n");
+  // Social adverts are often pasted as one long paragraph. Split recognisable
+  // information labels and numbered/bulleted items onto their own lines so
+  // visitors can scan the details without changing the original wording.
+  const arrangedText = text
+    .replace(/\\r\\n?/g, "\\n")
+    .replace(/[\\t ]+(?=(?:Job\\s*title|Position|Vacancy|Location|Deadline|Closing\\s*date|Qualifications?|Requirements?|Responsibilities|Duties|How\\s*to\\s*apply|Application(?:\\s+procedure)?|Mode\\s+of\\s+application|Salary|Benefits|Experience|Contact)\\s*:?)/giu, "\\n")
+    .replace(/[\\t ]+(?=\\d+[.)]\\s+)/gu, "\\n")
+    .replace(/[\\t ]+(?=[•▪‣*-]\\s+)/gu, "\\n");
+  const lines = arrangedText.split("\\n");
   const firstContentIndex = lines.findIndex(line => line.trim());
   const headlineKey = headline.trim().replace(/\s+/g, " ").toLocaleLowerCase();
   const firstLineKey = firstContentIndex >= 0 ? lines[firstContentIndex].trim().replace(/\s+/g, " ").toLocaleLowerCase() : "";
