@@ -86,7 +86,7 @@ export default function Home() {
     return () => { alive = false; };
   }, [query, category, location]);
 
-  const visibleJobs = useMemo(() => view === "saved" ? jobs.filter(job => job.saved) : jobs, [jobs, view]);
+  const visibleJobs = useMemo(() => (view === "saved" ? jobs.filter(job => job.saved) : jobs).filter(job => !job.isRemote), [jobs, view]);
   const displayedJobs = visibleJobs.slice(0, INITIAL_JOB_COUNT);
   const moreJobsUrl = useMemo(() => {
     const params = new URLSearchParams();
