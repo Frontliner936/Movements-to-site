@@ -178,7 +178,7 @@ export function RawSocialPostText({ text, headline = "", className = "", organiz
         <h3 className="social-post-section-heading">{section.heading}</h3>
         {section.lines.map((line, lineIndex) => {
           const item = line.match(socialPostListPrefix);
-          const shouldNumber = ["duties", "requirements", "process", "benefits", "highlights", "application", "other"].includes(section.key);
+          const shouldNumber = true;
           if (item || shouldNumber) {
             itemNumber += 1;
             return <div className="social-post-list-line" key={`item-${sectionIndex}-${lineIndex}`}><span className="social-post-list-marker" aria-hidden="true">{itemNumber}.</span><span>{linkify(item ? item[2] : line, `organized-${sectionIndex}-${lineIndex}`)}</span></div>;
