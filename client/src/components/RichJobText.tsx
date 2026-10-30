@@ -114,10 +114,10 @@ function isSocialPostHeading(line: string) {
 }
 
 export function RawSocialPostText({ text, headline = "", className = "", organized = false }: { text: string; headline?: string; className?: string; organized?: boolean }) {
-  const lines = text.replace(/\\r\\n?/g, "\\n").split("\\n");
+  const lines = text.replace(/\r\n?/g, "\n").split("\n");
   const firstContentIndex = lines.findIndex(line => line.trim());
-  const headlineKey = headline.trim().replace(/\\s+/g, " ").toLocaleLowerCase();
-  const firstLineKey = firstContentIndex >= 0 ? lines[firstContentIndex].trim().replace(/\\s+/g, " ").toLocaleLowerCase() : "";
+  const headlineKey = headline.trim().replace(/\s+/g, " ").toLocaleLowerCase();
+  const firstLineKey = firstContentIndex >= 0 ? lines[firstContentIndex].trim().replace(/\s+/g, " ").toLocaleLowerCase() : "";
   const showLead = firstContentIndex >= 0 && firstLineKey !== headlineKey;
 
   if (organized) {
