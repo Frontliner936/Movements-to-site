@@ -14,8 +14,8 @@ import { formatPostedAgo } from "@/lib/timeAgo";
 import { jobDeadlineLabel } from "@/lib/jobFormatting";
 
 function hasMultipleApplicationSteps(value: string) {
-  const lines = value.replace(/\\r\\n?/g, "\\n").split("\\n").map(line => line.trim()).filter(Boolean);
-  return lines.length > 1 && lines.every(line => /^(?:\\d+[.)]|[-*•▪‣])\\s+/.test(line));
+  const lines = value.replace(/\\r\\n?/g, "\n").split("\n").map(line => line.trim()).filter(Boolean);
+  return lines.length > 1 && lines.every(line => /^(?:\\d+[.)]|[-*•▪‣])\s+/.test(line));
 }
 
 export default function JobDetail() {
@@ -69,9 +69,9 @@ export default function JobDetail() {
     if (!value) return null;
     const raw = value.trim();
     if (/^mailto:/i.test(raw)) {
-      try { return new URL(raw).pathname.replace(/^\\/+/, ""); } catch { return raw.replace(/^mailto:/i, "").split(/[?;]/, 1)[0]; }
+      try { return new URL(raw).pathname.replace(/^\/+/, ""); } catch { return raw.replace(/^mailto:/i, "").split(/[?;]/, 1)[0]; }
     }
-    return /^[^\\s@<>]+@[^\\s@<>.]+(?:\\.[^\\s@<>.]+)*\\.[^\\s@<>.]{2,}$/.test(raw) ? raw : null;
+    return /^[^\s@<>]+@[^\s@<>.]+(?:\.[^\s@<>.]+)*\.[^\s@<>.]{2,}$/.test(raw) ? raw : null;
   }
 
   function applicationMailto(email: string) {
@@ -86,7 +86,7 @@ export default function JobDetail() {
       "Phone: " + (applicant.phoneNumber || "Not provided in my profile"),
       "Location: " + (applicant.location || "Not provided in my profile"), "",
       "Kind regards,", applicant.fullName,
-    ].join("\\n");
+    ].join("\n");
     return "mailto:" + email + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
   }
   async function toggle(kind: "like" | "save") {
