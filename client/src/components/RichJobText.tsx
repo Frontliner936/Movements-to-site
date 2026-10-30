@@ -172,9 +172,10 @@ export function RawSocialPostText({ text, headline = "", className = "", organiz
     });
     pushCurrent();
     const renderedSections = order.flatMap(key => sections[key]);
-    let itemNumber = 0;
     return <div className={`raw-social-post-text ${className}`.trim()}>
-      {renderedSections.map((section, sectionIndex) => <section className="social-post-organized-section" key={`organized-${sectionIndex}`}>
+      {renderedSections.map((section, sectionIndex) => {
+        let itemNumber = 0;
+        return <section className="social-post-organized-section" key={`organized-${sectionIndex}`}>
         <h3 className="social-post-section-heading">{section.heading}</h3>
         {section.lines.map((line, lineIndex) => {
           const item = line.match(socialPostListPrefix);
@@ -186,7 +187,8 @@ export function RawSocialPostText({ text, headline = "", className = "", organiz
           itemNumber = 0;
           return <p className="social-post-paragraph" key={`paragraph-${sectionIndex}-${lineIndex}`}>{linkify(item ? item[2] : line, `organized-${sectionIndex}-${lineIndex}`)}</p>;
         })}
-      </section>)}
+      </section>;
+      })}
     </div>;
   }
 
