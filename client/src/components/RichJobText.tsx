@@ -118,14 +118,16 @@ export function RawSocialPostText({ text, headline = "", className = "" }: { tex
   const headlineKey = headline.trim().replace(/\s+/g, " ").toLocaleLowerCase();
   const firstLineKey = firstContentIndex >= 0 ? lines[firstContentIndex].trim().replace(/\s+/g, " ").toLocaleLowerCase() : "";
   const showLead = firstContentIndex >= 0 && firstLineKey !== headlineKey;
+  let listNumber = 0;
   return <div className={`raw-social-post-text ${className}`.trim()}>{lines.map((line, index) => {
     const value = line.trim();
-    if (!value) return <div className="social-post-space" aria-hidden="true" key={`raw-space-${index}`} />;
+    if (!value) { listNumber = 0; return <div className="social-post-space" aria-hidden="true" key={`raw-space-${index}`} />; }
     if (index === firstContentIndex && !showLead) return null;
-    if (index === firstContentIndex) return <p className="social-post-lead" key={`raw-line-${index}`}>{linkify(value, `raw-${index}`)}</p>;
-    if (isSocialPostHeading(value)) return <h3 className="social-post-section-heading" key={`raw-line-${index}`}>{linkify(value, `raw-${index}`)}</h3>;
+    if (index === firstContentIndex) { listNumber = 0; return <p className="social-post-lead" key={`raw-line-${index}`}>{linkify(value, `raw-${index}`)}</p>; }
+    if (isSocialPostHeading(value)) { listNumber = 0; return <h3 className="social-post-section-heading" key={`raw-line-${index}`}>{linkify(value, `raw-${index}`)}</h3>; }
     const listItem = value.match(socialPostListPrefix);
-    if (listItem) return <div className="social-post-list-line" key={`raw-line-${index}`}><span className="social-post-list-marker" aria-hidden="true">{listItem[1]}</span><span>{linkify(listItem[2], `raw-${index}`)}</span></div>;
+    if (listItem) { listNumber += 1; return <div className="social-post-list-line" key={`raw-line-${index}`}><span className="social-post-list-marker" aria-hidden="true">{listNumber}.</span><span>{linkify(listItem[2], `raw-${index}`)}</span></div>; }
+    listNumber = 0;
     return <p className="social-post-paragraph" key={`raw-line-${index}`}>{linkify(value, `raw-${index}`)}</p>;
   })}</div>;
 }
