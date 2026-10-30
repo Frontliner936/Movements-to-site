@@ -100,8 +100,8 @@ export default function RichJobText({ text, className = "", forceList = false }:
   </div>;
 }
 
-const socialPostHeadingLabel = /^(?:job\s*title|position|vacancy|location|deadline|closing\s*date|qualifications?|requirements?|responsibilities|duties|how\s*to\s*apply|application(?:\s+procedure)?|mode\s+of\s+application|salary|benefits|experience|contact|about\s+(?:the\s+)?(?:role|job|company))\s*:?$/iu;
-const socialPostFieldHeading = /^(?:job\s*title|position|location|deadline|closing\s*date|qualifications?|requirements?|responsibilities|duties|how\s*to\s*apply|application(?:\s+procedure)?|mode\s+of\s+application|salary|benefits|experience|contact)\s*:/iu;
+const socialPostHeadingLabel = /^(?:job\s*details|job\s*title|position|vacancy|location|deadline|closing\s*date|employment\s*type|location\s*type|department|compensation|salary|pay|overview|about(?:\s+.+)?|position\s+overview|position\s+summary|job\s+summary|qualifications?|requirements?|who\s+we.?re\s+looking\s+for|responsibilities|duties|what\s+you.?ll\s+do|key\s+responsibilities|hiring\s+process|recruitment\s+process|how\s*to\s*apply|application(?:\s+procedure)?|mode\s+of\s+application|benefits|what\s+we\s+offer|experience|contact|work\s+schedule|schedule|important\s+note|quick\s+note\s+on\s+scammers|scam\s+warning|important\s+notice)\s*:?$/iu;
+const socialPostFieldHeading = /^(?:job\s*title|position|location|deadline|closing\s*date|employment\s*type|location\s*type|department|compensation|salary|pay|qualifications?|requirements?|responsibilities|duties|how\s*to\s*apply|application(?:\s+procedure)?|mode\s+of\s+application|benefits|experience|contact|work\s+schedule)\s*:/iu;
 const socialPostListPrefix = /^(\d+[.)]|[-*•▪‣])\s+(.*)$/u;
 
 function isSocialPostHeading(line: string) {
@@ -109,7 +109,8 @@ function isSocialPostHeading(line: string) {
   if (!value || value.length > 90 || socialPostListPrefix.test(value)) return false;
   if (socialPostHeadingLabel.test(value.replace(/\s*:\s*$/u, "")) || socialPostFieldHeading.test(value)) return true;
   const letters = value.replace(/[^\p{L}]/gu, "");
-  return letters.length >= 4 && letters.length <= 75 && value === value.toLocaleUpperCase() && !/[.!?]$/u.test(value);
+  if (letters.length >= 4 && letters.length <= 75 && value === value.toLocaleUpperCase() && !/[.!?]$/u.test(value)) return true;
+  return letters.length >= 4 && letters.length <= 75 && !/[.!?]$/u.test(value) && /^(?:about\s+\S|overview|what\s+you|who\s+we|hiring\s+process|important\s+note|quick\s+note|work\s+schedule|compensation|requirements?|qualifications?)/iu.test(value);
 }
 
 export function RawSocialPostText({ text, headline = "", className = "", organized = false }: { text: string; headline?: string; className?: string; organized?: boolean }) {
@@ -120,7 +121,7 @@ export function RawSocialPostText({ text, headline = "", className = "", organiz
   const showLead = firstContentIndex >= 0 && firstLineKey !== headlineKey;
 
   if (organized) {
-    const order = ["about", "summary", "duties", "benefits", "requirements", "highlights", "application", "safety", "other"];
+    const order = ["about", "summary", "benefits", "duties", "requirements", "process", "schedule", "highlights", "application", "safety", "other"];
     const labels: Record<string, string> = {
       about: "ABOUT THE COMPANY",
       summary: "POSITION SUMMARY",
@@ -128,6 +129,8 @@ export function RawSocialPostText({ text, headline = "", className = "", organiz
       benefits: "WHAT WE OFFER",
       requirements: "REQUIREMENTS",
       highlights: "OPPORTUNITY HIGHLIGHTS",
+      process: "HIRING PROCESS",
+      schedule: "WORK SCHEDULE",
       application: "HOW TO APPLY",
       safety: "IMPORTANT NOTICE",
       other: "ADDITIONAL INFORMATION",
@@ -136,14 +139,16 @@ export function RawSocialPostText({ text, headline = "", className = "", organiz
     let current: { key: string; heading: string; lines: string[] } | null = null;
     const classify = (heading: string) => {
       const value = heading.toLocaleLowerCase();
-      if (/about.*(company|organisation|organization)|company overview/.test(value)) return "about";
-      if (/position summary|job summary|role overview|about the (role|job)/.test(value)) return "summary";
+      if (/about.*(company|organisation|organization|clipboard)|company overview/.test(value)) return "about";
+      if (/position summary|job summary|role overview|about the (role|job)|^overview$/.test(value)) return "summary";
       if (/what you.?ll do|responsibilit|duties|key tasks|your role/.test(value)) return "duties";
-      if (/what we offer|benefits|perks|compensation/.test(value)) return "benefits";
-      if (/requirements|qualifications|what you.?ll need|eligibility/.test(value)) return "requirements";
+      if (/what we offer|benefits|perks|compensation|salary|^pay$/.test(value)) return "benefits";
+      if (/requirements|qualifications|what you.?ll need|eligibility|who we.?re looking for/.test(value)) return "requirements";
       if (/opportunity highlights|key highlights|job highlights/.test(value)) return "highlights";
+      if (/hiring process|recruitment process/.test(value)) return "process";
       if (/how to apply|application|apply now|mode of application/.test(value)) return "application";
-      if (/important notice|safety|warning|scam/.test(value)) return "safety";
+      if (/schedule|shift|working hours/.test(value)) return "schedule";
+      if (/important notice|safety|warning|scam|important note|quick note/.test(value)) return "safety";
       return "other";
     };
     const pushCurrent = () => {
@@ -173,12 +178,13 @@ export function RawSocialPostText({ text, headline = "", className = "", organiz
         <h3 className="social-post-section-heading">{section.heading}</h3>
         {section.lines.map((line, lineIndex) => {
           const item = line.match(socialPostListPrefix);
-          if (item) {
+          const shouldNumber = ["duties", "requirements", "process"].includes(section.key);
+          if (item || shouldNumber) {
             itemNumber += 1;
-            return <div className="social-post-list-line" key={`item-${sectionIndex}-${lineIndex}`}><span className="social-post-list-marker" aria-hidden="true">{itemNumber}.</span><span>{linkify(item[2], `organized-${sectionIndex}-${lineIndex}`)}</span></div>;
+            return <div className="social-post-list-line" key={`item-${sectionIndex}-${lineIndex}`}><span className="social-post-list-marker" aria-hidden="true">{itemNumber}.</span><span>{linkify(item ? item[2] : line, `organized-${sectionIndex}-${lineIndex}`)}</span></div>;
           }
           itemNumber = 0;
-          return <p className="social-post-paragraph" key={`paragraph-${sectionIndex}-${lineIndex}`}>{linkify(line, `organized-${sectionIndex}-${lineIndex}`)}</p>;
+          return <p className="social-post-paragraph" key={`paragraph-${sectionIndex}-${lineIndex}`}>{linkify(item ? item[2] : line, `organized-${sectionIndex}-${lineIndex}`)}</p>;
         })}
       </section>)}
     </div>;
