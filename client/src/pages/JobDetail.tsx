@@ -78,17 +78,37 @@ export default function JobDetail() {
     if (!job) return "#";
     if (!applicant) return "/login?returnTo=" + encodeURIComponent("/jobs/" + job.id);
     const subject = "Application for " + job.title + (job.companyName ? " - " + job.companyName : "");
+    const role = (job.title + " " + (job.category || "")).toLowerCase();
+    const skillGroups: [RegExp, string[]][] = [
+      [/account|finance|audit|cashier|bookkeep|payroll/, ["Numerical accuracy and attention to detail", "Record keeping and data entry", "Confidentiality and integrity", "Problem-solving"]],
+      [/sales|marketing|business development|retail/, ["Customer service and relationship building", "Communication and persuasion", "Product knowledge and sales support", "Target awareness and teamwork"]],
+      [/customer|client|front desk|reception|call cent|hospitality|waiter|hotel/, ["Customer care and active listening", "Clear verbal communication", "Complaint handling and problem-solving", "Patience and teamwork"]],
+      [/driver|transport|logistic|warehouse|storekeeper|supply chain/, ["Time management and reliability", "Route, stock or delivery coordination", "Safety awareness and responsibility", "Accurate record keeping"]],
+      [/teach|teacher|education|trainer|tutor/, ["Communication and presentation", "Planning and organisation", "Learner support and patience", "Assessment and record keeping"]],
+      [/engineer|technician|maintenance|electric|mechanic|ict|it support|software|developer/, ["Technical troubleshooting and problem-solving", "Attention to detail", "Safe and systematic work practices", "Team collaboration"]],
+      [/human resource|hr officer|recruit|administrat|office assistant|secretar/, ["Organisation and time management", "Professional communication", "Documentation and record keeping", "Confidentiality and teamwork"]],
+      [/nurse|clinical|medical|health|laboratory|pharmacy/, ["Careful and accurate work", "Communication and teamwork", "Following procedures and safety standards", "Confidentiality and attention to detail"]],
+      [/security|guard|safety|hse/, ["Observation and situational awareness", "Following procedures", "Clear reporting and communication", "Responsibility and calm decision-making"]],
+      [/clean|housekeep|production|quality control|manufactur/, ["Attention to detail and quality standards", "Following procedures consistently", "Time management and reliability", "Safety awareness and teamwork"]],
+    ];
+    const relevantSkills = skillGroups.find(([pattern]) => pattern.test(role))?.[1] || [
+      "Professional communication and teamwork",
+      "Time management and organisation",
+      "Attention to detail and problem-solving",
+      "Adaptability and willingness to learn",
+    ];
     const body = [
       "Dear Hiring Team,", "",
       "I am writing to apply for the " + job.title + " position" + (job.companyName ? " at " + job.companyName : "") + ". Please find my CV attached for your consideration.", "",
-      "Applicant details:",
       "Full name: " + applicant.fullName,
       "Email: " + applicant.email,
       "Phone: " + (applicant.phoneNumber || "Not provided in my profile"),
       "Location: " + (applicant.location || "Not provided in my profile"), "",
+      "Relevant skills:",
+      ...relevantSkills.map(skill => "- " + skill), "",
       "Kind regards,", applicant.fullName,
     ].join("\n");
-    return "https://mail.google.com/mail/?view=cm&fs=1&to=" + encodeURIComponent(email) + "&su=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+    return "mailto:" + encodeURIComponent(email) + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
   }
   async function toggle(kind: "like" | "save") {
     if (!job || busy) return;
