@@ -13,6 +13,11 @@ import { applyJobPageMetadata } from "@/lib/pageMetadata";
 import { formatPostedAgo } from "@/lib/timeAgo";
 import { jobDeadlineLabel } from "@/lib/jobFormatting";
 
+function hasMultipleApplicationSteps(value: string) {
+  const lines = value.replace(/\\r\\n?/g, "\\n").split("\\n").map(line => line.trim()).filter(Boolean);
+  return lines.length > 1 && lines.every(line => /^(?:\\d+[.)]|[-*•▪‣])\\s+/.test(line));
+}
+
 export default function JobDetail() {
   const [, params] = useRoute("/jobs/:id");
   const [job, setJob] = useState<Job | null>(null);
@@ -69,7 +74,7 @@ export default function JobDetail() {
               {job.responsibilities && <section className="detail-section"><span className="eyebrow muted-eyebrow">THE WORK</span><h2>Responsibilities</h2><RichJobText text={job.responsibilities} forceList="ordered" /></section>}
               {job.qualifications && <section className="detail-section"><span className="eyebrow muted-eyebrow">WHAT YOU'LL NEED</span><h2>Qualifications & requirements</h2><RichJobText text={job.qualifications} forceList="ordered" /></section>}
             </>}
-            {job.howToApply && <section className="detail-section"><span className="eyebrow muted-eyebrow">NEXT STEP</span><h2>How to apply</h2><RichJobText text={job.howToApply} /></section>}
+            {job.howToApply && <section className="detail-section"><span className="eyebrow muted-eyebrow">NEXT STEP</span><h2>How to apply</h2><RichJobText text={job.howToApply} forceList={hasMultipleApplicationSteps(job.howToApply) ? "ordered" : false} /></section>}
             {job.applicationUrl && <aside className="apply-card detail-apply-card">
               <span className="eyebrow muted-eyebrow">CLICK TO APPLY</span>
               <a className="primary-button apply-button" href={job.applicationUrl} target="_blank" rel="noopener noreferrer">APPLY <ExternalLink size={16} /></a>
