@@ -30,7 +30,12 @@ export default function MemberAuth() {
         const confirmation = result.message ?? "If an account can be created for that email, it is ready. Sign in to continue.";
         try { sessionStorage.setItem("gm-member-signup-notice", confirmation); } catch { /* confirmation also appears in current page state */ }
         setNotice(confirmation); setLocation("/login");
-      } else setLocation("/dashboard");
+      } else {
+        const params = new URLSearchParams(window.location.search);
+        const requestedReturn = params.get("returnTo") || "";
+        const returnTo = requestedReturn.startsWith("/") && !requestedReturn.startsWith("//") ? requestedReturn : "/dashboard";
+        setLocation(returnTo);
+      }
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Your request could not be completed.");
     } finally { setBusy(false); }
