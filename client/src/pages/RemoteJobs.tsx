@@ -11,6 +11,8 @@ export default function RemoteJobs() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const socialRemoteJobs = jobs.filter(job => job.isSocialPost);
+  const regularRemoteJobs = jobs.filter(job => !job.isSocialPost);
 
   const loadJobs = () => api<JobsResponse>("/api/gm/jobs?remote=true").then(data => setJobs(data.jobs));
   useEffect(() => {
@@ -31,7 +33,10 @@ export default function RemoteJobs() {
       {!loading && !error && jobs.length > 0 && <div className="more-jobs-count"><BriefcaseBusiness size={16} /><span>{jobs.length} remote {jobs.length === 1 ? "opportunity" : "opportunities"}</span></div>}
       {loading && <div className="loading-state"><span className="loading-dot" />Finding remote opportunities…</div>}
       {error && <div className="notice-card error-card"><strong>Remote jobs could not be loaded.</strong><p>{error}</p></div>}
-      {!loading && !error && jobs.length > 0 && <div className="jobs-feed">{jobs.map(job => <JobCard key={job.id} job={job} onChanged={() => { void loadJobs().catch(() => undefined); }} />)}</div>}
+      {!loading && !error && jobs.length > 0 && <div className="remote-job-groups">
+        {regularRemoteJobs.length > 0 && <section className="remote-job-group" aria-labelledby="standard-remote-jobs-title"><div className="form-section-heading"><span className="eyebrow muted-eyebrow">REMOTE OPPORTUNITIES</span><strong id="standard-remote-jobs-title">Remote job listings</strong></div><div className="jobs-feed">{regularRemoteJobs.map(job => <JobCard key={job.id} job={job} onChanged={() => { void loadJobs().catch(() => undefined); }} />)}</div></section>}
+        {socialRemoteJobs.length > 0 && <section className="remote-job-group" aria-labelledby="social-remote-jobs-title"><div className="form-section-heading"><span className="eyebrow muted-eyebrow">FROM SOCIAL MEDIA</span><strong id="social-remote-jobs-title">Remote social media adverts</strong></div><div className="jobs-feed">{socialRemoteJobs.map(job => <JobCard key={job.id} job={job} onChanged={() => { void loadJobs().catch(() => undefined); }} />)}</div></section>}
+      </div>}
       {!loading && !error && jobs.length === 0 && <div className="more-jobs-empty"><span className="eyebrow muted-eyebrow">NEW POSSIBILITIES</span><h2>No remote listings just yet.</h2><p>Remote opportunities will appear here when the team publishes them. Check back soon.</p><a className="secondary-button" href="/"><ArrowLeft size={15} />Back to opportunities</a></div>}
     </main>
     <SiteFooter />
