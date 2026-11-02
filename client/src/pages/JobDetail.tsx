@@ -14,28 +14,25 @@ import { formatPostedAgo } from "@/lib/timeAgo";
 import { jobDeadlineLabel } from "@/lib/jobFormatting";
 
 function applicationPositionTitle(value: string, companyName?: string | null) {
-  let title = value.replace(/\\s+/g, " ").trim();
+  let title = value.replace(/\s+/g, " ").trim();
 
-  // Remove common advert labels when they appear before the actual role.
-  title = title.replace(/^(?:(?:job|career|employment)\\s+)?(?:vacanc(?:y|ies)|opportunit(?:y|ies)|opening|recruitment)\\s*(?:at\\s+[^:|–—-]+)?\\s*[:|–—-]\\s*/i, "");
+  // Remove leading advert labels, keeping the role name.
+  title = title.replace(/^(?:(?:job|career|employment)\s+)?(?:vacanc(?:y|ies)|opportunit(?:y|ies)|opening|recruitment)\s*(?::|\||–|—|-)\s*/i, "");
 
-  // Remove the employer name and everything after it when included in the advert title.
+  // Remove an employer suffix without building a dynamic regular expression.
   if (companyName?.trim()) {
-    const escapedCompany = companyName.trim().replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\function applicationPositionTitle(value: string) {
-  return value
-    .replace(/\s*[,|–—-]\s*(?:job\s+)?vacanc(?:y|ies)\b.*$/i, "")
-    .replace(/\s*[,|–—-]\s*job\s+opportunit(?:y|ies)\b.*$/i, "")
-    .trim();
-}");
-    title = title.replace(new RegExp("(?:\\\\s*[,|–—-]\\\\s*|\\\\s+at\\\\s+)" + escapedCompany + "\\\\b.*$", "i"), "");
+    const companyIndex = title.toLowerCase().indexOf(companyName.trim().toLowerCase());
+    if (companyIndex > 0) {
+      const beforeCompany = title.slice(0, companyIndex).replace(/[\s,|–—-]+$/, "").trim();
+      if (beforeCompany) title = beforeCompany;
+    }
   }
 
-  // Strip advert wording and trailing publication/location details.
+  // Remove advert labels and common trailing publication details.
   title = title
-    .replace(/\\s*[,|–—-]\\s*(?:(?:job\\s+)?vacanc(?:y|ies)|job\\s+opportunit(?:y|ies)|career\\s+opportunit(?:y|ies)|now\\s+hiring)\\b.*$/i, "")
-    .replace(/\\s+(?:at|with)\\s+[^,|–—-]+(?:[,|–—-].*)?$/i, "")
-    .replace(/\\s*[,|–—-]\\s*(?:dar\\s+es\\s+salaam|arusha|dodoma|mwanza|kagera|tanzania|november|december|january|february|march|april|may|june|july|august|september|october|20\\d{2})\\b.*$/i, "")
-    .replace(/^[\\s:|–—-]+|[\\s:|–—-]+$/g, "")
+    .replace(/[\s,|–—-]+(?:(?:job\s+)?vacanc(?:y|ies)|job\s+opportunit(?:y|ies)|career\s+opportunit(?:y|ies)|now\s+hiring)\b.*$/i, "")
+    .replace(/[\s,|–—-]+(?:dar\s+es\s+salaam|arusha|dodoma|mwanza|kagera|tanzania|november|december|january|february|march|april|may|june|july|august|september|october|20\d{2})\b.*$/i, "")
+    .replace(/^[\s:|–—-]+|[\s:|–—-]+$/g, "")
     .trim();
 
   return title || value.trim();
