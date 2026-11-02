@@ -15,8 +15,8 @@ import { jobDeadlineLabel } from "@/lib/jobFormatting";
 
 function applicationPositionTitle(value: string) {
   return value
-    .replace(/\\s*[,|–—-]\\s*(?:job\\s+)?vacanc(?:y|ies)\\b.*$/i, "")
-    .replace(/\\s*[,|–—-]\\s*job\\s+opportunit(?:y|ies)\\b.*$/i, "")
+    .replace(/\s*[,|–—-]\s*(?:job\s+)?vacanc(?:y|ies)\b.*$/i, "")
+    .replace(/\s*[,|–—-]\s*job\s+opportunit(?:y|ies)\b.*$/i, "")
     .trim();
 }
 
@@ -84,7 +84,7 @@ export default function JobDetail() {
   function applicationMailto(email: string) {
     if (!job) return "#";
     if (!applicant) return "/login?returnTo=" + encodeURIComponent("/jobs/" + job.id);
-    const positionTitle = applicationPositionTitle(job.title);\n    const subject = "Application for the position of " + positionTitle;
+    const positionTitle = applicationPositionTitle(job.title);
     const role = (positionTitle + " " + (job.category || "")).toLowerCase();
     const skillGroups: [RegExp, string[]][] = [
       [/account|finance|audit|cashier|bookkeep|payroll/, ["numerical accuracy, attention to detail, record keeping, and confidentiality"]],
