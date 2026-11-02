@@ -13,6 +13,13 @@ import { applyJobPageMetadata } from "@/lib/pageMetadata";
 import { formatPostedAgo } from "@/lib/timeAgo";
 import { jobDeadlineLabel } from "@/lib/jobFormatting";
 
+function applicationPositionTitle(value: string) {
+  return value
+    .replace(/\\s*[,|–—-]\\s*(?:job\\s+)?vacanc(?:y|ies)\\b.*$/i, "")
+    .replace(/\\s*[,|–—-]\\s*job\\s+opportunit(?:y|ies)\\b.*$/i, "")
+    .trim();
+}
+
 function hasMultipleApplicationSteps(value: string) {
   const lines = value.replace(/\r\n?/g, "\n").split("\n").map(line => line.trim()).filter(Boolean);
   return lines.length > 1 && lines.every(line => /^(?:\d+[.)]|[-*•▪‣])\s+/.test(line));
@@ -77,8 +84,8 @@ export default function JobDetail() {
   function applicationMailto(email: string) {
     if (!job) return "#";
     if (!applicant) return "/login?returnTo=" + encodeURIComponent("/jobs/" + job.id);
-    const subject = "Application for the position of " + job.title;
-    const role = (job.title + " " + (job.category || "")).toLowerCase();
+    const positionTitle = applicationPositionTitle(job.title);\n    const subject = "Application for the position of " + positionTitle;
+    const role = (positionTitle + " " + (job.category || "")).toLowerCase();
     const skillGroups: [RegExp, string[]][] = [
       [/account|finance|audit|cashier|bookkeep|payroll/, ["numerical accuracy, attention to detail, record keeping, and confidentiality"]],
       [/sales|marketing|business development|retail/, ["customer service, communication, relationship building, and sales support"]],
@@ -94,7 +101,7 @@ export default function JobDetail() {
     const relevantSkills = skillGroups.find(([pattern]) => pattern.test(role))?.[1][0] || "professional communication, teamwork, time management, attention to detail, and problem-solving";
     const body = [
       "Dear Hiring Manager,", "",
-      "I am applying for the position of " + job.title + (job.companyName ? " at " + job.companyName : "") + ". I have relevant skills in " + relevantSkills + " and the ability to carry out the responsibilities of this role effectively. I am ready to contribute positively to your team.", "",
+      "I am applying for the position of " + positionTitle + (job.companyName ? " at " + job.companyName : "") + ". I have relevant skills in " + relevantSkills + " and the ability to carry out the responsibilities of this role effectively. I am ready to contribute positively to your team.", "",
       "Please find attached my CV for your consideration.", "",
       "Kind regards,",
       applicant.fullName,
