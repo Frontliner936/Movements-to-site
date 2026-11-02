@@ -85,6 +85,7 @@ export default function JobDetail() {
     if (!job) return "#";
     if (!applicant) return "/login?returnTo=" + encodeURIComponent("/jobs/" + job.id);
     const positionTitle = applicationPositionTitle(job.title);
+    const subject = "Application for the position of " + positionTitle;
     const role = (positionTitle + " " + (job.category || "")).toLowerCase();
     const skillGroups: [RegExp, string[]][] = [
       [/account|finance|audit|cashier|bookkeep|payroll/, ["numerical accuracy, attention to detail, record keeping, and confidentiality"]],
