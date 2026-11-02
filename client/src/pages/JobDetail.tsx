@@ -13,11 +13,32 @@ import { applyJobPageMetadata } from "@/lib/pageMetadata";
 import { formatPostedAgo } from "@/lib/timeAgo";
 import { jobDeadlineLabel } from "@/lib/jobFormatting";
 
-function applicationPositionTitle(value: string) {
+function applicationPositionTitle(value: string, companyName?: string | null) {
+  let title = value.replace(/\\s+/g, " ").trim();
+
+  // Remove common advert labels when they appear before the actual role.
+  title = title.replace(/^(?:(?:job|career|employment)\\s+)?(?:vacanc(?:y|ies)|opportunit(?:y|ies)|opening|recruitment)\\s*(?:at\\s+[^:|–—-]+)?\\s*[:|–—-]\\s*/i, "");
+
+  // Remove the employer name and everything after it when included in the advert title.
+  if (companyName?.trim()) {
+    const escapedCompany = companyName.trim().replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\function applicationPositionTitle(value: string) {
   return value
     .replace(/\s*[,|–—-]\s*(?:job\s+)?vacanc(?:y|ies)\b.*$/i, "")
     .replace(/\s*[,|–—-]\s*job\s+opportunit(?:y|ies)\b.*$/i, "")
     .trim();
+}");
+    title = title.replace(new RegExp("(?:\\\\s*[,|–—-]\\\\s*|\\\\s+at\\\\s+)" + escapedCompany + "\\\\b.*$", "i"), "");
+  }
+
+  // Strip advert wording and trailing publication/location details.
+  title = title
+    .replace(/\\s*[,|–—-]\\s*(?:(?:job\\s+)?vacanc(?:y|ies)|job\\s+opportunit(?:y|ies)|career\\s+opportunit(?:y|ies)|now\\s+hiring)\\b.*$/i, "")
+    .replace(/\\s+(?:at|with)\\s+[^,|–—-]+(?:[,|–—-].*)?$/i, "")
+    .replace(/\\s*[,|–—-]\\s*(?:dar\\s+es\\s+salaam|arusha|dodoma|mwanza|kagera|tanzania|november|december|january|february|march|april|may|june|july|august|september|october|20\\d{2})\\b.*$/i, "")
+    .replace(/^[\\s:|–—-]+|[\\s:|–—-]+$/g, "")
+    .trim();
+
+  return title || value.trim();
 }
 
 function hasMultipleApplicationSteps(value: string) {
@@ -84,7 +105,7 @@ export default function JobDetail() {
   function applicationMailto(email: string) {
     if (!job) return "#";
     if (!applicant) return "/login?returnTo=" + encodeURIComponent("/jobs/" + job.id);
-    const positionTitle = applicationPositionTitle(job.title);
+    const positionTitle = applicationPositionTitle(job.title, job.companyName);
     const subject = "Application for the position of " + positionTitle;
     const role = (positionTitle + " " + (job.category || "")).toLowerCase();
     const skillGroups: [RegExp, string[]][] = [
