@@ -77,7 +77,7 @@ export default function JobDetail() {
   function applicationMailto(email: string) {
     if (!job) return "#";
     if (!applicant) return "/login?returnTo=" + encodeURIComponent("/jobs/" + job.id);
-    const subject = "Application for " + job.title + (job.companyName ? " - " + job.companyName : "");
+    const subject = "Application for the position of " + job.title;
     const role = (job.title + " " + (job.category || "")).toLowerCase();
     const skillGroups: [RegExp, string[]][] = [
       [/account|finance|audit|cashier|bookkeep|payroll/, ["numerical accuracy, attention to detail, record keeping, and confidentiality"]],
@@ -93,10 +93,9 @@ export default function JobDetail() {
     ];
     const relevantSkills = skillGroups.find(([pattern]) => pattern.test(role))?.[1][0] || "professional communication, teamwork, time management, attention to detail, and problem-solving";
     const body = [
-      "Dear Human Resources Team,", "",
-      "I am writing to apply for the position of " + job.title + (job.companyName ? " at " + job.companyName : "") + ". I have relevant skills in " + relevantSkills + ", and I am willing to contribute positively to your team while continuing to develop my abilities in this role.", "",
-      "Please find attached my CV for your consideration. I look forward to the opportunity to contribute to your organisation.", "",
-      "Thank you for your time and consideration.", "",
+      "Dear Hiring Manager,", "",
+      "I am applying for the position of " + job.title + (job.companyName ? " at " + job.companyName : "") + ". I have relevant skills in " + relevantSkills + " and the ability to carry out the responsibilities of this role effectively. I am ready to contribute positively to your team.", "",
+      "Please find attached my CV for your consideration.", "",
       "Kind regards,",
       applicant.fullName,
       "Mobile: " + (applicant.phoneNumber || "Not provided in my profile"),
