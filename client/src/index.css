@@ -2284,9 +2284,8 @@ button.member-nav-login:active { background: #edf4ed; }
 .promoted-jobs-heading p { margin: 0; color: rgba(255, 255, 255, .78); font-size: 13px; }
 .promoted-jobs-count { flex: 0 0 auto; padding: 8px 14px; border: 1px solid rgba(246, 217, 135, .6); border-radius: 99px; background: rgba(255, 255, 255, .1); color: #f6d987; font-size: 12px; font-weight: 800; letter-spacing: .04em; white-space: nowrap; }
 .promoted-jobs-block .promoted-jobs-feed { position: relative; z-index: 1; gap: 16px; }
-.promoted-jobs-block .job-card { --card-accent: #d4a83d; --card-wash: #fff7dc; margin-top: 0; border: 2px solid #f0cf72; border-top: 5px solid #d4a83d; border-radius: 14px; background: #ffffff; box-shadow: 0 14px 34px rgba(0, 0, 0, .28); padding-top: 26px; }
+.promoted-jobs-block .job-card { --card-accent: #d4a83d; --card-wash: #fff7dc; margin-top: 0; border: 2px solid #f0cf72; border-top: 5px solid #d4a83d; border-radius: 14px; background: #ffffff; box-shadow: 0 14px 34px rgba(0, 0, 0, .28); }
 .promoted-jobs-block .job-card:hover { transform: translateY(-6px); border-color: #f6d987; box-shadow: 0 22px 46px rgba(0, 0, 0, .38), 0 0 0 3px rgba(246, 217, 135, .35); }
-.promoted-ribbon { position: absolute; z-index: 2; top: -2px; left: 18px; display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px 6px; border-radius: 0 0 9px 9px; background: linear-gradient(135deg, #b7851e, #f0cf72); color: #211906; font-size: 10px; font-weight: 900; letter-spacing: .1em; box-shadow: 0 4px 10px rgba(117, 82, 16, .35); }
 .job-card-promoted { border-color: #f0cf72; }
 .other-opportunities-heading { display: flex; align-items: center; gap: 14px; margin: 4px 0 20px; color: #4d6354; font-size: 12px; font-weight: 800; letter-spacing: .14em; }
 .other-opportunities-heading::before, .other-opportunities-heading::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, #c9d6cc, transparent); }
