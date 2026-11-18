@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "wouter";
-import { ArrowUpRight, Bookmark, Clock3, Heart, MapPin, Star, Wifi } from "lucide-react";
+import { ArrowUpRight, Bookmark, Clock3, Heart, MapPin, Wifi } from "lucide-react";
 import { api, type Job } from "@/lib/api";
 import { JobShareMenu } from "@/components/JobShareMenu";
 import { HideBrokenImage } from "@/components/HideBrokenImage";
@@ -30,7 +30,6 @@ export function JobCard({ job, onChanged }: { job: Job; onChanged: () => void })
   }
   return (
     <article className={`job-card${job.isSocialPost ? " job-card-social-post" : ""}${job.isPromoted ? " job-card-promoted" : ""}`}>
-      {job.isPromoted && <span className="promoted-ribbon"><Star size={11} fill="currentColor" aria-hidden="true" />PROMOTED</span>}
       <div className="job-card-topline">
         <CompanyLogo name={job.isSocialPost ? "Social advert" : job.companyName} imageUrl={job.isSocialPost ? job.companyLogoUrl : job.companyLogoUrl || job.imageUrl} imageAlt={job.isSocialPost ? "Company profile photo" : undefined} />
         <div className="job-card-heading">
