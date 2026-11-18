@@ -2271,3 +2271,14 @@ button.member-nav-login:active { background: #edf4ed; }
 @media (max-width: 600px) {
   .whatsapp-channel-link.whatsapp-channel-link--header { min-height: 30px; padding: 0 9px; font-size: 11px; gap: 6px; }
 }
+
+/* Promoted Jobs section on the homepage */
+.promoted-jobs-block { margin: 0 0 30px; padding: 16px 16px 6px; border: 1px solid #ecd9a0; border-top: 4px solid #d4a83d; border-radius: 14px; background: linear-gradient(180deg, #fffaf0, #fffdf8); }
+.promoted-jobs-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; margin: 0 0 14px; }
+.promoted-jobs-heading p { margin: 0; color: #7a6a3c; font-size: 12px; }
+.promoted-jobs-kicker { color: #7a5a0c; font-size: 12px; font-weight: 800; letter-spacing: .08em; }
+.promoted-jobs-feed { margin-bottom: 8px; }
+.other-opportunities-heading { margin: 8px 0 14px; padding-top: 4px; }
+.other-opportunities-heading .promoted-jobs-kicker { color: #4d6354; }
+.promoted-job-badge { display: inline-flex; align-items: center; gap: 4px; border-radius: 99px; padding: 5px 9px; background: linear-gradient(135deg, #d4a83d, #f0cf72); color: #211906; font-size: 10px; font-weight: 800; }
+@media (max-width: 600px) { .promoted-jobs-block { padding: 12px 10px 2px; } }
