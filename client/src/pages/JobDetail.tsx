@@ -5,6 +5,7 @@ import { Brand } from "@/components/Brand";
 import { CompanyLogo } from "@/components/JobCard";
 import { JobQuickShareButtons, JobShareMenu } from "@/components/JobShareMenu";
 import { SiteFooter } from "@/components/SiteFooter";
+import { WhatsAppChannelLink } from "@/components/WhatsAppChannelLink";
 import RichJobText from "@/components/RichJobText";
 import { RawSocialPostText } from "@/components/RichJobText";
 import { HideBrokenImage } from "@/components/HideBrokenImage";
@@ -137,7 +138,7 @@ export default function JobDetail() {
     finally { setBusy(false); }
   }
 
-  return <div className="site-shell"><header className="site-header"><div className="header-inner"><Brand /><a className="header-admin-link" href="/admin/login">Admin <ArrowUpRight size={14} /></a></div></header>
+  return <div className="site-shell"><header className="site-header"><div className="header-inner"><Brand /><div className="header-actions"><WhatsAppChannelLink className="whatsapp-channel-link--header" /><a className="header-admin-link" href="/admin/login">Admin <ArrowUpRight size={14} /></a></div></div></header>
     <main className="detail-page">
       <Link href="/" className="back-link"><ArrowLeft size={15} /> All opportunities</Link>
       {loading ? <div className="loading-state"><span className="loading-dot" />Loading opportunity…</div> : null}
