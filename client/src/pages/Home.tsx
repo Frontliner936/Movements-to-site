@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowDownRight, ArrowRight, BriefcaseBusiness, ChevronDown, Search, Sparkles, Menu, X, LogOut } from "lucide-react";
+import { ArrowDownRight, ArrowRight, BriefcaseBusiness, ChevronDown, Search, Sparkles, Star, Menu, X, LogOut } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa6";
 import { Brand } from "@/components/Brand";
 import { EmptyBoardIllustration } from "@/components/EditorialVisuals";
@@ -181,8 +181,15 @@ export default function Home() {
 
           {error ? <div className="notice-card error-card"><strong>Could not load listings.</strong><p>{error}</p><button type="button" className="text-link" onClick={() => window.location.reload()}>Try again <ArrowRight size={14} /></button></div> : null}
           {!error && loading ? <div className="loading-state"><span className="loading-dot" /><span>Looking for the right opportunity…</span></div> : null}
-          {!error && !loading && promotedJobs.length > 0 ? <div className="promoted-jobs-block" aria-labelledby="promoted-jobs-title"><div className="promoted-jobs-heading"><span className="promoted-jobs-kicker" id="promoted-jobs-title">★ PROMOTED JOBS</span><p>Featured openings you should not miss</p></div><div className="jobs-feed promoted-jobs-feed">{promotedJobs.map(job => <JobCard key={job.id} job={job} onChanged={refreshJobs} />)}</div></div> : null}
-          {!error && !loading && promotedJobs.length > 0 && regularJobs.length > 0 ? <div className="promoted-jobs-heading other-opportunities-heading"><span className="promoted-jobs-kicker">OTHER OPPORTUNITIES</span></div> : null}
+          {!error && !loading && promotedJobs.length > 0 ? <section className="promoted-jobs-block" aria-labelledby="promoted-jobs-title">
+            <div className="promoted-jobs-heading">
+              <span className="promoted-jobs-star" aria-hidden="true"><Star size={24} fill="currentColor" /></span>
+              <div className="promoted-jobs-titles"><span className="promoted-jobs-eyebrow">HAND-PICKED OPPORTUNITIES</span><h2 id="promoted-jobs-title">Promoted Jobs</h2><p>Top openings you should not miss. Apply early!</p></div>
+              <span className="promoted-jobs-count">{promotedJobs.length} featured</span>
+            </div>
+            <div className="jobs-feed promoted-jobs-feed">{promotedJobs.map(job => <JobCard key={job.id} job={job} onChanged={refreshJobs} />)}</div>
+          </section> : null}
+          {!error && !loading && promotedJobs.length > 0 && regularJobs.length > 0 ? <div className="other-opportunities-heading"><span>OTHER OPPORTUNITIES</span></div> : null}
           {!error && !loading && regularJobs.length > 0 ? <div className="jobs-feed" id="jobs-feed">{displayedJobs.map(job => <JobCard key={job.id} job={job} onChanged={refreshJobs} />)}</div> : null}
           {!error && !loading && regularJobs.length > displayedJobs.length ? <div className="jobs-load-more">
             <a className="jobs-load-more-button" href={moreJobsUrl}><span>View more jobs</span><ArrowDownRight size={17} aria-hidden="true" /></a>
