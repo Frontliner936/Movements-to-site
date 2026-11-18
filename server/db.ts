@@ -6,6 +6,19 @@ import { ENV } from './_core/env';
 let _db: ReturnType<typeof drizzle> | null = null;
 let geoTableReady = false;
 let geoTableInit: Promise<void> | null = null;
+let promotedColumnInit: Promise<void> | null = null;
+
+/** Adds the gm_jobs.is_promoted column on first connection if it does not exist yet. */
+async function ensurePromotedColumn(db: ReturnType<typeof drizzle>) {
+  try {
+    await db.execute(sql`ALTER TABLE gm_jobs ADD COLUMN is_promoted boolean NOT NULL DEFAULT false`);
+  } catch (error: any) {
+    const code = error?.errno ?? error?.cause?.errno;
+    if (code === 1060) return; // column already exists
+    promotedColumnInit = null; // retry on the next call
+    console.warn("[Database] Could not add is_promoted column:", error);
+  }
+}
 
 // Lazily create the drizzle instance so local tooling can run without a DB.
 export async function getDb() {
@@ -16,6 +29,10 @@ export async function getDb() {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
     }
+  }
+  if (_db) {
+    promotedColumnInit ??= ensurePromotedColumn(_db);
+    await promotedColumnInit;
   }
   return _db;
 }
