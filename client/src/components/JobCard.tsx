@@ -36,6 +36,7 @@ export function JobCard({ job, onChanged }: { job: Job; onChanged: () => void })
           <Link href={`/jobs/${job.id}`} className="job-card-title">{job.title}<ArrowUpRight size={16} aria-hidden="true" /></Link>
           <div className="job-card-heading-meta">
             {job.companyName && (job.companyHref ? <Link className="job-company-link" href={job.companyHref}>{job.companyName}</Link> : <p className="job-company-name">{job.companyName}</p>)}
+            {job.isPromoted && <span className="promoted-job-badge">★ Promoted</span>}
             {job.isSocialPost && <span className="social-post-badge">Social media advert</span>}
             {job.category && <span className="job-category">{job.category}</span>}
             {job.isRemote && <span className="remote-job-badge"><Wifi size={12} />Remote</span>}
