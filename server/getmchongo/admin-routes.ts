@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, asc, count, desc, eq, inArray, max } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, max, ne } from "drizzle-orm";
 import { Router } from "express";
 import type { Request, Response } from "express";
 import sharp from "sharp";
@@ -171,6 +171,7 @@ function normalizeJob(body: any, old?: typeof jobs.$inferSelect) {
     category: body.category === undefined ? old?.category ?? null : textValue(body.category, 120),
     location: body.location === undefined ? old?.location ?? null : textValue(body.location, 240),
     isRemote: body.isRemote === undefined ? old?.isRemote ?? false : body.isRemote === true,
+    isPromoted: body.isPromoted === undefined ? old?.isPromoted ?? false : body.isPromoted === true,
     deadline: body.deadline === undefined ? old?.deadline ?? null : textValue(body.deadline, 240),
     description: storedDescription,
     responsibilities: body.responsibilities === undefined ? old?.responsibilities ?? null : textValue(body.responsibilities, 12_000),
@@ -178,6 +179,15 @@ function normalizeJob(body: any, old?: typeof jobs.$inferSelect) {
     howToApply: body.howToApply === undefined ? old?.howToApply ?? null : textValue(body.howToApply, 8_000),
     applicationUrl, imageUrl, sourceUrl, status: rawStatus as "draft" | "published", publishedAt,
   };
+}
+
+const MAX_PROMOTED_JOBS = 3;
+async function assertPromotedLimit(db: NonNullable<Awaited<ReturnType<typeof getDb>>>, input: { isPromoted: boolean; status: string }, excludeId?: number) {
+  if (!input.isPromoted || input.status !== "published") return;
+  const predicates = [eq(jobs.isPromoted, true), eq(jobs.status, "published")];
+  if (excludeId) predicates.push(ne(jobs.id, excludeId));
+  const [row] = await db.select({ total: count() }).from(jobs).where(and(...predicates));
+  if (Number(row?.total ?? 0) >= MAX_PROMOTED_JOBS) throw new Error(`Only ${MAX_PROMOTED_JOBS} jobs can be promoted at the same time. Remove Promoted from another job first.`);
 }
 
 function presentJob(job: typeof jobs.$inferSelect) {
@@ -239,6 +249,7 @@ router.post("/jobs", async (req, res) => {
   const db = await getDb(); if (!db) return sendDbUnavailable(res);
   try {
     const input = normalizeJob(req.body);
+    await assertPromotedLimit(db, input);
     if (input.companyId) {
       const [company] = await db.select({ id: companies.id }).from(companies).where(eq(companies.id, input.companyId)).limit(1);
       if (!company) return res.status(400).json({ error: "Select an existing company profile or leave the company profile blank." });
@@ -260,6 +271,7 @@ router.put("/jobs/:id", async (req, res) => {
   if (!old) return res.status(404).json({ error: "Job not found." });
   try {
     const input = normalizeJob(req.body, old);
+    await assertPromotedLimit(db, input, id);
     if (input.companyId) {
       const [company] = await db.select({ id: companies.id }).from(companies).where(eq(companies.id, input.companyId)).limit(1);
       if (!company) return res.status(400).json({ error: "Select an existing company profile or leave the company profile blank." });
