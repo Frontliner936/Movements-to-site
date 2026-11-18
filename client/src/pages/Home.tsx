@@ -101,7 +101,10 @@ export default function Home() {
   }, [query, category, location]);
 
   const visibleJobs = useMemo(() => (view === "saved" ? jobs.filter(job => job.saved) : jobs).filter(job => !job.isRemote), [jobs, view]);
-  const displayedJobs = visibleJobs.slice(0, INITIAL_JOB_COUNT);
+  const promotedJobs = useMemo(() => (view === "all" ? visibleJobs.filter(job => job.isPromoted).slice(0, 3) : []), [visibleJobs, view]);
+  const regularJobs = useMemo(() => { const promotedIds = new Set(promotedJobs.map(job => job.id)); return visibleJobs.filter(job => !promotedIds.has(job.id)); }, [visibleJobs, promotedJobs]);
+  const displayedJobs = regularJobs.slice(0, INITIAL_JOB_COUNT);
+  const refreshJobs = () => { void api<{ jobs: Job[] }>(`/api/gm/jobs?${new URLSearchParams({ ...(query ? { q: query } : {}), ...(category ? { category } : {}), ...(location ? { location } : {}) })}`).then(data => setJobs(data.jobs)); };
   const moreJobsUrl = useMemo(() => {
     const params = new URLSearchParams();
     if (query.trim()) params.set("q", query.trim());
@@ -178,10 +181,12 @@ export default function Home() {
 
           {error ? <div className="notice-card error-card"><strong>Could not load listings.</strong><p>{error}</p><button type="button" className="text-link" onClick={() => window.location.reload()}>Try again <ArrowRight size={14} /></button></div> : null}
           {!error && loading ? <div className="loading-state"><span className="loading-dot" /><span>Looking for the right opportunity…</span></div> : null}
-          {!error && !loading && visibleJobs.length > 0 ? <div className="jobs-feed" id="jobs-feed">{displayedJobs.map(job => <JobCard key={job.id} job={job} onChanged={() => { void api<{ jobs: Job[] }>(`/api/gm/jobs?${new URLSearchParams({ ...(query ? { q: query } : {}), ...(category ? { category } : {}), ...(location ? { location } : {}) })}`).then(data => setJobs(data.jobs)); }} />)}</div> : null}
-          {!error && !loading && visibleJobs.length > displayedJobs.length ? <div className="jobs-load-more">
+          {!error && !loading && promotedJobs.length > 0 ? <div className="promoted-jobs-block" aria-labelledby="promoted-jobs-title"><div className="promoted-jobs-heading"><span className="promoted-jobs-kicker" id="promoted-jobs-title">★ PROMOTED JOBS</span><p>Featured openings you should not miss</p></div><div className="jobs-feed promoted-jobs-feed">{promotedJobs.map(job => <JobCard key={job.id} job={job} onChanged={refreshJobs} />)}</div></div> : null}
+          {!error && !loading && promotedJobs.length > 0 && regularJobs.length > 0 ? <div className="promoted-jobs-heading other-opportunities-heading"><span className="promoted-jobs-kicker">OTHER OPPORTUNITIES</span></div> : null}
+          {!error && !loading && regularJobs.length > 0 ? <div className="jobs-feed" id="jobs-feed">{displayedJobs.map(job => <JobCard key={job.id} job={job} onChanged={refreshJobs} />)}</div> : null}
+          {!error && !loading && regularJobs.length > displayedJobs.length ? <div className="jobs-load-more">
             <a className="jobs-load-more-button" href={moreJobsUrl}><span>View more jobs</span><ArrowDownRight size={17} aria-hidden="true" /></a>
-            <span className="jobs-load-more-status">Showing the first {displayedJobs.length} of {visibleJobs.length} opportunities</span>
+            <span className="jobs-load-more-status">Showing the first {displayedJobs.length} of {regularJobs.length} opportunities</span>
           </div> : null}
           {!error && !loading && visibleJobs.length === 0 ? (
             <div className="empty-opportunities">
