@@ -2265,3 +2265,9 @@ button.member-nav-login {
 .site-menu-signout { width: 100%; }
 .site-menu-signout:active,
 button.member-nav-login:active { background: #edf4ed; }
+
+/* Join channel button in the opportunity (job detail) header, top right */
+.whatsapp-channel-link.whatsapp-channel-link--header { margin: 0; transform-origin: right center; } /* keeps the homepage animation */
+@media (max-width: 600px) {
+  .whatsapp-channel-link.whatsapp-channel-link--header { min-height: 30px; padding: 0 9px; font-size: 11px; gap: 6px; }
+}
