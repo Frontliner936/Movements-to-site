@@ -191,6 +191,9 @@ export function RawSocialPostText({ text, headline = "", className = "", organiz
       const value = raw.trim();
       if (!value || (index === firstContentIndex && !showLead)) return;
       if (index === firstContentIndex && showLead) { addLine(value); return; }
+      const metadataField = value.match(/^([A-Za-z][A-Za-z /()-]{1,34})\s*:\s*.+$/);
+      const metadataKey = metadataField?.[1].trim().toLocaleLowerCase().replace(/\s+/g, " ");
+      if (metadataKey && socialMetaLabels[metadataKey]) { addLine(value); return; }
       if (isSocialPostHeading(value)) {
         pushCurrent();
         const heading = value.replace(/:\s*$/, "").trim();
