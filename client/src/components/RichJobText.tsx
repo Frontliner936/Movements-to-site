@@ -113,6 +113,17 @@ function isSocialPostHeading(line: string) {
   return letters.length >= 4 && letters.length <= 75 && !/[.!?]$/u.test(value) && /^(?:about\s+\S|overview|what\s+you|who\s+we|hiring\s+process|important\s+note|quick\s+note|work\s+schedule|compensation|requirements?|qualifications?)/iu.test(value);
 }
 
+function getMarkedSocialHeading(line: string) {
+  const value = line.trim();
+  // Decorative symbol prefixes explicitly mark a heading; ordinary list
+  // bullets and numbered prefixes are excluded.
+  const match = value.match(/^([^\\p{L}\\p{N}\\s]{1,4})\\s+(.+)$/u);
+  if (!match || /^[-*•▪‣]+$/u.test(match[1])) return null;
+  const heading = match[2].trim();
+  if (!heading || heading.length > 90 || /[.!?]$/u.test(heading)) return null;
+  return heading;
+}
+
 type SocialSection = { key: string; heading: string; lines: string[] };
 
 const socialMetaLabels: Record<string, string> = {
@@ -214,9 +225,10 @@ export function RawSocialPostText({ text, headline = "", className = "", organiz
       const metadataField = value.match(/^([A-Za-z][A-Za-z /()-]{1,34})\s*:\s*.+$/);
       const metadataKey = metadataField?.[1].trim().toLocaleLowerCase().replace(/\s+/g, " ");
       if (metadataKey && socialMetaLabels[metadataKey]) { addLine(value); return; }
-      if (isSocialPostHeading(value)) {
+      const markedHeading = getMarkedSocialHeading(value);
+      if (markedHeading || isSocialPostHeading(value)) {
         pushCurrent();
-        const heading = value.replace(/:\s*$/, "").trim();
+        const heading = (markedHeading || value).replace(/:\\s*$/, "").trim();
         const key = socialSectionKey(heading);
         current = { key, heading: key === "other" ? heading : labels[key], lines: [] };
         return;
