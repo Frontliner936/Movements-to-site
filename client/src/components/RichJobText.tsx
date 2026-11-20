@@ -143,7 +143,7 @@ function isLikelySocialListItem(line: string, sectionKey: string) {
   if (sectionKey !== "duties" && sectionKey !== "requirements") return false;
   const value = line.trim();
   if (value.length > 220) return false;
-  if (/^(manage|lead|support|prepare|develop|ensure|provide|perform|conduct|coordinate|maintain|monitor|assist|implement|review|oversee|deliver|build|create|analyse|analyze|design|identify|demonstrate|possess|have|hold|must|should|be able|at least|minimum|bachelor|master|diploma|degree|certificate|certified|proven|excellent|strong|good|knowledge|experience|ability|fluent|proficiency|proficient|valid|a minimum|not less than|the candidate)\\b/i.test(value)) return true;
+  if (/^(manage|lead|support|prepare|develop|ensure|provide|perform|conduct|coordinate|maintain|monitor|assist|implement|review|oversee|deliver|build|create|analyse|analyze|design|identify|demonstrate|possess|have|hold|must|should|be able|at least|minimum|bachelor|master|diploma|degree|certificate|certified|proven|excellent|strong|good|knowledge|experience|ability|fluent|proficiency|proficient|valid|a minimum|not less than|the candidate)\b/i.test(value)) return true;
   return false;
 }
 
@@ -154,9 +154,9 @@ function isSocialSubheading(line: string, sectionKey: string) {
   const letters = value.replace(/[^\p{L}]/gu, "");
   if (letters.length >= 3 && value === value.toLocaleUpperCase() && !/[.!?]$/.test(value)) return true;
   if (sectionKey !== "duties" && sectionKey !== "requirements") return false;
-  const words = value.split(/\\s+/);
+  const words = value.split(/\s+/);
   if (words.length > 6 || /[.!?;]$/.test(value)) return false;
-  if (/^(manage|lead|support|prepare|develop|ensure|provide|perform|conduct|coordinate|maintain|monitor|assist|implement|review|oversee|deliver|build|create|analyse|analyze|design|identify|demonstrate|possess|have|hold|must|should|be able|at least|minimum|bachelor|master|diploma|degree|certificate|certified|proven|excellent|strong|good|knowledge|experience|ability|fluent|proficiency|proficient|valid)\\b/i.test(value)) return false;
+  if (/^(manage|lead|support|prepare|develop|ensure|provide|perform|conduct|coordinate|maintain|monitor|assist|implement|review|oversee|deliver|build|create|analyse|analyze|design|identify|demonstrate|possess|have|hold|must|should|be able|at least|minimum|bachelor|master|diploma|degree|certificate|certified|proven|excellent|strong|good|knowledge|experience|ability|fluent|proficiency|proficient|valid)\b/i.test(value)) return false;
   return words.length <= 5 && words.some(word => /^[A-Z][a-z]/.test(word));
 }
 
