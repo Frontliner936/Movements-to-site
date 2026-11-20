@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, ExternalLink, FileText, Maximize2, Megaphone, X 
 import { Brand } from "@/components/Brand";
 import { HideBrokenImage } from "@/components/HideBrokenImage";
 import { SiteFooter } from "@/components/SiteFooter";
+import { AnnouncementShareMenu } from "@/components/AnnouncementShareMenu";
 import { announcementKinds, api, type Announcement } from "@/lib/api";
 
 function AnnouncementPhoto({ item }: { item: Announcement }) {
@@ -38,10 +39,10 @@ export default function Announcements() {
       <section className="announcements-intro"><span className="eyebrow"><span className="eyebrow-dot" />LATEST</span><h1>Announcements</h1><p>Interviews, events, adverts and businesses we want you to know about.</p></section>
       {error && <div className="submission-error" role="alert">{error}</div>}
       {loading ? <p className="announcements-empty">Loading announcements…</p> : items.length === 0 && !error ? <div className="announcements-empty"><Megaphone size={22} /><p>No announcements yet. Please check back soon.</p></div> : <div className="announcement-list">
-        {items.map(item => <article className="announcement-card" key={item.id}>
+        {items.map(item => <article className="announcement-card" id={`announcement-${item.id}`} key={item.id}>
           {item.imageUrl && <AnnouncementPhoto key={item.imageUrl} item={item} />}
           <div className="announcement-body">
-            <div className="announcement-meta"><span className="announcement-kind">{kindLabel(item.kind)}</span><time dateTime={item.publishedAt ?? item.createdAt}>{new Date(item.publishedAt ?? item.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}</time></div>
+            <div className="announcement-meta"><span className="announcement-kind">{kindLabel(item.kind)}</span><time dateTime={item.publishedAt ?? item.createdAt}>{new Date(item.publishedAt ?? item.createdAt).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" })}</time><AnnouncementShareMenu announcement={item} /></div>
             <h2>{item.title}</h2>
             {item.body && <p className="announcement-text">{item.body}</p>}
             {(item.imageUrl || item.pdfUrl || item.linkUrl) && <div className="announcement-actions">
