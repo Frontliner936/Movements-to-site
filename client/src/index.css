@@ -2381,3 +2381,135 @@ button.member-nav-login:active { background: #edf4ed; }
   .announcement-body { padding: 11px; }
   .announcement-kind { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
 }
+
+/* Announcements mobile rendering: avoid clipped page and clipped share menus. */
+.announcements-shell {
+  overflow: visible !important;
+  min-height: 100vh;
+  min-height: 100svh;
+}
+.announcements-shell > .announcements-page {
+  flex: 1 0 auto;
+  width: min(860px, calc(100% - 40px));
+  min-width: 0;
+}
+.announcements-shell .announcement-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: max-content;
+  align-items: start;
+  width: 100%;
+  min-width: 0;
+}
+.announcements-shell .announcement-card {
+  display: block !important;
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+  overflow: visible !important;
+  contain: none;
+  content-visibility: visible;
+  opacity: 1;
+  visibility: visible;
+}
+.announcements-shell .announcement-photo {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+}
+.announcements-shell .announcement-photo img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+.announcements-shell .announcement-body {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  height: auto;
+  overflow: visible;
+}
+.announcements-shell .announcement-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
+  min-width: 0;
+}
+.announcements-shell .announcement-share-control {
+  position: relative;
+  z-index: 80;
+  margin-left: auto;
+}
+.announcements-shell .announcement-share-control[data-open="true"] {
+  z-index: 100;
+}
+.announcements-shell .announcement-share-control .job-share-popover {
+  z-index: 101;
+  right: 0;
+  max-width: calc(100vw - 40px);
+}
+@media (max-width: 640px) {
+  .announcements-shell > .announcements-page {
+    width: calc(100% - 24px);
+    padding: 20px 0 40px;
+  }
+  .announcements-shell .announcement-list {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+  .announcements-shell .announcement-card {
+    margin: 0;
+    border-radius: 10px;
+  }
+  .announcements-shell .announcement-photo img {
+    height: auto;
+    max-height: none;
+    object-fit: contain;
+  }
+  .announcements-shell .announcement-body {
+    padding: 14px;
+  }
+  .announcements-shell .announcement-meta {
+    gap: 8px;
+  }
+  .announcements-shell .announcement-share-control {
+    margin-left: auto;
+  }
+  .announcements-shell .announcement-share-control .job-share-popover {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    left: auto;
+    width: min(318px, calc(100vw - 40px));
+  }
+  .announcements-shell .announcement-body h2 {
+    font-size: clamp(20px, 6vw, 25px);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+  .announcements-shell .announcement-text {
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+  .announcements-shell .announcement-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    width: 100%;
+  }
+  .announcements-shell .announcement-actions > * {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
