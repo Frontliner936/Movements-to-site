@@ -139,11 +139,19 @@ function socialSectionKey(heading: string) {
   return "other";
 }
 
+function isLikelySocialListItem(line: string, sectionKey: string) {
+  if (sectionKey !== "duties" && sectionKey !== "requirements") return false;
+  const value = line.trim();
+  if (value.length > 220) return false;
+  if (/^(manage|lead|support|prepare|develop|ensure|provide|perform|conduct|coordinate|maintain|monitor|assist|implement|review|oversee|deliver|build|create|analyse|analyze|design|identify|demonstrate|possess|have|hold|must|should|be able|at least|minimum|bachelor|master|diploma|degree|certificate|certified|proven|excellent|strong|good|knowledge|experience|ability|fluent|proficiency|proficient|valid|a minimum|not less than|the candidate)\\b/i.test(value)) return true;
+  return false;
+}
+
 function isSocialSubheading(line: string, sectionKey: string) {
   const value = line.trim();
   if (!value || value.length > 85) return false;
   if (/[:：]$/.test(value)) return true;
-  const letters = value.replace(/[^\\p{L}]/gu, "");
+  const letters = value.replace(/[^\p{L}]/gu, "");
   if (letters.length >= 3 && value === value.toLocaleUpperCase() && !/[.!?]$/.test(value)) return true;
   if (sectionKey !== "duties" && sectionKey !== "requirements") return false;
   const words = value.split(/\\s+/);
@@ -245,8 +253,8 @@ export function RawSocialPostText({ text, headline = "", className = "", organiz
           const subsection = isSocialSubheading(line, section.key);
           if (subsection) {
             itemNumber = 0;
-            content.push(<h4 className="social-post-subheading" key={"subheading-" + sectionIndex + "-" + i}>{linkify(line.replace(/:\\s*$/u, ""), "subheading-" + sectionIndex + "-" + i, emailHref)}</h4>);
-          } else if (item || ((section.key === "duties" || section.key === "requirements") && line.length <= 180)) {
+            content.push(<h4 className="social-post-subheading" key={"subheading-" + sectionIndex + "-" + i}>{linkify(line.replace(/:\s*$/u, ""), "subheading-" + sectionIndex + "-" + i, emailHref)}</h4>);
+          } else if (item || isLikelySocialListItem(line, section.key)) {
             itemNumber += 1;
             content.push(<div className="social-post-list-line" key={"item-" + sectionIndex + "-" + i}><span className="social-post-list-marker" aria-hidden="true">{itemNumber}.</span><span>{linkify(item ? item[2] : line, "organized-" + sectionIndex + "-" + i, emailHref)}</span></div>);
           } else {
