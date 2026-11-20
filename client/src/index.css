@@ -2342,3 +2342,42 @@ button.member-nav-login:active { background: #edf4ed; }
 @media (max-width: 520px) {
   .announcement-share-control .job-share-popover { right: -4px; }
 }
+
+
+/* Announcement cards: prevent mobile-width overflow and keep every item visible. */
+.announcements-page,
+.announcement-list,
+.announcement-card,
+.announcement-body { box-sizing: border-box; min-width: 0; }
+.announcement-card { width: 100%; }
+.announcement-photo { width: 100%; max-width: 100%; min-width: 0; }
+.announcement-photo img { width: 100%; max-width: 100%; height: auto; }
+.announcement-body h2,
+.announcement-text,
+.announcement-photo figcaption { min-width: 0; overflow-wrap: anywhere; word-break: normal; }
+.announcement-meta { min-width: 0; flex-wrap: wrap; }
+.announcement-actions { min-width: 0; flex-wrap: wrap; }
+.announcement-actions > a,
+.announcement-actions > button { max-width: 100%; min-width: 0; white-space: normal; overflow-wrap: anywhere; }
+@media (max-width: 640px) {
+  .announcements-page { width: calc(100% - 24px); max-width: 100%; padding: 22px 0 44px; }
+  .announcements-intro { margin: 14px 0 22px; }
+  .announcements-intro h1 { font-size: clamp(30px, 9vw, 42px); overflow-wrap: anywhere; }
+  .announcements-intro p { font-size: 14px; }
+  .announcement-list { width: 100%; gap: 14px; }
+  .announcement-card { width: 100%; max-width: 100%; }
+  .announcement-body { padding: 14px; }
+  .announcement-meta { gap: 7px 9px; }
+  .announcement-share-control { margin-left: auto; flex: 0 0 auto; }
+  .announcement-share-trigger { min-height: 34px; }
+  .announcement-body h2 { font-size: clamp(20px, 6vw, 24px); line-height: 1.2; }
+  .announcement-text { font-size: 14px; line-height: 1.65; }
+  .announcement-actions { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .announcement-actions .secondary-button { width: 100%; justify-content: center; text-align: center; white-space: normal; padding: 9px 12px; }
+  .announcement-photo figcaption { padding: 9px 14px; }
+}
+@media (max-width: 360px) {
+  .announcements-page { width: calc(100% - 18px); }
+  .announcement-body { padding: 11px; }
+  .announcement-kind { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+}
