@@ -58,3 +58,52 @@ describe("RichJobText", () => {
     expect(html).toContain("<li>Ensure a minimum transition rate</li>");
   });
 });
+
+
+import { RawSocialPostText } from "../../client/src/components/RichJobText";
+
+describe("RawSocialPostText", () => {
+  it("formats inline recruitment facts as information cards without changing their values", () => {
+    const html = renderToStaticMarkup(React.createElement(RawSocialPostText, {
+      text: "JOB TITLE: Finance Officer\nEmployer: Example Organisation\nLocation: Dar es Salaam\nSalary: TZS 1,500,000\nEmployment Type: Full-time\nApplication Deadline: 30 June 2026",
+      headline: "Finance Officer",
+    }));
+    expect(html).toContain("Job title");
+    expect(html).toContain("Example Organisation");
+    expect(html).toContain("Dar es Salaam");
+    expect(html).toContain("TZS 1,500,000");
+    expect(html).toContain("Full-time");
+    expect(html).toContain("30 June 2026");
+    expect(html).toContain("social-post-facts");
+  });
+
+  it("renders responsibility and qualification sections as numbered lists", () => {
+    const html = renderToStaticMarkup(React.createElement(RawSocialPostText, {
+      text: "KEY RESPONSIBILITIES\nPrepare reports\nSupport the team\nQUALIFICATIONS\nBachelor's degree\nThree years of experience",
+    }));
+    expect(html).toContain("KEY RESPONSIBILITIES");
+    expect(html).toContain("QUALIFICATIONS &amp; REQUIREMENTS");
+    expect(html).toContain(">1.</span>");
+    expect(html).toContain("Prepare reports");
+    expect(html).toContain("Three years of experience");
+  });
+
+  it("renders clearly delimited tabular recruitment details as a responsive table", () => {
+    const html = renderToStaticMarkup(React.createElement(RawSocialPostText, {
+      text: "VACANCIES\nPosition | Vacancies\nAccountant | 2\nHR Officer | 1",
+    }));
+    expect(html).toContain("<table");
+    expect(html).toContain("<th");
+    expect(html).toContain("Accountant");
+    expect(html).toContain("HR Officer");
+  });
+
+  it("keeps plain prose in paragraphs and preserves application contacts as links", () => {
+    const html = renderToStaticMarkup(React.createElement(RawSocialPostText, {
+      text: "ABOUT THE ROLE\nThis role supports a growing team.\nHOW TO APPLY\nSend your CV to jobs@example.org",
+    }));
+    expect(html).toContain("This role supports a growing team.");
+    expect(html).toContain('href="mailto:jobs@example.org"');
+    expect(html).toContain("HOW TO APPLY");
+  });
+});
