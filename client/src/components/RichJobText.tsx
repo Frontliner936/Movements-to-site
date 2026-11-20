@@ -139,6 +139,19 @@ function socialSectionKey(heading: string) {
   return "other";
 }
 
+function isSocialSubheading(line: string, sectionKey: string) {
+  const value = line.trim();
+  if (!value || value.length > 85) return false;
+  if (/[:：]$/.test(value)) return true;
+  const letters = value.replace(/[^\\p{L}]/gu, "");
+  if (letters.length >= 3 && value === value.toLocaleUpperCase() && !/[.!?]$/.test(value)) return true;
+  if (sectionKey !== "duties" && sectionKey !== "requirements") return false;
+  const words = value.split(/\\s+/);
+  if (words.length > 6 || /[.!?;]$/.test(value)) return false;
+  if (/^(manage|lead|support|prepare|develop|ensure|provide|perform|conduct|coordinate|maintain|monitor|assist|implement|review|oversee|deliver|build|create|analyse|analyze|design|identify|demonstrate|possess|have|hold|must|should|be able|at least|minimum|bachelor|master|diploma|degree|certificate|certified|proven|excellent|strong|good|knowledge|experience|ability|fluent|proficiency|proficient|valid)\\b/i.test(value)) return false;
+  return words.length <= 5 && words.some(word => /^[A-Z][a-z]/.test(word));
+}
+
 function splitSocialTable(lines: string[]) {
   const cells = (line: string) => line.trim().replace(/^\||\|$/g, "").split(/\s*\|\s*|\t+| {3,}/).map(cell => cell.trim()).filter(Boolean);
   const rows = lines.map(line => cells(line));
@@ -162,18 +175,17 @@ export function RawSocialPostText({ text, headline = "", className = "", organiz
   const showLead = firstContentIndex >= 0 && firstLineKey !== headlineKey;
 
   if (organized) {
-    const order = ["about", "summary", "benefits", "duties", "requirements", "process", "schedule", "highlights", "application", "safety", "other"];
     const labels: Record<string, string> = {
       about: "ABOUT THE EMPLOYER", summary: "POSITION OVERVIEW", duties: "KEY RESPONSIBILITIES",
       benefits: "COMPENSATION & BENEFITS", requirements: "QUALIFICATIONS & REQUIREMENTS",
       highlights: "POSITION HIGHLIGHTS", process: "RECRUITMENT PROCESS", schedule: "WORK SCHEDULE",
       application: "HOW TO APPLY", safety: "IMPORTANT NOTICE", other: "ADDITIONAL INFORMATION",
     };
-    const sections: Record<string, SocialSection[]> = Object.fromEntries(order.map(key => [key, []]));
+    const renderedSections: SocialSection[] = [];
     const metadata: Array<{ label: string; value: string }> = [];
     let current: SocialSection | null = null;
     const pushCurrent = () => {
-      if (current?.lines.length) sections[current.key].push(current);
+      if (current?.lines.length) renderedSections.push(current);
       current = null;
     };
     const addLine = (value: string) => {
@@ -205,7 +217,6 @@ export function RawSocialPostText({ text, headline = "", className = "", organiz
     });
     pushCurrent();
 
-    const renderedSections = order.flatMap(key => sections[key]);
     return <div className={"raw-social-post-text social-post-formatted " + className.trim()}>
       {metadata.length > 0 && <div className="social-post-facts" aria-label="Job details">
         {metadata.map((fact, index) => <div className="social-post-fact" key={"fact-" + index}>
@@ -231,7 +242,11 @@ export function RawSocialPostText({ text, headline = "", className = "", organiz
           }
           const line = section.lines[i];
           const item = line.match(socialPostListPrefix);
-          if (item || section.key === "duties" || section.key === "requirements") {
+          const subsection = isSocialSubheading(line, section.key);
+          if (subsection) {
+            itemNumber = 0;
+            content.push(<h4 className="social-post-subheading" key={"subheading-" + sectionIndex + "-" + i}>{linkify(line.replace(/:\\s*$/u, ""), "subheading-" + sectionIndex + "-" + i, emailHref)}</h4>);
+          } else if (item || ((section.key === "duties" || section.key === "requirements") && line.length <= 180)) {
             itemNumber += 1;
             content.push(<div className="social-post-list-line" key={"item-" + sectionIndex + "-" + i}><span className="social-post-list-marker" aria-hidden="true">{itemNumber}.</span><span>{linkify(item ? item[2] : line, "organized-" + sectionIndex + "-" + i, emailHref)}</span></div>);
           } else {
