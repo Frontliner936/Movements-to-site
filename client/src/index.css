@@ -2300,3 +2300,34 @@ button.member-nav-login:active { background: #edf4ed; }
   .promoted-jobs-count { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { .promoted-jobs-block::before, .promoted-jobs-star { animation: none; } }
+
+
+/* Social adverts: polished, fact-first layout with safe overflow on narrow screens. */
+.social-post-formatted { display: grid; gap: 22px; min-width: 0; }
+.social-post-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 175px), 1fr)); gap: 10px; margin: 0 0 4px; }
+.social-post-fact { min-width: 0; padding: 14px 16px; border: 1px solid #dfe8df; border-left: 3px solid var(--green); border-radius: 10px; background: linear-gradient(145deg, #f5f8f2, #fffefa); }
+.social-post-fact > span { display: block; margin-bottom: 5px; color: #718078; font-size: 10px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.social-post-fact > strong { display: block; color: #183b30; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+.social-post-organized-section { min-width: 0; padding: 0 0 18px; border-bottom: 1px solid #e6e9e1; }
+.social-post-organized-section:last-child { border-bottom: 0; padding-bottom: 0; }
+.social-post-organized-section .social-post-section-heading { display: flex; align-items: center; gap: 10px; margin: 0 0 13px; color: #174d3c; font-size: 13px; font-weight: 850; letter-spacing: .09em; line-height: 1.45; }
+.social-post-organized-section .social-post-section-heading::before { content: ""; width: 4px; height: 19px; flex: none; border-radius: 4px; background: #d2a83e; }
+.social-post-organized-section .social-post-paragraph { margin: 0 0 10px; color: #47584f; font-size: 14px; line-height: 1.8; overflow-wrap: anywhere; }
+.social-post-organized-section .social-post-paragraph:last-child { margin-bottom: 0; }
+.social-post-organized-section .social-post-list-line { display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: start; gap: 8px; margin: 0 0 9px; color: #405449; font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
+.social-post-organized-section .social-post-list-marker { display: inline-grid; place-items: center; width: 22px; height: 22px; margin-top: 1px; border-radius: 50%; background: #edf4ed; color: #17664f; font-size: 11px; font-weight: 800; }
+.social-post-table-wrap { width: 100%; margin: 12px 0 16px; overflow-x: auto; border: 1px solid #e0e7de; border-radius: 10px; -webkit-overflow-scrolling: touch; }
+.social-post-table { width: 100%; min-width: 420px; border-collapse: collapse; background: #fffefa; font-size: 13px; text-align: left; }
+.social-post-table th { padding: 12px 14px; background: #edf4ed; color: #174d3c; font-size: 11px; font-weight: 800; letter-spacing: .035em; }
+.social-post-table td { padding: 11px 14px; border-top: 1px solid #e8ece6; color: #43544a; line-height: 1.55; overflow-wrap: anywhere; }
+.social-post-table tbody tr:nth-child(even) { background: #fafbf8; }
+@media (max-width: 600px) {
+  .social-post-formatted { gap: 18px; }
+  .social-post-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .social-post-fact { padding: 11px 12px; }
+  .social-post-fact > span { font-size: 9px; }
+  .social-post-fact > strong { font-size: 13px; }
+  .social-post-organized-section { padding-bottom: 15px; }
+  .social-post-organized-section .social-post-paragraph,
+  .social-post-organized-section .social-post-list-line { font-size: 13px; }
+}

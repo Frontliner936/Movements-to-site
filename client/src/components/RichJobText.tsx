@@ -113,7 +113,48 @@ function isSocialPostHeading(line: string) {
   return letters.length >= 4 && letters.length <= 75 && !/[.!?]$/u.test(value) && /^(?:about\s+\S|overview|what\s+you|who\s+we|hiring\s+process|important\s+note|quick\s+note|work\s+schedule|compensation|requirements?|qualifications?)/iu.test(value);
 }
 
-export function RawSocialPostText({ text, headline = "", className = "", organized = false, emailHref }: { text: string; headline?: string; className?: string; organized?: boolean; emailHref?: (email: string) => string }) {
+type SocialSection = { key: string; heading: string; lines: string[] };
+
+const socialMetaLabels: Record<string, string> = {
+  "job title": "Job title", position: "Job title", employer: "Employer", company: "Employer",
+  organisation: "Employer", organization: "Employer", "company name": "Employer",
+  location: "Location", "job location": "Location", salary: "Salary", pay: "Salary",
+  compensation: "Salary", "salary scale": "Salary", "employment type": "Employment type",
+  "job type": "Employment type", "contract type": "Employment type", deadline: "Application deadline",
+  "closing date": "Application deadline", "application deadline": "Application deadline",
+};
+
+function socialSectionKey(heading: string) {
+  const value = heading.toLocaleLowerCase();
+  if (/about.*(company|organisation|organization)|company overview/.test(value)) return "about";
+  if (/position summary|job summary|role overview|about the (role|job)|^overview$|^introduction$/.test(value)) return "summary";
+  if (/responsibilit|duties|what you.?ll do|key tasks|key accountabilities|your role|your tasks/.test(value)) return "duties";
+  if (/what we offer|benefits|perks|compensation|salary|^pay$/.test(value)) return "benefits";
+  if (/requirements|qualifications|what you.?ll need|eligibility|who we.?re looking for|candidate profile|about you|you should have|you will bring|skills and experience|education and experience|experience and skills|knowledge and skills/.test(value)) return "requirements";
+  if (/opportunity highlights|key highlights|job highlights/.test(value)) return "highlights";
+  if (/hiring process|recruitment process/.test(value)) return "process";
+  if (/how to apply|application|apply now|mode of application|application procedure/.test(value)) return "application";
+  if (/schedule|shift|working hours/.test(value)) return "schedule";
+  if (/important notice|safety|warning|scam|important note|quick note/.test(value)) return "safety";
+  return "other";
+}
+
+function splitSocialTable(lines: string[]) {
+  const cells = (line: string) => line.trim().replace(/^\||\|$/g, "").split(/\s*\|\s*|\t+| {3,}/).map(cell => cell.trim()).filter(Boolean);
+  const rows = lines.map(line => cells(line));
+  const tables: Array<{ start: number; end: number; rows: string[][] }> = [];
+  for (let i = 0; i < rows.length - 1;) {
+    if (rows[i].length >= 2 && rows[i + 1].length === rows[i].length) {
+      let end = i + 1;
+      while (end + 1 < rows.length && rows[end + 1].length === rows[i].length) end++;
+      tables.push({ start: i, end, rows: rows.slice(i, end + 1) });
+      i = end + 1;
+    } else i++;
+  }
+  return tables;
+}
+
+export function RawSocialPostText({ text, headline = "", className = "", organized = true, emailHref }: { text: string; headline?: string; className?: string; organized?: boolean; emailHref?: (email: string) => string }) {
   const lines = text.replace(/\r\n?/g, "\n").split("\n");
   const firstContentIndex = lines.findIndex(line => line.trim());
   const headlineKey = headline.trim().replace(/\s+/g, " ").toLocaleLowerCase();
@@ -123,85 +164,99 @@ export function RawSocialPostText({ text, headline = "", className = "", organiz
   if (organized) {
     const order = ["about", "summary", "benefits", "duties", "requirements", "process", "schedule", "highlights", "application", "safety", "other"];
     const labels: Record<string, string> = {
-      about: "ABOUT THE COMPANY",
-      summary: "POSITION SUMMARY",
-      duties: "WHAT YOU'LL DO",
-      benefits: "WHAT WE OFFER",
-      requirements: "REQUIREMENTS",
-      highlights: "OPPORTUNITY HIGHLIGHTS",
-      process: "HIRING PROCESS",
-      schedule: "WORK SCHEDULE",
-      application: "HOW TO APPLY",
-      safety: "IMPORTANT NOTICE",
-      other: "ADDITIONAL INFORMATION",
+      about: "ABOUT THE EMPLOYER", summary: "POSITION OVERVIEW", duties: "KEY RESPONSIBILITIES",
+      benefits: "COMPENSATION & BENEFITS", requirements: "QUALIFICATIONS & REQUIREMENTS",
+      highlights: "POSITION HIGHLIGHTS", process: "RECRUITMENT PROCESS", schedule: "WORK SCHEDULE",
+      application: "HOW TO APPLY", safety: "IMPORTANT NOTICE", other: "ADDITIONAL INFORMATION",
     };
-    const sections: Record<string, { key: string; heading: string; lines: string[] }[]> = Object.fromEntries(order.map(key => [key, []]));
-    let current: { key: string; heading: string; lines: string[] } | null = null;
-    const classify = (heading: string) => {
-      const value = heading.toLocaleLowerCase();
-      if (/about.*(company|organisation|organization|clipboard)|company overview/.test(value)) return "about";
-      if (/position summary|job summary|role overview|about the (role|job)|^overview$/.test(value)) return "summary";
-      if (/responsibilit|duties|what you.?ll do|key tasks|key accountabilities|your role|your tasks/.test(value)) return "duties";
-      if (/what we offer|benefits|perks|compensation|salary|^pay$/.test(value)) return "benefits";
-      if (/requirements|qualifications|what you.?ll need|eligibility|who we.?re looking for|candidate profile|about you|you should have|you will bring|skills and experience|education and experience|experience and skills|knowledge and skills/.test(value)) return "requirements";
-      if (/opportunity highlights|key highlights|job highlights/.test(value)) return "highlights";
-      if (/hiring process|recruitment process/.test(value)) return "process";
-      if (/how to apply|application|apply now|mode of application/.test(value)) return "application";
-      if (/schedule|shift|working hours/.test(value)) return "schedule";
-      if (/important notice|safety|warning|scam|important note|quick note/.test(value)) return "safety";
-      return "other";
-    };
+    const sections: Record<string, SocialSection[]> = Object.fromEntries(order.map(key => [key, []]));
+    const metadata: Array<{ label: string; value: string }> = [];
+    let current: SocialSection | null = null;
     const pushCurrent = () => {
-      if (current && current.lines.length) sections[current.key].push({ key: current.key, heading: current.heading, lines: current.lines });
+      if (current?.lines.length) sections[current.key].push(current);
+      current = null;
     };
-    lines.forEach((raw, index) => {
-      const value = raw.trim();
-      if (!value || (index === firstContentIndex && !showLead)) return;
-      if (index === firstContentIndex && showLead) {
-        current = { key: "summary", heading: "POSITION SUMMARY", lines: [value] };
-        return;
-      }
-      if (isSocialPostHeading(value)) {
-        pushCurrent();
-        const key = classify(value.replace(/:$/, ""));
-        current = { key, heading: labels[key] === "ADDITIONAL INFORMATION" ? value.replace(/:$/, "") : labels[key], lines: [] };
-        return;
+    const addLine = (value: string) => {
+      const field = value.match(/^([A-Za-z][A-Za-z /()-]{1,34})\s*:\s*(.+)$/);
+      if (field) {
+        const metaKey = field[1].trim().toLocaleLowerCase().replace(/\s+/g, " ");
+        const label = socialMetaLabels[metaKey];
+        if (label) { metadata.push({ label, value: field[2].trim() }); return; }
       }
       if (!current) current = { key: "summary", heading: labels.summary, lines: [] };
       current.lines.push(value);
+    };
+
+    lines.forEach((raw, index) => {
+      const value = raw.trim();
+      if (!value || (index === firstContentIndex && !showLead)) return;
+      if (index === firstContentIndex && showLead) { addLine(value); return; }
+      const metadataField = value.match(/^([A-Za-z][A-Za-z /()-]{1,34})\s*:\s*.+$/);
+      const metadataKey = metadataField?.[1].trim().toLocaleLowerCase().replace(/\s+/g, " ");
+      if (metadataKey && socialMetaLabels[metadataKey]) { addLine(value); return; }
+      if (isSocialPostHeading(value)) {
+        pushCurrent();
+        const heading = value.replace(/:\s*$/, "").trim();
+        const key = socialSectionKey(heading);
+        current = { key, heading: key === "other" ? heading : labels[key], lines: [] };
+        return;
+      }
+      addLine(value);
     });
     pushCurrent();
+
     const renderedSections = order.flatMap(key => sections[key]);
-    return <div className={`raw-social-post-text ${className}`.trim()}>
+    return <div className={"raw-social-post-text social-post-formatted " + className.trim()}>
+      {metadata.length > 0 && <div className="social-post-facts" aria-label="Job details">
+        {metadata.map((fact, index) => <div className="social-post-fact" key={"fact-" + index}>
+          <span>{fact.label}</span><strong>{linkify(fact.value, "fact-" + index, emailHref)}</strong>
+        </div>)}
+      </div>}
       {renderedSections.map((section, sectionIndex) => {
+        const tables = splitSocialTable(section.lines);
+        const tableAt = new Map(tables.map(table => [table.start, table]));
+        const skipped = new Set<number>();
         let itemNumber = 0;
-        return <section className="social-post-organized-section" key={`organized-${sectionIndex}`}>
-        <h3 className="social-post-section-heading">{section.heading}</h3>
-        {section.lines.map((line, lineIndex) => {
-          const item = line.match(socialPostListPrefix);
-          const shouldNumber = section.key === "duties" || section.key === "requirements";
-          if (item || shouldNumber) {
-            itemNumber += 1;
-            return <div className="social-post-list-line" key={`item-${sectionIndex}-${lineIndex}`}><span className="social-post-list-marker" aria-hidden="true">{itemNumber}.</span><span>{linkify(item ? item[2] : line, `organized-${sectionIndex}-${lineIndex}`, emailHref)}</span></div>;
+        const content: ReactNode[] = [];
+        for (let i = 0; i < section.lines.length; i++) {
+          if (skipped.has(i)) continue;
+          const table = tableAt.get(i);
+          if (table) {
+            for (let offset = 1; offset < table.rows.length; offset++) skipped.add(i + offset);
+            content.push(<div className="social-post-table-wrap" key={"table-" + sectionIndex + "-" + i}><table className="social-post-table">
+              <thead><tr>{table.rows[0].map((cell, cellIndex) => <th key={cellIndex} scope="col">{cell}</th>)}</tr></thead>
+              <tbody>{table.rows.slice(1).map((row, rowIndex) => <tr key={rowIndex}>{row.map((cell, cellIndex) => <td key={cellIndex}>{linkify(cell, "table-" + sectionIndex + "-" + i + "-" + rowIndex + "-" + cellIndex, emailHref)}</td>)}</tr>)}</tbody>
+            </table></div>);
+            continue;
           }
-          itemNumber = 0;
-          return <p className="social-post-paragraph" key={`paragraph-${sectionIndex}-${lineIndex}`}>{linkify(item ? item[2] : line, `organized-${sectionIndex}-${lineIndex}`)}</p>;
-        })}
-      </section>;
+          const line = section.lines[i];
+          const item = line.match(socialPostListPrefix);
+          if (item || section.key === "duties" || section.key === "requirements") {
+            itemNumber += 1;
+            content.push(<div className="social-post-list-line" key={"item-" + sectionIndex + "-" + i}><span className="social-post-list-marker" aria-hidden="true">{itemNumber}.</span><span>{linkify(item ? item[2] : line, "organized-" + sectionIndex + "-" + i, emailHref)}</span></div>);
+          } else {
+            itemNumber = 0;
+            content.push(<p className="social-post-paragraph" key={"paragraph-" + sectionIndex + "-" + i}>{linkify(line, "organized-" + sectionIndex + "-" + i, emailHref)}</p>);
+          }
+        }
+        return <section className="social-post-organized-section" key={"organized-" + sectionIndex}>
+          <h3 className="social-post-section-heading">{section.heading}</h3>
+          {content}
+        </section>;
       })}
     </div>;
   }
 
   let listNumber = 0;
-  return <div className={`raw-social-post-text ${className}`.trim()}>{lines.map((line, index) => {
+  return <div className={"raw-social-post-text " + className.trim()}>{lines.map((line, index) => {
     const value = line.trim();
-    if (!value) { listNumber = 0; return <div className="social-post-space" aria-hidden="true" key={`raw-space-${index}`} />; }
+    if (!value) { listNumber = 0; return <div className="social-post-space" aria-hidden="true" key={"raw-space-" + index} />; }
     if (index === firstContentIndex && !showLead) return null;
-    if (index === firstContentIndex) { listNumber = 0; return <p className="social-post-lead" key={`raw-line-${index}`}>{linkify(value, `raw-${index}`, emailHref)}</p>; }
-    if (isSocialPostHeading(value)) { listNumber = 0; return <h3 className="social-post-section-heading" key={`raw-line-${index}`}>{linkify(value, `raw-${index}`)}</h3>; }
+    if (index === firstContentIndex) { listNumber = 0; return <p className="social-post-lead" key={"raw-line-" + index}>{linkify(value, "raw-" + index, emailHref)}</p>; }
+    if (isSocialPostHeading(value)) { listNumber = 0; return <h3 className="social-post-section-heading" key={"raw-line-" + index}>{linkify(value, "raw-" + index)}</h3>; }
     const listItem = value.match(socialPostListPrefix);
-    if (listItem) { listNumber += 1; return <div className="social-post-list-line" key={`raw-line-${index}`}><span className="social-post-list-marker" aria-hidden="true">{listNumber}.</span><span>{linkify(listItem[2], `raw-${index}`)}</span></div>; }
+    if (listItem) { listNumber += 1; return <div className="social-post-list-line" key={"raw-line-" + index}><span className="social-post-list-marker" aria-hidden="true">{listNumber}.</span><span>{linkify(listItem[2], "raw-" + index, emailHref)}</span></div>; }
     listNumber = 0;
-    return <p className="social-post-paragraph" key={`raw-line-${index}`}>{linkify(value, `raw-${index}`)}</p>;
+    return <p className="social-post-paragraph" key={"raw-line-" + index}>{linkify(value, "raw-" + index, emailHref)}</p>;
   })}</div>;
 }
