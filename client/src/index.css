@@ -2334,3 +2334,11 @@ button.member-nav-login:active { background: #edf4ed; }
 
 .social-post-subheading { margin: 14px 0 8px; color: #254c3d; font-size: 14px; font-weight: 750; line-height: 1.5; }
 .social-post-subheading:first-child { margin-top: 0; }
+
+.announcement-meta { flex-wrap: wrap; }
+.announcement-share-control { margin-left: auto; }
+.announcement-share-trigger { min-height: 32px; padding: 0 10px; font-size: 10px; }
+.announcement-share-control .job-share-popover { top: calc(100% + 6px); }
+@media (max-width: 520px) {
+  .announcement-share-control .job-share-popover { right: -4px; }
+}
