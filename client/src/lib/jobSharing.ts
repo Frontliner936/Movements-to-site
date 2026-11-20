@@ -45,3 +45,30 @@ export function createJobShareInfo(job: ShareableJob, currentOrigin: string, can
   ];
   return { url, text, title: `${text} | Get Mchongo`, destinations };
 }
+
+export function createAnnouncementShareInfo(announcement: { id: number; title: string }, currentOrigin: string) {
+  const url = new URL(`/announcements#announcement-${announcement.id}`, currentOrigin).href;
+  const text = announcement.title;
+  const whatsapp = new URL("https://wa.me/");
+  whatsapp.searchParams.set("text", `${text}\n${url}`);
+  const facebook = new URL("https://www.facebook.com/sharer/sharer.php");
+  facebook.searchParams.set("u", url);
+  const x = new URL("https://twitter.com/intent/tweet");
+  x.searchParams.set("text", text);
+  x.searchParams.set("url", url);
+  const linkedin = new URL("https://www.linkedin.com/sharing/share-offsite/");
+  linkedin.searchParams.set("url", url);
+  const telegram = new URL("https://t.me/share/url");
+  telegram.searchParams.set("url", url);
+  telegram.searchParams.set("text", text);
+  return {
+    url,
+    destinations: [
+      { id: "whatsapp" as const, label: "WhatsApp", href: whatsapp.href },
+      { id: "facebook" as const, label: "Facebook", href: facebook.href },
+      { id: "x" as const, label: "X", href: x.href },
+      { id: "linkedin" as const, label: "LinkedIn", href: linkedin.href },
+      { id: "telegram" as const, label: "Telegram", href: telegram.href },
+    ],
+  };
+}
